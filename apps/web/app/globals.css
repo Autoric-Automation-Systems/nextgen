@@ -1,0 +1,118 @@
+:root {
+  --ink: #0b0f14;
+  --ink-soft: #4a5568;
+  --line: #e3e8ef;
+  --surface: #ffffff;
+  --canvas: #f6f8fb;
+  --brand: #10331f;
+  --brand-soft: #e8f3ec;
+  --accent: #c9f24d;
+  --danger: #b42318;
+  --warning: #b54708;
+  --ok: #067647;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+.topbar {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.02em; }
+
+.brand-mark {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--brand); color: var(--accent);
+  display: grid; place-items: center; font-size: 14px; font-weight: 800;
+}
+
+.nav { display: flex; gap: 20px; font-size: 14px; color: var(--ink-soft); }
+.nav a { text-decoration: none; }
+.nav a:hover { color: var(--ink); }
+
+.hero { padding: 72px 0 40px; }
+.eyebrow {
+  display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--brand); background: var(--brand-soft);
+  padding: 6px 10px; border-radius: 999px;
+}
+h1 { font-size: 44px; line-height: 1.1; letter-spacing: -0.03em; margin: 18px 0 16px; max-width: 760px; }
+.lead { font-size: 18px; line-height: 1.6; color: var(--ink-soft); max-width: 620px; margin: 0 0 28px; }
+
+.grid { display: grid; gap: 16px; }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+}
+.card h3 { margin: 0 0 8px; font-size: 15px; }
+.card p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-soft); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 42px; padding: 0 18px; border-radius: 10px; border: 1px solid transparent;
+  background: var(--brand); color: #fff; font-size: 14px; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+}
+.btn:hover { opacity: 0.92; }
+.btn[disabled] { opacity: 0.5; cursor: progress; }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 13px; font-weight: 600; }
+.field input {
+  height: 42px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
+  font-size: 14px; background: var(--surface); color: var(--ink);
+}
+.field input:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
+
+.auth-card { max-width: 420px; margin: 64px auto; }
+.muted { color: var(--ink-soft); font-size: 13px; line-height: 1.6; }
+.notice {
+  border: 1px solid var(--line); background: #fffbeb; color: #7c2d12;
+  padding: 12px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5;
+}
+.notice.ok { background: var(--brand-soft); color: var(--brand); border-color: #cfe6d8; }
+.notice.error { background: #fef3f2; color: var(--danger); border-color: #fecdca; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; background: var(--brand-soft); color: var(--brand);
+}
+.badge.neutral { background: #f2f4f7; color: var(--ink-soft); }
+.badge.warn { background: #fef0c7; color: var(--warning); }
+.badge.danger { background: #fee4e2; color: var(--danger); }
+
+.stack { display: flex; flex-direction: column; gap: 20px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.section-title { font-size: 20px; letter-spacing: -0.02em; margin: 0; }
+.stat { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }

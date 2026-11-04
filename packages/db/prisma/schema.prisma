@@ -1,0 +1,582 @@
+// NextGen — schema de fundação (Fase 0)
+// Regras do doc 05: uuid v7, dinheiro em centavos, soft delete, school_id em toda
+// tabela de domínio, RLS obrigatória (ver migrations/*_rls).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────
+
+enum SchoolStatus {
+  trial
+  active
+  suspended
+  cancelled
+
+  @@map("school_status")
+}
+
+enum UserStatus {
+  active
+  suspended
+
+  @@map("user_status")
+}
+
+enum MembershipRole {
+  admin
+  coordinator
+  teacher
+  guardian
+  platform_support
+
+  @@map("membership_role")
+}
+
+enum MembershipStatus {
+  invited
+  active
+  revoked
+
+  @@map("membership_status")
+}
+
+enum StudentStatus {
+  active
+  inactive
+  graduated
+  transferred
+
+  @@map("student_status")
+}
+
+enum GuardianRelation {
+  mother
+  father
+  grandmother
+  grandfather
+  aunt
+  uncle
+  sibling
+  legal_guardian
+  other
+
+  @@map("guardian_relation")
+}
+
+enum VerificationMethod {
+  in_person_document
+  document_upload
+  credit_bureau
+  email_link
+  manual
+
+  @@map("verification_method")
+}
+
+enum EnrollmentStatus {
+  draft
+  active
+  suspended
+  cancelled
+  completed
+  waitlist
+
+  @@map("enrollment_status")
+}
+
+enum ConsentStatus {
+  granted
+  revoked
+  expired
+
+  @@map("consent_status")
+}
+
+enum RoomKind {
+  field
+  court
+  classroom
+  gym
+
+  @@map("room_kind")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tenant
+// ─────────────────────────────────────────────────────────────
+
+model School {
+  id           String       @id @default(uuid(7)) @db.Uuid
+  slug         String       @unique
+  legalName    String       @map("legal_name")
+  tradeName    String       @map("trade_name")
+  cnpjHash     String?      @map("cnpj_hash")
+  cnpjLast4    String?      @map("cnpj_last4")
+  status       SchoolStatus @default(trial)
+  planCode     String       @default("campo") @map("plan_code")
+  trialEndsAt  DateTime?    @map("trial_ends_at") @db.Timestamptz(6)
+  timezone     String       @default("America/Sao_Paulo")
+  logoPathname String?      @map("logo_pathname")
+  heroPathname String?      @map("hero_pathname")
+  tagline      String?
+  palette      Json         @default("{}")
+  settings     Json         @default("{}")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt    DateTime?    @map("deleted_at") @db.Timestamptz(6)
+
+  units              Unit[]
+  rooms              Room[]
+  memberships        Membership[]
+  guardians          Guardian[]
+  students           Student[]
+  studentGuardians   StudentGuardian[]
+  pickupPeople       PickupAuthorizedPerson[]
+  seasons            Season[]
+  categories         Category[]
+  classGroups        ClassGroup[]
+  classGroupTeachers ClassGroupTeacher[]
+  enrollments        Enrollment[]
+  consents           Consent[]
+  auditLogs          AuditLog[]
+
+  @@map("schools")
+}
+
+model Unit {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  schoolId  String    @map("school_id") @db.Uuid
+  name      String
+  address   String
+  city      String
+  state     String    @db.Char(2)
+  zip       String
+  timezone  String    @default("America/Sao_Paulo")
+  isPrimary Boolean   @default(false) @map("is_primary")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school      School       @relation(fields: [schoolId], references: [id])
+  rooms       Room[]
+  classGroups ClassGroup[]
+
+  @@index([schoolId])
+  @@map("units")
+}
+
+model Room {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  schoolId  String    @map("school_id") @db.Uuid
+  unitId    String    @map("unit_id") @db.Uuid
+  name      String
+  kind      RoomKind  @default(field)
+  capacity  Int       @default(20)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school      School       @relation(fields: [schoolId], references: [id])
+  unit        Unit         @relation(fields: [unitId], references: [id])
+  classGroups ClassGroup[]
+
+  @@index([schoolId, unitId])
+  @@map("rooms")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Identidade (compatível com Better Auth)
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id              String     @id @default(uuid(7)) @db.Uuid
+  name            String
+  email           String     @unique
+  emailVerified   Boolean    @default(false) @map("email_verified")
+  image           String?
+  phone           String?
+  status          UserStatus @default(active)
+  locale          String     @default("pt-BR")
+  isPlatformStaff Boolean    @default(false) @map("is_platform_staff")
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  sessions         Session[]
+  accounts         Account[]
+  memberships      Membership[]
+  guardianProfiles Guardian[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  token     String   @unique
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid(7)) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz(6)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model Membership {
+  id        String           @id @default(uuid(7)) @db.Uuid
+  schoolId  String           @map("school_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  role      MembershipRole
+  status    MembershipStatus @default(invited)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  revokedAt DateTime?        @map("revoked_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([schoolId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Aluno e responsável
+// ─────────────────────────────────────────────────────────────
+
+model Guardian {
+  id              String           @id @default(uuid(7)) @db.Uuid
+  schoolId        String           @map("school_id") @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  cpfHash         String?          @map("cpf_hash")
+  cpfLast4        String?          @map("cpf_last4")
+  phone           String?
+  relationDefault GuardianRelation @default(legal_guardian) @map("relation_default")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  school           School            @relation(fields: [schoolId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+  studentGuardians StudentGuardian[]
+  consents         Consent[]
+
+  @@unique([schoolId, userId])
+  @@index([schoolId])
+  @@map("guardians")
+}
+
+model Student {
+  id                String        @id @default(uuid(7)) @db.Uuid
+  schoolId          String        @map("school_id") @db.Uuid
+  fullName          String        @map("full_name")
+  nickname          String?
+  birthDate         DateTime      @map("birth_date") @db.Date
+  gender            String?
+  photoPathname     String?       @map("photo_pathname")
+  status            StudentStatus @default(active)
+  notesInternal     String?       @map("notes_internal")
+  publicCardSlug    String?       @unique @map("public_card_slug")
+  publicCardEnabled Boolean       @default(false) @map("public_card_enabled")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(6)
+
+  school       School                   @relation(fields: [schoolId], references: [id])
+  guardians    StudentGuardian[]
+  pickupPeople PickupAuthorizedPerson[]
+  enrollments  Enrollment[]
+  consents     Consent[]
+
+  @@index([schoolId])
+  @@index([schoolId, birthDate])
+  @@map("students")
+}
+
+model StudentGuardian {
+  id                 String              @id @default(uuid(7)) @db.Uuid
+  schoolId           String              @map("school_id") @db.Uuid
+  studentId          String              @map("student_id") @db.Uuid
+  guardianId         String              @map("guardian_id") @db.Uuid
+  relation           GuardianRelation
+  isLegal            Boolean             @default(true) @map("is_legal")
+  isFinancial        Boolean             @default(false) @map("is_financial")
+  isPickupAuthorized Boolean             @default(true) @map("is_pickup_authorized")
+  verifiedAt         DateTime?           @map("verified_at") @db.Timestamptz(6)
+  verificationMethod VerificationMethod? @map("verification_method")
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school   School   @relation(fields: [schoolId], references: [id])
+  student  Student  @relation(fields: [studentId], references: [id])
+  guardian Guardian @relation(fields: [guardianId], references: [id])
+
+  @@unique([studentId, guardianId])
+  @@index([schoolId])
+  @@index([guardianId])
+  @@map("student_guardians")
+}
+
+model PickupAuthorizedPerson {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  studentId     String   @map("student_id") @db.Uuid
+  name          String
+  relation      String
+  documentLast4 String?  @map("document_last4")
+  photoPathname String?  @map("photo_pathname")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school  School  @relation(fields: [schoolId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@index([schoolId, studentId])
+  @@map("pickup_authorized_people")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Temporada, categoria, turma, matrícula
+// ─────────────────────────────────────────────────────────────
+
+model Season {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  schoolId  String   @map("school_id") @db.Uuid
+  name      String
+  startsOn  DateTime @map("starts_on") @db.Date
+  endsOn    DateTime @map("ends_on") @db.Date
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school      School       @relation(fields: [schoolId], references: [id])
+  categories  Category[]
+  classGroups ClassGroup[]
+
+  @@index([schoolId])
+  @@map("seasons")
+}
+
+model Category {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  seasonId      String   @map("season_id") @db.Uuid
+  name          String
+  birthYearFrom Int?     @map("birth_year_from")
+  birthYearTo   Int?     @map("birth_year_to")
+  ageMin        Int?     @map("age_min")
+  ageMax        Int?     @map("age_max")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school      School       @relation(fields: [schoolId], references: [id])
+  season      Season       @relation(fields: [seasonId], references: [id])
+  classGroups ClassGroup[]
+
+  @@unique([seasonId, name])
+  @@index([schoolId])
+  @@map("categories")
+}
+
+model ClassGroup {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  schoolId   String    @map("school_id") @db.Uuid
+  unitId     String    @map("unit_id") @db.Uuid
+  roomId     String?   @map("room_id") @db.Uuid
+  seasonId   String    @map("season_id") @db.Uuid
+  categoryId String    @map("category_id") @db.Uuid
+  name       String
+  weekdays   Int[]     @default([])
+  startTime  String    @map("start_time") @db.Char(5)
+  endTime    String    @map("end_time") @db.Char(5)
+  capacity   Int       @default(20)
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school      School              @relation(fields: [schoolId], references: [id])
+  unit        Unit                @relation(fields: [unitId], references: [id])
+  room        Room?               @relation(fields: [roomId], references: [id])
+  season      Season              @relation(fields: [seasonId], references: [id])
+  category    Category            @relation(fields: [categoryId], references: [id])
+  teachers    ClassGroupTeacher[]
+  enrollments Enrollment[]
+
+  @@index([schoolId, seasonId])
+  @@map("class_groups")
+}
+
+model ClassGroupTeacher {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  schoolId     String    @map("school_id") @db.Uuid
+  classGroupId String    @map("class_group_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  isLead       Boolean   @default(false) @map("is_lead")
+  fromDate     DateTime  @map("from_date") @db.Date
+  toDate       DateTime? @map("to_date") @db.Date
+
+  school     School     @relation(fields: [schoolId], references: [id])
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id])
+
+  @@unique([classGroupId, userId, fromDate])
+  @@index([schoolId])
+  @@map("class_group_teachers")
+}
+
+model Enrollment {
+  id               String           @id @default(uuid(7)) @db.Uuid
+  schoolId         String           @map("school_id") @db.Uuid
+  studentId        String           @map("student_id") @db.Uuid
+  classGroupId     String           @map("class_group_id") @db.Uuid
+  status           EnrollmentStatus @default(draft)
+  startsOn         DateTime         @map("starts_on") @db.Date
+  endsOn           DateTime?        @map("ends_on") @db.Date
+  dueDay           Int              @default(10) @map("due_day")
+  discountCents    Int              @default(0) @map("discount_cents")
+  waitlistPosition Int?             @map("waitlist_position")
+  overrideReason   String?          @map("override_reason")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  school     School     @relation(fields: [schoolId], references: [id])
+  student    Student    @relation(fields: [studentId], references: [id])
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id])
+
+  @@index([schoolId, status])
+  @@index([studentId])
+  @@map("enrollments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Consentimento (LGPD art. 8º e 14) e auditoria
+// ─────────────────────────────────────────────────────────────
+
+model ConsentPurpose {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  code        String   @unique
+  name        String
+  description String
+  isRequired  Boolean  @default(false) @map("is_required")
+  isSensitive Boolean  @default(false) @map("is_sensitive")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  terms    ConsentTerm[]
+  consents Consent[]
+
+  @@map("consent_purposes")
+}
+
+model ConsentTerm {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  purposeCode   String    @map("purpose_code")
+  version       String
+  bodyMarkdown  String    @map("body_markdown")
+  bodyHash      String    @map("body_hash")
+  effectiveFrom DateTime  @map("effective_from") @db.Timestamptz(6)
+  retiredAt     DateTime? @map("retired_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  purpose  ConsentPurpose @relation(fields: [purposeCode], references: [code])
+  consents Consent[]
+
+  @@unique([purposeCode, version])
+  @@map("consent_terms")
+}
+
+model Consent {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  schoolId     String        @map("school_id") @db.Uuid
+  studentId    String        @map("student_id") @db.Uuid
+  guardianId   String        @map("guardian_id") @db.Uuid
+  purposeCode  String        @map("purpose_code")
+  termId       String        @map("term_id") @db.Uuid
+  status       ConsentStatus @default(granted)
+  grantedAt    DateTime      @default(now()) @map("granted_at") @db.Timestamptz(6)
+  revokedAt    DateTime?     @map("revoked_at") @db.Timestamptz(6)
+  // prova de consentimento: hash do termo + contexto da coleta
+  evidenceHash String        @map("evidence_hash")
+  ip           String?
+  userAgent    String?       @map("user_agent")
+  method       String        @default("portal")
+
+  school   School         @relation(fields: [schoolId], references: [id])
+  student  Student        @relation(fields: [studentId], references: [id])
+  guardian Guardian       @relation(fields: [guardianId], references: [id])
+  purpose  ConsentPurpose @relation(fields: [purposeCode], references: [code])
+  term     ConsentTerm    @relation(fields: [termId], references: [id])
+
+  @@index([schoolId, studentId, purposeCode])
+  @@map("consents")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  schoolId    String?  @map("school_id") @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  actorRole   String?  @map("actor_role")
+  action      String
+  entity      String
+  entityId    String?  @map("entity_id")
+  before      Json?
+  after       Json?
+  ip          String?
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School? @relation(fields: [schoolId], references: [id])
+  actor  User?   @relation(fields: [actorUserId], references: [id])
+
+  @@index([schoolId, createdAt])
+  @@map("audit_logs")
+}

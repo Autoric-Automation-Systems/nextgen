@@ -4,9 +4,36 @@ Instruções para qualquer agente (humano ou IA) trabalhando neste repositório.
 
 ## Contexto
 
-Repositório de **planejamento** do NextGen, SaaS de gestão para escolas de futebol.
-A documentação é a fonte da verdade; código de produção será adicionado nas fases
-descritas em `docs/09-roadmap.md`.
+Repositório do NextGen, SaaS de gestão para escolas de futebol. A documentação é a
+fonte da verdade do produto; `docs/13-fundacao-implementada.md` descreve o que já
+existe em código. O restante entra conforme `docs/09-roadmap.md`.
+
+## Estrutura
+
+```
+apps/web              Next.js 15 (App Router) — painel, login, API de auth
+packages/db           Prisma, migrações com RLS, seed, cliente de tenant
+packages/core         regras puras: dinheiro, categoria, RBAC, consentimento
+packages/auth         Better Auth + resolução de sessão/ator
+packages/integrations Vercel Blob (stores público e privado)
+docs/                 especificação (01..13)
+```
+
+## Comandos
+
+```bash
+pnpm install
+pnpm db:migrate   # prisma migrate deploy
+pnpm db:seed
+pnpm dev
+pnpm test         # regras + RLS (RLS exige Postgres com o papel nextgen_app)
+pnpm typecheck
+pnpm build
+```
+
+Duas URLs de banco são obrigatórias e **precisam ser diferentes**: `DATABASE_URL`
+(dono, só migração e seed) e `APP_DATABASE_URL` (papel `nextgen_app`, sem superusuário).
+Se a aplicação conectar como dono, a RLS deixa de valer.
 
 ## Idioma
 
