@@ -18,3 +18,12 @@ export function parseFailedMigration(output) {
 export function isRolePrivilegeFailure(output) {
   return /permission denied to create role|42501/.test(output ?? "");
 }
+
+/**
+ * O Neon valida a senha ao gravar via `ALTER ROLE` e recusa as fracas com um 400 do
+ * control plane. O texto não menciona senha fraca de forma óbvia ("insecure password"),
+ * e o erro chega como falha genérica de SQL — por isso vale nomear.
+ */
+export function isWeakPasswordFailure(output) {
+  return /insecure password/i.test(output ?? "");
+}

@@ -17,7 +17,11 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { candidates, pickPassword } from "./lib/migration-candidates.mjs";
-import { isRolePrivilegeFailure, parseFailedMigration } from "./lib/migration-failure.mjs";
+import {
+  isRolePrivilegeFailure,
+  isWeakPasswordFailure,
+  parseFailedMigration,
+} from "./lib/migration-failure.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const schema = path.join(root, "packages/db/prisma/schema.prisma");
@@ -149,6 +153,14 @@ const sql = `alter role nextgen_app login password $pw$${password.value}$pw$;`;
 const passwordResult = run(["db", "execute", "--schema", schema, "--stdin"], url, sql);
 
 if (!passwordResult.ok) {
+  if (isWeakPasswordFailure(passwordResult.output)) {
+    console.log(
+      "[migrate] o Neon recusou a senha de APP_DB_PASSWORD: use 12+ caracteres com maiúscula, minúscula, número e símbolo",
+    );
+    logDeploy(url, "senha-fraca", "Neon recusou a senha de APP_DB_PASSWORD (política de força)");
+    process.exit(strict ? 1 : 0);
+  }
+
   console.log("[migrate] senha do nextgen_app não pôde ser alterada por SQL; use a do console");
   logDeploy(url, "sem-alter", passwordResult.output);
   process.exit(strict ? 1 : 0);

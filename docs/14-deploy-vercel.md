@@ -134,6 +134,27 @@ foi habilitado por engano, desabilite no console e remova o schema
 decisão de arquitetura: o Neon Auth também roda Better Auth, mas as políticas de RLS e o
 `membership` da aplicação continuariam apontando para `public.users`.
 
+### 1.3.2 O papel nasce `NOLOGIN` — de propósito
+
+A migração de RLS cria `nextgen_app` sem login: quem liga o login é o build, com a senha
+da variável `APP_DB_PASSWORD`. São dois passos separados porque a senha não pode viver no
+SQL versionado.
+
+Consequência prática: esquema migrado com papel `NOLOGIN` não autentica, e o erro que
+aparece na tela é `P1001 — can't reach database server`, que sugere host errado. O
+`/api/health` mostra a verdade em `role.can_login`, e o build registra o que aconteceu em
+`public.deploy_log` (lido pelo health em `lastDeploy`).
+
+Se o build não conseguir ligar o login, o caminho é o SQL Editor do Neon:
+
+```sql
+alter role nextgen_app login password 'SENHA-FORTE';
+```
+
+O Neon valida a senha nesse comando: menos de 12 caracteres, ou tudo minúsculo, devolve
+`insecure password` (HTTP 400 do control plane). Use maiúscula, minúscula, número e
+símbolo — e o mesmo valor em `APP_DB_PASSWORD` na Vercel.
+
 ### 1.4 Sem dados de demonstração em produção
 
 Não rode `pnpm db:seed` em produção: ele cria as escolas `demo` e `rival` com alunos
@@ -462,6 +483,8 @@ Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 | `P3018` / `P3009` nas migrações | `create role` recusado (42501) abortou a migração de RLS; o Prisma registra a falha e bloqueia as seguintes | o build corrige sozinho (`migrate resolve --rolled-back` + nova tentativa); o papel `nextgen_app` deve existir em Neon → Roles |
 | `/api/health` → `migrations: "falhou"` | migração abortada e não resolvida | veja `migrationFailed` no health; o próximo deploy tenta de novo |
 | Schema `neon_auth` no banco | Neon Auth habilitado no console | não é do projeto — ver 1.3.1 |
+| `insecure password` ao gravar a senha | Neon recusa senha fraca no `ALTER ROLE` (400 do control plane) | `APP_DB_PASSWORD` com 12+ caracteres, maiúscula, minúscula, número e símbolo |
+| Papel existe mas `can_login: false` | migração cria `nextgen_app` como `NOLOGIN`; o login vem do build | o build liga o login; se falhar, o `deploy_log` diz por quê |
 
 ---
 

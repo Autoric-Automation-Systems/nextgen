@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isRolePrivilegeFailure,
+  isWeakPasswordFailure,
   parseFailedMigration,
 } from "../../../scripts/lib/migration-failure.mjs";
 
@@ -45,5 +46,18 @@ describe("isRolePrivilegeFailure", () => {
 
   it("não confunde com erro de conexão", () => {
     expect(isRolePrivilegeFailure("Can't reach database server")).toBe(false);
+  });
+});
+
+describe("isWeakPasswordFailure", () => {
+  it("reconhece a recusa de senha fraca do Neon", () => {
+    const output =
+      'ERROR: Received HTTP code 400 from control plane: {"error":"insecure password, try including more special characters"}';
+
+    expect(isWeakPasswordFailure(output)).toBe(true);
+  });
+
+  it("não confunde com outros erros de permissão", () => {
+    expect(isWeakPasswordFailure("permission denied to alter role")).toBe(false);
   });
 });
