@@ -47,17 +47,36 @@ export function directDatabaseUrl(env: Env = process.env): string | undefined {
   return pick(env, DIRECT_URL_NAMES);
 }
 
-/** Conexão da aplicação. Precisa ser o papel `nextgen_app`, não o dono. */
+/**
+ * Conexão da aplicação: precisa ser o papel `nextgen_app`, não o dono das tabelas.
+ *
+ * A ordem importa. `DATABASE_URL` vem antes de `PGHOST` porque é a URL que a aplicação
+ * já usou e que funcionou: o host da integração pode estar rotacionado ou suspenso, e
+ * nesse caso montar a URL a partir dele derruba um site que estava no ar.
+ */
 export function appDatabaseUrl(env: Env = process.env): string | undefined {
   const explicit = pick(env, ["APP_DATABASE_URL"]);
   if (explicit) return explicit;
 
-  // Sem URL pronta: monta a do papel de aplicação em cima do host da integração.
-  // O host do Neon aceita qualquer papel; o que muda é o usuário da URL.
+  const password = pick(env, APP_PASSWORD_NAMES);
+  if (!password) return undefined;
+
+  const ownerUrl = pick(env, POOLED_URL_NAMES);
+  if (ownerUrl) {
+    // Troca só as credenciais: host, porta, banco e parâmetros seguem os do dono.
+    try {
+      const url = new URL(ownerUrl);
+      url.username = "nextgen_app";
+      url.password = password;
+      return url.toString();
+    } catch {
+      // URL fora do formato padrão: cai para a montagem abaixo.
+    }
+  }
+
   const host = pick(env, ["PGHOST", "PGHOST_UNPOOLED"]);
   const database = pick(env, ["PGDATABASE"]) ?? "nextgen";
-  const password = pick(env, APP_PASSWORD_NAMES);
-  if (!host || !password) return undefined;
+  if (!host) return undefined;
 
   const params = host.includes("pooler") ? POOLED_PARAMS : "sslmode=require";
   return `postgresql://nextgen_app:${encodeURIComponent(password)}@${host}/${database}?${params}`;
@@ -74,6 +93,8 @@ export type DatabaseConfig = {
   appUser?: string;
   appIsOwner: boolean;
   hasDirectUrl: boolean;
+  /** Qual variável forneceu o host: decide a depuração quando a conexão falha. */
+  hostSource?: "APP_DATABASE_URL" | "DATABASE_URL" | "PGHOST";
 };
 
 /** Lê só o usuário da URL. Serve para o health provar qual papel conectou. */
@@ -83,22 +104,35 @@ export function userFromUrl(url: string | undefined): string | undefined {
   return match?.[1] ? decodeURIComponent(match[1]) : undefined;
 }
 
-function describe(appUrl: string | undefined, source: DatabaseConfig["appSource"], env: Env): DatabaseConfig {
+function describe(
+  appUrl: string | undefined,
+  source: DatabaseConfig["appSource"],
+  env: Env,
+  hostSource: DatabaseConfig["hostSource"],
+): DatabaseConfig {
   const appUser = userFromUrl(appUrl);
   return {
     appSource: source,
     appUser,
     appIsOwner: appUser !== "nextgen_app",
     hasDirectUrl: Boolean(directDatabaseUrl(env)),
+    hostSource,
   };
 }
 
 export function resolveDatabaseConfig(env: Env = process.env): DatabaseConfig {
   const app = appDatabaseUrl(env);
-  if (app) return describe(app, env.APP_DATABASE_URL ? "APP_DATABASE_URL" : "montada", env);
+  if (app) {
+    const hostSource = env.APP_DATABASE_URL
+      ? "APP_DATABASE_URL"
+      : pick(env, POOLED_URL_NAMES)
+        ? "DATABASE_URL"
+        : "PGHOST";
+    return describe(app, env.APP_DATABASE_URL ? "APP_DATABASE_URL" : "montada", env, hostSource);
+  }
 
   const owner = pick(env, POOLED_URL_NAMES);
-  if (owner) return describe(owner, "DATABASE_URL", env);
+  if (owner) return describe(owner, "DATABASE_URL", env, "DATABASE_URL");
 
   return { appSource: "ausente", appIsOwner: true, hasDirectUrl: Boolean(directDatabaseUrl(env)) };
 }

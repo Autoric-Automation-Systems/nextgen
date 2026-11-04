@@ -117,3 +117,38 @@ describe("userFromUrl", () => {
     expect(userFromUrl(undefined)).toBeUndefined();
   });
 });
+
+describe("hostSource", () => {
+  it("deriva do DATABASE_URL que já funcionava, trocando só o papel", () => {
+    const config = resolveDatabaseConfig({
+      DATABASE_URL: "postgresql://neondb_owner:senha@ep-ok-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true",
+      PGHOST: "ep-rotacionado-pooler.sa-east-1.aws.neon.tech",
+      APP_DB_PASSWORD: "app-pw",
+    });
+
+    expect(config.hostSource).toBe("DATABASE_URL");
+    expect(config.appUser).toBe("nextgen_app");
+    expect(config.appSource).toBe("montada");
+  });
+
+  it("mantém host e parâmetros do dono ao trocar credenciais", () => {
+    const url = appDatabaseUrl({
+      DATABASE_URL: "postgresql://owner:pw@ep-ok-pooler.neon.tech/neondb?sslmode=require&pgbouncer=true",
+      PGHOST: "ep-rotacionado.neon.tech",
+      APP_DB_PASSWORD: "app-pw",
+    });
+
+    expect(url).toContain("ep-ok-pooler.neon.tech");
+    expect(url).toContain("pgbouncer=true");
+    expect(url).not.toContain("ep-rotacionado");
+  });
+
+  it("usa PGHOST quando não há DATABASE_URL", () => {
+    const config = resolveDatabaseConfig({
+      PGHOST: "ep-x-pooler.neon.tech",
+      PGDATABASE: "neondb",
+      APP_DB_PASSWORD: "pw",
+    });
+    expect(config.hostSource).toBe("PGHOST");
+  });
+});

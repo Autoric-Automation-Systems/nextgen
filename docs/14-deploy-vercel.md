@@ -248,6 +248,27 @@ Um link mágico por login, mais convites de responsável, mais cobrança mensal:
 atende um piloto, não uma rede de escolas. Quando passar de uma escola com movimento,
 troque para Resend ou SMTP transacional — a troca é só variável de ambiente.
 
+### Migração: no build da Vercel, não no GitHub Actions
+
+As credenciais do banco vivem nas variáveis do projeto na Vercel — a integração Neon
+cria `DATABASE_URL_UNPOOLED`, `PGHOST`, `PGPASSWORD`. **O GitHub Actions não enxerga
+essas variáveis**: são plataformas separadas, com cofres separados. Um workflow que
+espera `DATABASE_URL_MIGRATE` não acha nada, mesmo com tudo configurado na Vercel.
+
+Por isso a migração roda no `prebuild` do site (`scripts/migrate-on-deploy.mjs`), com as
+variáveis que já existem:
+
+1. testa cada URL direta disponível e usa a que responder;
+2. aplica `prisma migrate deploy`;
+3. liga o login do papel `nextgen_app` com `APP_DB_PASSWORD`.
+
+O build não falha se nenhuma URL responder — nesse caso o site segue no ar e
+`/api/health` mostra `migrations: "ausentes"`, que é melhor que derrubar o site.
+
+O workflow `migrate` do GitHub continua existindo para rodar à mão, e agora aceita os
+nomes da integração Neon. Ele só funciona se um secret existir no GitHub; a Vercel não
+empresta os dela.
+
 ### Pooled ou direct?
 
 | Uso | Conexão |
@@ -288,8 +309,10 @@ Nenhum dos dois é obrigatório hoje: o upload ainda não está ligado a nenhuma
 O login é por link mágico e **não existe auto-cadastro** (`disableSignUp: true`). Nenhum
 usuário nasce pela tela de login.
 
-Edite `scripts/bootstrap-admin.sql` com o seu e-mail e o nome da escola, cole no **SQL
-Editor do Neon** (conexão *direct*, sem `-pooler`) e execute. Ele cria usuário, escola e
+Espere o deploy terminar com `migrations: "aplicadas"` no `/api/health`.
+
+Depois edite `scripts/bootstrap-admin.sql` com o seu e-mail e o nome da escola, cole no
+**SQL Editor do Neon** (conexão *direct*, sem `-pooler`) e execute. Ele cria usuário, escola e
 vínculo de administrador, e é idempotente — pode rodar de novo para corrigir nome.
 
 Depois entre em `https://seudominio.com.br/login` com esse e-mail.
