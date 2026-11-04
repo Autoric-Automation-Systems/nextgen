@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   appDatabaseUrl,
   directDatabaseUrl,
+  directUrlSource,
+  normalizeUrl,
   resolveDatabaseConfig,
   sslMode,
+  urlAnomaly,
   userFromUrl,
 } from "../src/env";
 
@@ -165,5 +168,50 @@ describe("hostSource", () => {
       APP_DB_PASSWORD: "pw",
     });
     expect(config.hostSource).toBe("PGHOST");
+  });
+});
+
+describe("normalizeUrl", () => {
+  it("remove espaço e quebra de linha colados na variável", () => {
+    expect(normalizeUrl("  postgresql://u:p@h/db\n")).toBe("postgresql://u:p@h/db");
+  });
+
+  it("remove aspas em volta do valor", () => {
+    expect(normalizeUrl('"postgresql://u:p@h/db"')).toBe("postgresql://u:p@h/db");
+  });
+
+  it("não mexe em URL já correta", () => {
+    const url = "postgresql://u:p@h/db?sslmode=require";
+
+    expect(normalizeUrl(url)).toBe(url);
+    expect(urlAnomaly(url)).toBeNull();
+  });
+});
+
+describe("urlAnomaly", () => {
+  it("aponta espaço, que o Prisma descreve como protocolo inválido", () => {
+    expect(urlAnomaly(" postgresql://u:p@h/db")).toBe("espaco");
+  });
+
+  it("aponta aspas", () => {
+    expect(urlAnomaly("'postgresql://u:p@h/db'")).toBe("aspas");
+  });
+
+  it("aponta ausência de protocolo", () => {
+    expect(urlAnomaly("u:p@h/db")).toBe("protocolo");
+  });
+});
+
+describe("directDatabaseUrl", () => {
+  it("entrega a conexão direta já normalizada", () => {
+    expect(directDatabaseUrl({ DATABASE_URL_UNPOOLED: " postgresql://u:p@h/db " })).toBe(
+      "postgresql://u:p@h/db",
+    );
+  });
+
+  it("diz qual variável forneceu a conexão direta", () => {
+    expect(directUrlSource({ DATABASE_URL_UNPOOLED: "postgresql://u:p@h/db" })).toBe(
+      "DATABASE_URL_UNPOOLED",
+    );
   });
 });

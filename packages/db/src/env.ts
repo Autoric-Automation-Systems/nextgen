@@ -14,6 +14,34 @@ type Env = Record<string, string | undefined>;
 const POOLED_PARAMS = "sslmode=require&pgbouncer=true&connection_limit=1";
 
 /**
+ * Limpa o que a colagem na Vercel costuma trazer junto: espaço, quebra de linha e aspas
+ * em volta do valor.
+ *
+ * O Prisma recusa a URL inteira com "must start with the protocol `postgresql://`", que
+ * descreve o sintoma errado: o protocolo está lá, o que veio antes dele é que não. E
+ * como o formulário de login engole o erro, o usuário só vê "link enviado".
+ */
+export function normalizeUrl(url: string): string {
+  let value = url.trim();
+
+  const quoted =
+    (value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"));
+  if (quoted) value = value.slice(1, -1).trim();
+
+  return value;
+}
+
+/** O que está errado no formato, sem devolver o valor. Vai para o health. */
+export function urlAnomaly(url: string | undefined): "espaco" | "aspas" | "protocolo" | null {
+  if (!url) return null;
+  if (url !== url.trim()) return "espaco";
+  if (/^["']/.test(url)) return "aspas";
+  if (!/^postgres(ql)?:\/\//i.test(url)) return "protocolo";
+
+  return null;
+}
+
+/**
  * Banco gerenciado exige TLS. URL sem `sslmode` faz o Prisma conectar em texto puro, o
  * servidor derruba a conexão e o erro que aparece é P1001 "can't reach database server" —
  * que manda procurar host errado quando o problema é o parâmetro que falta.
@@ -69,7 +97,18 @@ export const APP_PASSWORD_NAMES = [
 
 /** Conexão dona das tabelas: migração, seed, script manual. Sempre direta. */
 export function directDatabaseUrl(env: Env = process.env): string | undefined {
+  const value = rawDirectDatabaseUrl(env);
+  return value && normalizeUrl(value);
+}
+
+/** Valor cru, sem normalizar: o health precisa ver o defeito que a normalização esconde. */
+export function rawDirectDatabaseUrl(env: Env = process.env): string | undefined {
   return pick(env, DIRECT_URL_NAMES);
+}
+
+/** Nome da variável que forneceu a conexão direta — é ela que precisa ser corrigida. */
+export function directUrlSource(env: Env = process.env): string | undefined {
+  return DIRECT_URL_NAMES.find((name) => env[name]);
 }
 
 /**
@@ -81,16 +120,17 @@ export function directDatabaseUrl(env: Env = process.env): string | undefined {
  */
 export function appDatabaseUrl(env: Env = process.env): string | undefined {
   const explicit = pick(env, ["APP_DATABASE_URL"]);
-  if (explicit) return withTls(explicit);
+  if (explicit) return withTls(normalizeUrl(explicit));
 
   const password = pick(env, APP_PASSWORD_NAMES);
   if (!password) return undefined;
 
   const ownerUrl = pick(env, POOLED_URL_NAMES);
   if (ownerUrl) {
+    const clean = normalizeUrl(ownerUrl);
     // Troca só as credenciais: host, porta, banco e parâmetros seguem os do dono.
     try {
-      const url = new URL(ownerUrl);
+      const url = new URL(clean);
       url.username = "nextgen_app";
       url.password = password;
       return url.toString();
@@ -143,7 +183,7 @@ export function appDatabaseCandidates(
 
   // Último recurso: o próprio papel dono. RLS continua valendo por FORCE, mas o dono lê
   // qualquer tabela — o health mostra `appIsOwner: true` para não passar despercebido.
-  for (const name of POOLED_URL_NAMES) add(name, env[name]);
+  for (const name of POOLED_URL_NAMES) add(name, env[name] && normalizeUrl(env[name]));
 
   return list;
 }

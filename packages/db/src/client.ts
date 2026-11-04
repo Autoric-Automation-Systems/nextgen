@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { appDatabaseUrl, directDatabaseUrl, resolveDatabaseConfig } from "./env";
+import { appDatabaseUrl, directDatabaseUrl, normalizeUrl, resolveDatabaseConfig } from "./env";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
@@ -12,7 +12,7 @@ export function createAppClient(url = appDatabaseUrl()) {
   if (!url) {
     throw new Error("URL do banco de aplicação não configurada");
   }
-  return new PrismaClient({ datasources: { db: { url } } });
+  return new PrismaClient({ datasources: { db: { url: normalizeUrl(url) } } });
 }
 
 export { resolveDatabaseConfig };
@@ -28,7 +28,9 @@ export function createAdminClient(url = directDatabaseUrl() ?? process.env.DATAB
   if (!url) {
     throw new Error("URL do banco administrativo não configurada");
   }
-  return new PrismaClient({ datasources: { db: { url } } });
+  // `DATABASE_URL` chega crua aqui: sem normalizar, espaço colado na Vercel derruba o
+  // Prisma com erro que culpa o protocolo.
+  return new PrismaClient({ datasources: { db: { url: normalizeUrl(url) } } });
 }
 
 export type { Prisma, PrismaClient } from "@prisma/client";

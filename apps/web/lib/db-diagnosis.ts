@@ -3,6 +3,9 @@ import {
   appDatabaseCandidates,
   appDatabaseUrl,
   directDatabaseUrl,
+  directUrlSource,
+  rawDirectDatabaseUrl,
+  urlAnomaly,
   resolveDatabaseConfig,
   sslMode,
 } from "@nextgen/db";
@@ -99,6 +102,11 @@ export function dbConfigPresence(env: Record<string, string | undefined> = proce
     pgIntegration: Boolean(env.PGHOST || env.PGPASSWORD),
     // `ausente` aqui explica um P1001 que manda procurar host errado.
     ssl: sslMode(appDatabaseUrl(env)),
+    // O Prisma recusa espaço ou aspas antes do protocolo culpando o protocolo. O valor
+    // da URL nunca sai daqui; só o formato.
+    directUrlShape: urlAnomaly(rawDirectDatabaseUrl(env)) ?? "ok",
+    directUrlSource: directUrlSource(env),
+    pooledUrlShape: urlAnomaly(env.DATABASE_URL ?? env.POSTGRES_URL) ?? "ok",
   };
 }
 
