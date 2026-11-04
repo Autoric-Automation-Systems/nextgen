@@ -43,22 +43,47 @@ describe("describeDbFailure", () => {
 });
 
 describe("dbConfigPresence", () => {
-  it("não expõe o valor da URL, só a presença", () => {
+  it("diz qual papel conectou e de onde veio a URL, sem expor o valor", () => {
     const presence = dbConfigPresence({
-      APP_DATABASE_URL: "postgresql://user:segredo@host/db?pgbouncer=true",
+      APP_DATABASE_URL: "postgresql://nextgen_app:segredo@host/db?pgbouncer=true",
     });
 
-    expect(presence).toEqual({ appDatabaseUrl: true, databaseUrl: false, pooled: true });
+    expect(presence.appSource).toBe("APP_DATABASE_URL");
+    expect(presence.appUser).toBe("nextgen_app");
+    expect(presence.appIsOwner).toBe(false);
     expect(JSON.stringify(presence)).not.toContain("segredo");
   });
 
-  it("detecta pgbouncer ausente", () => {
-    expect(dbConfigPresence({ APP_DATABASE_URL: "postgresql://u:p@host/db?sslmode=require" }).pooled)
-      .toBe(false);
+  it("reconhece a URL unpooled da integração Neon", () => {
+    const presence = dbConfigPresence({
+      DATABASE_URL_UNPOOLED: "postgresql://owner:pw@host/db",
+      DATABASE_URL: "postgresql://owner:pw@host-pooler/db?pgbouncer=true",
+    });
+
+    expect(presence.unpooledUrl).toBe(true);
+    expect(presence.appSource).toBe("DATABASE_URL");
+    expect(presence.appIsOwner).toBe(true);
+  });
+
+  it("monta a URL da app a partir das variáveis PG da integração", () => {
+    const presence = dbConfigPresence({
+      PGHOST: "ep-x-pooler.sa-east-1.aws.neon.tech",
+      PGDATABASE: "nextgen",
+      APP_DB_PASSWORD: "pw",
+    });
+
+    expect(presence.appSource).toBe("montada");
+    expect(presence.appUser).toBe("nextgen_app");
+    expect(presence.pgIntegration).toBe(true);
   });
 
   it("ambiente vazio", () => {
-    expect(dbConfigPresence({})).toEqual({ appDatabaseUrl: false, databaseUrl: false, pooled: false });
+    expect(dbConfigPresence({})).toMatchObject({
+      appSource: "ausente",
+      appIsOwner: true,
+      unpooledUrl: false,
+      pgIntegration: false,
+    });
   });
 });
 

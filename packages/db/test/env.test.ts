@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+import {
+  appDatabaseUrl,
+  directDatabaseUrl,
+  resolveDatabaseConfig,
+  userFromUrl,
+} from "../src/env";
+
+const OWNER = "postgresql://neondb_owner:senha@ep-x-pooler.sa-east-1.aws.neon.tech/nextgen";
+
+describe("directDatabaseUrl", () => {
+  it("prefere o nome do projeto", () => {
+    expect(
+      directDatabaseUrl({
+        DATABASE_URL_MIGRATE: "postgresql://a@dir/nextgen",
+        DATABASE_URL_UNPOOLED: "postgresql://b@dir/nextgen",
+      }),
+    ).toBe("postgresql://a@dir/nextgen");
+  });
+
+  it("aceita o nome que a integração Neon cria", () => {
+    expect(directDatabaseUrl({ DATABASE_URL_UNPOOLED: "postgresql://b@dir/nextgen" }))
+      .toBe("postgresql://b@dir/nextgen");
+  });
+
+  it("ignora variável declarada vazia", () => {
+    expect(
+      directDatabaseUrl({
+        DATABASE_URL_MIGRATE: "",
+        POSTGRES_URL_NON_POOLING: "postgresql://c@dir/nextgen",
+      }),
+    ).toBe("postgresql://c@dir/nextgen");
+  });
+});
+
+describe("appDatabaseUrl", () => {
+  it("usa APP_DATABASE_URL quando existe", () => {
+    const url = "postgresql://nextgen_app:senha@ep-x-pooler/nextgen?pgbouncer=true";
+    expect(appDatabaseUrl({ APP_DATABASE_URL: url })).toBe(url);
+  });
+
+  it("monta a URL do papel de aplicação a partir das variáveis PG*", () => {
+    const url = appDatabaseUrl({
+      PGHOST: "ep-x-pooler.sa-east-1.aws.neon.tech",
+      PGDATABASE: "nextgen",
+      APP_DB_PASSWORD: "s3nh4",
+    });
+
+    expect(url).toContain("nextgen_app:s3nh4@");
+    expect(url).toContain("pgbouncer=true");
+    expect(url).toContain("connection_limit=1");
+  });
+
+  it("respeita o nome de senha da integração", () => {
+    expect(
+      appDatabaseUrl({
+        PGHOST: "ep-x-pooler/nextgen",
+        PGDATABASE: "nextgen",
+        PGPASSWORD_APP: "outra",
+      }),
+    ).toContain("nextgen_app:outra@");
+  });
+
+  it("codifica senha com caractere especial em vez de quebrar a URL", () => {
+    const url = appDatabaseUrl({
+      PGHOST: "ep-x-pooler/nextgen",
+      PGDATABASE: "nextgen",
+      APP_DB_PASSWORD: "a@b/c:d",
+    });
+    expect(url).toContain("a%40b%2Fc%3Ad");
+  });
+
+  it("não monta nada sem senha: melhor falhar alto que conectar como dono", () => {
+    expect(appDatabaseUrl({ PGHOST: "ep-x/nextgen", PGDATABASE: "nextgen" })).toBeUndefined();
+  });
+});
+
+describe("resolveDatabaseConfig", () => {
+  it("reporta a origem e o papel sem expor a senha", () => {
+    const config = resolveDatabaseConfig({ APP_DATABASE_URL: OWNER });
+
+    expect(config.appSource).toBe("APP_DATABASE_URL");
+    expect(config.appUser).toBe("neondb_owner");
+    expect(config.appIsOwner).toBe(true);
+    expect(JSON.stringify(config)).not.toContain("senha");
+    expect(config).not.toHaveProperty("appUrl");
+  });
+
+  it("reconhece o papel de aplicação como não-dono", () => {
+    const config = resolveDatabaseConfig({
+      APP_DATABASE_URL: "postgresql://nextgen_app:pw@host/nextgen",
+    });
+    expect(config.appIsOwner).toBe(false);
+  });
+
+  it("cai para DATABASE_URL quando nada mais existe", () => {
+    const config = resolveDatabaseConfig({ DATABASE_URL: OWNER });
+    expect(config.appSource).toBe("DATABASE_URL");
+    expect(config.appIsOwner).toBe(true);
+  });
+
+  it("declara ausente quando não há nada", () => {
+    expect(resolveDatabaseConfig({}).appSource).toBe("ausente");
+  });
+});
+
+describe("userFromUrl", () => {
+  it("lê só o usuário", () => {
+    expect(userFromUrl("postgresql://nextgen_app:pw@host:5432/db")).toBe("nextgen_app");
+  });
+
+  it("aceita URL sem senha", () => {
+    expect(userFromUrl("postgresql://nextgen_app@host/db")).toBe("nextgen_app");
+  });
+
+  it("devolve undefined para entrada vazia", () => {
+    expect(userFromUrl(undefined)).toBeUndefined();
+  });
+});

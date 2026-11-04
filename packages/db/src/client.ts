@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { appDatabaseUrl, directDatabaseUrl, resolveDatabaseConfig } from "./env";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
@@ -7,12 +8,14 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
  * superusuário e não tem BYPASSRLS. É isso que faz a RLS valer de verdade — com o
  * papel dono das tabelas, política nenhuma seria aplicada.
  */
-export function createAppClient(url = process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL) {
+export function createAppClient(url = appDatabaseUrl()) {
   if (!url) {
-    throw new Error("APP_DATABASE_URL (ou DATABASE_URL) não configurada");
+    throw new Error("URL do banco de aplicação não configurada");
   }
   return new PrismaClient({ datasources: { db: { url } } });
 }
+
+export { resolveDatabaseConfig };
 
 export const prisma = globalForPrisma.prisma ?? createAppClient();
 
@@ -21,9 +24,9 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 /** Cliente administrativo (dono das tabelas): migrações, seed e backoffice. */
-export function createAdminClient(url = process.env.DATABASE_URL) {
+export function createAdminClient(url = directDatabaseUrl() ?? process.env.DATABASE_URL) {
   if (!url) {
-    throw new Error("DATABASE_URL não configurada");
+    throw new Error("URL do banco administrativo não configurada");
   }
   return new PrismaClient({ datasources: { db: { url } } });
 }

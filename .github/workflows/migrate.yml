@@ -1,8 +1,12 @@
 name: migrate
 
 # Migração manual do banco de produção, sem precisar do repositório na máquina.
-# Secrets necessários: DATABASE_URL_MIGRATE (conexão direta, sem -pooler)
-# e APP_DB_PASSWORD (senha do papel nextgen_app).
+#
+# Aceita os nomes da integração Neon da Vercel (`DATABASE_URL_UNPOOLED`,
+# `POSTGRES_URL_NON_POOLING`, `PGPASSWORD`...) além dos nomes próprios do projeto.
+# Exigir um nome específico faz variável existente parecer ausente.
+#
+# O passo "diagnosticar" imprime qual nome foi encontrado — booleano, nunca valor.
 on:
   workflow_dispatch:
     inputs:
@@ -20,6 +24,20 @@ jobs:
     if: inputs.confirm == 'migrate'
     runs-on: ubuntu-latest
     environment: production
+    env:
+      # Primeiro nome não vazio vence; secret inexistente resolve para "".
+      DB: ${{ secrets.DATABASE_URL_MIGRATE || secrets.DATABASE_URL_UNPOOLED || secrets.POSTGRES_URL_NON_POOLING || secrets.NEON_DATABASE_URL_UNPOOLED || secrets.DIRECT_URL }}
+      # `PGPASSWORD` é a senha do papel dono criada pela integração Neon. Usá-la no
+      # papel de aplicação iguala as duas credenciais: quem vazar a config da app
+      # passa a ter também o dono das tabelas. O resumo avisa quando é o caso.
+      PW: ${{ secrets.APP_DB_PASSWORD || secrets.NEXTGEN_APP_PASSWORD || secrets.PGPASSWORD_APP || secrets.PGPASSWORD }}
+      HAS_MIGRATE_URL: ${{ secrets.DATABASE_URL_MIGRATE != '' }}
+      HAS_UNPOOLED_URL: ${{ secrets.DATABASE_URL_UNPOOLED != '' }}
+      HAS_NON_POOLING_URL: ${{ secrets.POSTGRES_URL_NON_POOLING != '' }}
+      HAS_NEON_UNPOOLED_URL: ${{ secrets.NEON_DATABASE_URL_UNPOOLED != '' }}
+      HAS_DIRECT_URL: ${{ secrets.DIRECT_URL != '' }}
+      HAS_APP_PASSWORD: ${{ secrets.APP_DB_PASSWORD != '' }}
+      HAS_OWNER_PASSWORD: ${{ secrets.PGPASSWORD != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,28 +50,61 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: diagnosticar variáveis
+        run: |
+          echo "URL direta encontrada em:"
+          for pair in \
+            "DATABASE_URL_MIGRATE=$HAS_MIGRATE_URL" \
+            "DATABASE_URL_UNPOOLED=$HAS_UNPOOLED_URL" \
+            "POSTGRES_URL_NON_POOLING=$HAS_NON_POOLING_URL" \
+            "NEON_DATABASE_URL_UNPOOLED=$HAS_NEON_UNPOOLED_URL" \
+            "DIRECT_URL=$HAS_DIRECT_URL"
+          do
+            printf '  %-28s %s\n' "${pair%%=*}" "$([ "${pair##*=}" = "true" ] && echo sim || echo nao)"
+          done
+
+          if [ -z "$DB" ]; then
+            echo "" >&2
+            echo "Nenhuma URL direta encontrada." >&2
+            echo "Cadastre um destes secrets (Settings > Secrets and variables > Actions):" >&2
+            echo "  DATABASE_URL_MIGRATE, DATABASE_URL_UNPOOLED, POSTGRES_URL_NON_POOLING," >&2
+            echo "  NEON_DATABASE_URL_UNPOOLED ou DIRECT_URL" >&2
+            exit 1
+          fi
+
+          if [ -z "$PW" ]; then
+            echo "" >&2
+            echo "Nenhuma senha encontrada. Aceitos: APP_DB_PASSWORD, NEXTGEN_APP_PASSWORD," >&2
+            echo "PGPASSWORD_APP, PGPASSWORD." >&2
+            exit 1
+          fi
+
+          sudo apt-get install -y --no-install-recommends postgresql-client >/dev/null
+          psql "$DB" -tAc "select 'conexao direta ok como ' || current_user"
+
       - name: aplicar migrações
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_MIGRATE }}
+          DATABASE_URL: ${{ env.DB }}
         run: pnpm --filter @nextgen/db run migrate
 
       - name: liberar login do papel de aplicação
-        env:
-          DB: ${{ secrets.DATABASE_URL_MIGRATE }}
-          PW: ${{ secrets.APP_DB_PASSWORD }}
         run: |
-          if [ -z "$PW" ]; then
-            echo "APP_DB_PASSWORD não configurado" >&2
-            exit 1
-          fi
-          sudo apt-get install -y --no-install-recommends postgresql-client >/dev/null
           # psql não interpola variáveis em -c, só em script via stdin.
           printf "alter role nextgen_app login password :'pw';\n" \
             | psql "$DB" -v ON_ERROR_STOP=1 -v pw="$PW"
 
       - name: conferir papel
-        env:
-          DB: ${{ secrets.DATABASE_URL_MIGRATE }}
         run: |
           psql "$DB" -c "select rolname, rolsuper, rolbypassrls, rolcanlogin
                          from pg_roles where rolname = 'nextgen_app';"
+
+      - name: resumo
+        run: |
+          echo "MIGRATE OK" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Tabelas e políticas aplicadas; `nextgen_app` agora aceita login.' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$HAS_APP_PASSWORD" != "true" ] && [ "$HAS_OWNER_PASSWORD" = "true" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '> A senha do papel de aplicação foi copiada de `PGPASSWORD` (dono do banco).' >> "$GITHUB_STEP_SUMMARY"
+            echo "> Funciona, mas troque por uma senha própria: \`alter role nextgen_app password '...';\`" >> "$GITHUB_STEP_SUMMARY"
+          fi

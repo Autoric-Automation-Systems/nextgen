@@ -1,3 +1,5 @@
+import { directDatabaseUrl, resolveDatabaseConfig } from "@nextgen/db";
+
 /**
  * Traduz falha de conexão do Prisma em uma frase curta e segura para o `/api/health`.
  *
@@ -70,11 +72,18 @@ export function describeDbDetail(error: unknown): string {
 }
 
 /** Presença das variáveis, sem expor valor. Ajuda a distinguir "faltou" de "errado". */
+/**
+ * O health não repete a lógica de resolução de URL: ele pergunta ao `@nextgen/db`
+ * qual papel a aplicação realmente usa. Duas implementações divergem, e a que
+ * aparece na tela passa a mentir.
+ */
 export function dbConfigPresence(env: Record<string, string | undefined> = process.env) {
+  const config = resolveDatabaseConfig(env);
   return {
-    appDatabaseUrl: Boolean(env.APP_DATABASE_URL),
-    databaseUrl: Boolean(env.DATABASE_URL),
-    pooled: /[?&]pgbouncer=true/.test(env.APP_DATABASE_URL ?? env.DATABASE_URL ?? ""),
+    ...config,
+    // Nomes que a integração Neon cria, para não parecer ausente o que está lá.
+    unpooledUrl: Boolean(directDatabaseUrl(env)),
+    pgIntegration: Boolean(env.PGHOST || env.PGPASSWORD),
   };
 }
 
