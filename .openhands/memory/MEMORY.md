@@ -33,3 +33,15 @@
   com `VERCEL_ENV=production`, e nunca derruba o deploy.
 - Schema `neon_auth` no banco `nextgen-neon` = Neon Auth habilitado no console. Não é
   criado por nenhuma migração deste repo (só `public` e `app`).
+- **`prebuild` nunca roda no build da Vercel**: o comando é `turbo run build`, que executa
+  o script `build` do pacote e não o ciclo de vida do npm. Passo que precisa rodar tem de
+  estar dentro de `build` (`node scripts/... && next build`). Custou dias de diagnóstico.
+- **O Neon valida senha no `ALTER ROLE`**: senha curta/simples volta HTTP 400 do control
+  plane com "insecure password". Precisa de 12+ caracteres com maiúscula, minúscula,
+  número e símbolo.
+- `nextgen_app` nasce `NOLOGIN` (migração de RLS); o login só é ligado pelo build. Papel
+  NOLOGIN produz P1001 "can't reach database server", que engana o diagnóstico.
+- Sem token da API da Vercel não dá para alterar variável de ambiente por aqui; o
+  `VERCEL_AUTOMATION_BYPASS_SECRET` serve só para furar o Deployment Protection.
+- O build não tem log acessível: `public.deploy_log` (escrito por
+  `scripts/migrate-on-deploy.mjs`, lido pelo health em `lastDeploy`) é a janela para ele.
