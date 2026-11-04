@@ -35,7 +35,10 @@ node scripts/check-deploy.mjs <url>   # sonda um deploy publicado
 
 ## Deploy
 
-Vercel com Root Directory `apps/web`; config em `apps/web/vercel.json`. O runbook completo
+Vercel com Root Directory `apps/web`; config em `apps/web/vercel.json` (e um
+`vercel.json` na raiz como reserva, caso alguém deixe a Root Directory em `./`).
+Node **24.x** (`.nvmrc` + `engines`): 22 está em manutenção e 26 é LTS novo demais para
+binário nativo de Prisma/sharp. O runbook completo
 está em `docs/14-deploy-vercel.md`. Três coisas não podem regredir:
 
 1. `APP_DATABASE_URL` diferente de `DATABASE_URL` — se o app conectar como dono, a RLS

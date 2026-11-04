@@ -13,7 +13,7 @@ LGPD e ECA Digital para alunos menores de idade.
 ## Rodar localmente
 
 ```bash
-pnpm install
+pnpm install  # Node 24 (.nvmrc)
 docker run -d --name nextgen-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nextgen \
   -p 5432:5432 postgres:16-alpine
 docker exec nextgen-pg psql -U postgres -d nextgen -c \
