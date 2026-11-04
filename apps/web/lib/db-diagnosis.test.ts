@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dbConfigPresence, describeDbFailure } from "./db-diagnosis";
+import { dbConfigPresence, describeDbDetail, describeDbFailure, redactSecrets } from "./db-diagnosis";
 
 function prismaError(errorCode: string, message = "raw driver message") {
   const error = new Error(message);
@@ -53,5 +53,37 @@ describe("dbConfigPresence", () => {
 
   it("ambiente vazio", () => {
     expect(dbConfigPresence({})).toEqual({ appDatabaseUrl: false, databaseUrl: false, pooled: false });
+  });
+});
+
+describe("redactSecrets", () => {
+  it("apaga a URL com credenciais do host Neon", () => {
+    const out = redactSecrets(
+      "Can't reach database server at postgresql://nextgen_app:pw@ep-x-pooler.sa-east-1.aws.neon.tech:5432/nextgen",
+    );
+
+    expect(out).not.toContain("pw@");
+    expect(out).not.toContain("neon.tech");
+    expect(out).toContain("<url>");
+  });
+
+  it("apaga token do Resend", () => {
+    expect(redactSecrets("chave re_1234567890abcdef")).toBe("chave <token>");
+  });
+
+  it("preserva texto sem segredo", () => {
+    expect(redactSecrets("desconhecido")).toBe("desconhecido");
+  });
+});
+
+describe("describeDbDetail", () => {
+  it("pega só a primeira linha não vazia", () => {
+    const error = new Error("\n  primeira linha  \nsegunda linha");
+    expect(describeDbDetail(error)).toBe("primeira linha");
+  });
+
+  it("redige antes de devolver", () => {
+    expect(describeDbDetail(new Error("falhou em postgresql://u:p@h.neon.tech/db")))
+      .toBe("falhou em <url>");
   });
 });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertRlsIsEnforced, prisma } from "@nextgen/db";
 import { mailTransport } from "@nextgen/auth/mail";
-import { dbConfigPresence, describeDbFailure } from "@/lib/db-diagnosis";
+import { dbConfigPresence, describeDbDetail, describeDbFailure } from "@/lib/db-diagnosis";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,7 @@ export async function GET() {
         status: "error",
         db: "down",
         reason: describeDbFailure(error),
+        detail: describeDbDetail(error),
         config: dbConfigPresence(),
         latencyMs: Date.now() - startedAt,
       },
