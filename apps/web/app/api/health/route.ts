@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertRlsIsEnforced, prisma } from "@nextgen/db";
 import { mailTransport } from "@nextgen/auth/mail";
+import { dbConfigPresence, describeDbFailure } from "@/lib/db-diagnosis";
 
 export const dynamic = "force-dynamic";
 
@@ -29,9 +30,15 @@ export async function GET() {
       },
       { status: rls ? 200 : 503, headers: { "cache-control": "no-store" } },
     );
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { status: "error", db: "down", latencyMs: Date.now() - startedAt },
+      {
+        status: "error",
+        db: "down",
+        reason: describeDbFailure(error),
+        config: dbConfigPresence(),
+        latencyMs: Date.now() - startedAt,
+      },
       { status: 503, headers: { "cache-control": "no-store" } },
     );
   }
