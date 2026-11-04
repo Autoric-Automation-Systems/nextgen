@@ -96,9 +96,36 @@ export const APP_PASSWORD_NAMES = [
 ];
 
 /** Conexão dona das tabelas: migração, seed, script manual. Sempre direta. */
+/** O que o Prisma aceita como conexão. Qualquer outra coisa derruba o cliente inteiro. */
+function isPostgresUrl(value: string): boolean {
+  return /^postgres(ql)?:\/\//i.test(value);
+}
+
+/**
+ * Primeira conexão direta **utilizável**, não a primeira presente.
+ *
+ * Uma variável declarada com valor que não é URL (`DATABASE_URL_MIGRATE` apontando para
+ * outra coisa, por exemplo) derrubava tudo antes de chegar ao banco: o Prisma valida a
+ * datasource na construção e a exceção só aparece na primeira query.
+ */
 export function directDatabaseUrl(env: Env = process.env): string | undefined {
-  const value = rawDirectDatabaseUrl(env);
-  return value && normalizeUrl(value);
+  for (const name of DIRECT_URL_NAMES) {
+    const value = env[name];
+    if (!value) continue;
+
+    const clean = normalizeUrl(value);
+    if (isPostgresUrl(clean)) return clean;
+  }
+
+  return undefined;
+}
+
+/** Variáveis de conexão direta presentes que o Prisma recusaria. Vai para o health. */
+export function ignoredDirectSources(env: Env = process.env): string[] {
+  return DIRECT_URL_NAMES.filter((name) => {
+    const value = env[name];
+    return Boolean(value) && !isPostgresUrl(normalizeUrl(value!));
+  });
 }
 
 /** Valor cru, sem normalizar: o health precisa ver o defeito que a normalização esconde. */
@@ -106,9 +133,9 @@ export function rawDirectDatabaseUrl(env: Env = process.env): string | undefined
   return pick(env, DIRECT_URL_NAMES);
 }
 
-/** Nome da variável que forneceu a conexão direta — é ela que precisa ser corrigida. */
+/** Nome da variável que forneceu a conexão direta utilizável. */
 export function directUrlSource(env: Env = process.env): string | undefined {
-  return DIRECT_URL_NAMES.find((name) => env[name]);
+  return DIRECT_URL_NAMES.find((name) => env[name] && isPostgresUrl(normalizeUrl(env[name]!)));
 }
 
 /**

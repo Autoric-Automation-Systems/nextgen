@@ -3,6 +3,7 @@ import {
   appDatabaseUrl,
   directDatabaseUrl,
   directUrlSource,
+  ignoredDirectSources,
   normalizeUrl,
   resolveDatabaseConfig,
   sslMode,
@@ -207,6 +208,17 @@ describe("directDatabaseUrl", () => {
     expect(directDatabaseUrl({ DATABASE_URL_UNPOOLED: " postgresql://u:p@h/db " })).toBe(
       "postgresql://u:p@h/db",
     );
+  });
+
+  it("pula variável cujo valor não é URL, em vez de derrubar o Prisma", () => {
+    const env = {
+      DATABASE_URL_MIGRATE: "neonctl connection-string",
+      DATABASE_URL_UNPOOLED: "postgresql://u:p@h/db",
+    };
+
+    expect(directDatabaseUrl(env)).toBe("postgresql://u:p@h/db");
+    expect(directUrlSource(env)).toBe("DATABASE_URL_UNPOOLED");
+    expect(ignoredDirectSources(env)).toEqual(["DATABASE_URL_MIGRATE"]);
   });
 
   it("diz qual variável forneceu a conexão direta", () => {

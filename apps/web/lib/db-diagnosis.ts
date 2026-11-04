@@ -4,6 +4,7 @@ import {
   appDatabaseUrl,
   directDatabaseUrl,
   directUrlSource,
+  ignoredDirectSources,
   rawDirectDatabaseUrl,
   urlAnomaly,
   resolveDatabaseConfig,
@@ -106,6 +107,7 @@ export function dbConfigPresence(env: Record<string, string | undefined> = proce
     // da URL nunca sai daqui; só o formato.
     directUrlShape: urlAnomaly(rawDirectDatabaseUrl(env)) ?? "ok",
     directUrlSource: directUrlSource(env),
+    directUrlIgnored: ignoredDirectSources(env),
     pooledUrlShape: urlAnomaly(env.DATABASE_URL ?? env.POSTGRES_URL) ?? "ok",
   };
 }
