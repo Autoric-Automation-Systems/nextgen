@@ -24,20 +24,26 @@ export async function GET() {
   try {
     await prisma.$queryRaw`select 1`;
     const rls = await assertRlsIsEnforced();
+    const migration = await migrationState();
+
+    // `db: up` só com as tabelas no lugar: banco acessível e schema vazio derrubava
+    // qualquer tela com 500 enquanto este endpoint dizia estar tudo bem.
+    const healthy = rls && migration.state === "aplicadas";
 
     return NextResponse.json(
       {
         config,
-        status: rls ? "ok" : "degraded",
+        status: healthy ? "ok" : "degraded",
         db: "up",
         rls,
         mail: mailTransport(),
         smtp: await smtpState(),
-        migrations: await migrationState(),
+        migrations: migration.state,
+        migrationFailed: migration.failed,
         latencyMs: Date.now() - startedAt,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
       },
-      { status: rls ? 200 : 503, headers: { "cache-control": "no-store" } },
+      { status: healthy ? 200 : 503, headers: { "cache-control": "no-store" } },
     );
   } catch (error) {
     return NextResponse.json(
@@ -58,16 +64,33 @@ export async function GET() {
  * Diz se as migrações chegaram ao banco. Sem isso, "db: up" esconde o caso em que a
  * conexão funciona mas as tabelas não existem — a tela quebra com 500 e o health
  * aparece saudável.
+ *
+ * `falhou` é o estado que mais engana: a migração abortou, o Prisma registrou a falha e
+ * passa a recusar qualquer migração nova (P3009). O nome vai junto porque sem ele a
+ * única saída é adivinhar qual `migrate resolve` rodar.
  */
-async function migrationState(): Promise<"aplicadas" | "ausentes"> {
+async function migrationState(): Promise<{
+  state: "aplicadas" | "ausentes" | "falhou";
+  failed?: string;
+}> {
   try {
-    const rows = await prisma.$queryRaw<{ n: bigint }[]>`
-      select count(*)::int as n from _prisma_migrations
-      where finished_at is not null and rolled_back_at is null
+    const rows = await prisma.$queryRaw<{ applied: number; failed: number; name: string | null }[]>`
+      select
+        count(*) filter (where finished_at is not null and rolled_back_at is null)::int as applied,
+        count(*) filter (where finished_at is null and rolled_back_at is null)::int as failed,
+        (select migration_name from _prisma_migrations
+          where finished_at is null and rolled_back_at is null
+          order by started_at desc limit 1) as name
+      from _prisma_migrations
     `;
-    return Number(rows[0]?.n ?? 0) > 0 ? "aplicadas" : "ausentes";
+
+    const row = rows[0];
+    if (!row) return { state: "ausentes" };
+    if (Number(row.failed) > 0) return { state: "falhou", failed: row.name ?? undefined };
+
+    return { state: Number(row.applied) > 0 ? "aplicadas" : "ausentes" };
   } catch {
-    return "ausentes";
+    return { state: "ausentes" };
   }
 }
 

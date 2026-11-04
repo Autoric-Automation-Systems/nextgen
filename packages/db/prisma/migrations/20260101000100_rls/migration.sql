@@ -20,19 +20,42 @@ LANGUAGE sql STABLE AS $$
   SELECT nullif(current_setting('app.user_id', true), '')::uuid
 $$;
 
--- Papel de aplicação. Login é criado pela operação (ALTER ROLE ... LOGIN PASSWORD ...).
+-- Papel de aplicação.
+--
+-- `CREATE ROLE` exige CREATEROLE, que o dono do banco no Neon não tem. Sem o bloco de
+-- exceção abaixo, a migração inteira aborta com 42501 e o Prisma registra a falha,
+-- bloqueando todos os deploys seguintes (P3009). A criação é melhor-esforço: quando o
+-- papel já existe — criado no console do Neon — este trecho só concede o acesso.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'nextgen_app') THEN
-    CREATE ROLE nextgen_app NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+    BEGIN
+      CREATE ROLE nextgen_app NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE 'sem CREATEROLE: crie o papel nextgen_app no console do Neon e use a senha em APP_DATABASE_URL';
+    END;
   END IF;
 END
 $$;
 
-GRANT USAGE ON SCHEMA public, app TO nextgen_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO nextgen_app;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nextgen_app;
-REVOKE UPDATE, DELETE ON audit_logs FROM nextgen_app;
+-- GRANT e REVOKE falham se o papel não existe, então ficam condicionados.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'nextgen_app') THEN
+    GRANT USAGE ON SCHEMA public, app TO nextgen_app;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO nextgen_app;
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nextgen_app;
+    REVOKE UPDATE, DELETE ON audit_logs FROM nextgen_app;
+
+    -- Sem isto, tabela criada por migração futura nasce inacessível ao runtime, e o
+    -- sintoma é 500 em uma tela nova, semanas depois.
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public
+      GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO nextgen_app;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public
+      GRANT USAGE, SELECT ON SEQUENCES TO nextgen_app;
+  END IF;
+END
+$$;
 
 -- ─────────────────────────────────────────────────────────────
 -- Políticas por tabela

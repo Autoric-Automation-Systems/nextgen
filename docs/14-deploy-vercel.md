@@ -54,54 +54,85 @@ isso convive com o modo *transaction*. Se algum caminho de código esquecer a tr
 contexto morre no fim do statement e a política devolve zero linhas: **falha fechada**, não
 vazamento.
 
-### 1.2 Migrar e liberar o papel de aplicação
+### 1.2 Criar o papel de aplicação e migrar
 
-```bash
-cd /caminho/do/repo
+**No Neon, `CREATE ROLE` por SQL não funciona.** O dono do banco (`neondb_owner`) não é
+superusuário e não tem `CREATEROLE`, então qualquer `create role` responde:
 
-# 1) migrações rodam como dono, pela conexão direta
-DATABASE_URL="<unpooled>" pnpm db:migrate
-
-# 2) a migração já criou o papel nextgen_app (NOLOGIN); dê login e senha a ele
-psql "<unpooled>" -c "alter role nextgen_app login password 'SENHA-FORTE';"
+```
+ERROR: permission denied to create role
+DETAIL: Only roles with the CREATEROLE attribute may create roles.
 ```
 
-A senha vai só para a variável de ambiente da Vercel. Não comite, não cole em issue.
+O papel então nasce fora do SQL, pelo console:
 
-> **Se o `create role` falhar** por falta de `CREATEROLE` (alguns provedores gerenciados
-> limitam isso), crie o papel pelo console do provedor com a mesma senha e rode a migração
-> de novo — ela é idempotente (`if not exists`) e só concede os grants.
->
-> **Último recurso**, se o provedor não permitir papel adicional: use o próprio papel dono
-> como `APP_DATABASE_URL`. Funciona porque as tabelas de domínio têm `FORCE ROW LEVEL
-> SECURITY` (vale até para o dono). O `/api/health` continua respondendo `rls: true` desde
-> que o papel não tenha `BYPASSRLS`. Fica menos isolado — o dono lê qualquer tabela — então
-> trate como dívida, não como desenho.
+1. **Neon Console → projeto → Roles → Create role**: nome `nextgen_app`, marque para gerar
+   uma senha e copie.
+2. Monte `APP_DATABASE_URL` com esse usuário, no host *pooled*:
+   `postgresql://nextgen_app:SENHA@ep-xxx-pooler.regiao.aws.neon.tech/neondb?sslmode=require&pgbouncer=true`
+3. Deixe o build aplicar as migrações (seção 3, "Migração no build"). A cada deploy o
+   script confere os `GRANT`s do papel — necessário porque a migração de RLS pode ter
+   rodado antes de o papel existir, e migração aplicada não roda de novo.
 
-Confira antes de seguir:
+A verificação mínima:
 
 ```bash
-psql "<pooled>" -c "select rolname, rolsuper, rolbypassrls, rolcanlogin from pg_roles where rolname in ('nextgen_app');"
+psql "<pooled>" -c "select rolname, rolsuper, rolbypassrls, rolcanlogin from pg_roles where rolname = 'nextgen_app';"
 # esperado: rolsuper = f, rolbypassrls = f, rolcanlogin = t
 ```
 
+> **Por que a migração não cria o papel:** ela tenta, e captura `insufficient_privilege`
+> com um aviso. Sem isso a migração aborta, o Prisma registra a falha e **passa a recusar
+> qualquer migração nova** (P3009) — um erro de permissão virava bloqueio permanente do
+> banco. Ver seção 8.
+>
+> **Último recurso**, se o provedor não permitir papel adicional: use o próprio papel dono
+> como `APP_DATABASE_URL`. Funciona porque as tabelas de domínio têm `FORCE ROW LEVEL
+> SECURITY` (vale até para o dono) e o `/api/health` continua dando `rls: true` desde que
+> o papel não tenha `BYPASSRLS`. Fica menos isolado — o dono lê qualquer tabela — então
+> trate como dívida.
+
 ### 1.3 Migrar sem ter o repositório na máquina
 
-O repositório traz o workflow **`migrate`** (`.github/workflows/migrate.yml`), disparado à
-mão: **Actions → migrate → Run workflow**, digitando `migrate` para confirmar.
-
-Antes, cadastre dois secrets em **Settings → Secrets and variables → Actions**:
+O caminho normal não precisa de nada disso: o build da Vercel migra com as variáveis que já
+existem no projeto (seção 3). O workflow **`migrate`** (`.github/workflows/migrate.yml`)
+existe para rodar à mão — **Actions → migrate → Run workflow**, digitando `migrate` para
+confirmar — mas ele **não enxerga as variáveis da Vercel**: são cofres separados. Para usá-lo,
+cadastre em **Settings → Secrets and variables → Actions**:
 
 | Secret | Valor |
 |---|---|
-| `DATABASE_URL_MIGRATE` | a URL **sem** `-pooler`, do banco `nextgen-neon` |
-| `APP_DB_PASSWORD` | senha forte que você escolhe para o `nextgen_app` |
+| `DATABASE_URL_UNPOOLED` | a URL sem `-pooler`, do banco `nextgen-neon` |
+| `APP_DB_PASSWORD` | senha do papel `nextgen_app` (só se ele já existir) |
 
-O workflow roda as migrações, aplica a senha ao papel e imprime
-`rolsuper / rolbypassrls / rolcanlogin` para conferência — esperado `f, f, t`.
+Sem esses secrets o workflow para em "Nenhuma URL direta encontrada" — é o mesmo banco, mas
+o GitHub não tem a credencial.
 
-Se o `create role` falhar por falta de `CREATEROLE` no seu projeto Neon, veja o quadro logo
-abaixo; o procedimento manual está em 1.2.
+### 1.3.1 O schema `neon_auth` não é deste projeto
+
+Se aparecer um schema `neon_auth` no banco, ele **não** foi criado por estas migrações:
+elas criam apenas `public` e `app`. `neon_auth` é criado pelo **Neon Auth** — a
+autenticação gerenciada do console (**Neon Console → projeto → Auth → Enable**) — que
+guarda ali usuários, sessões e configuração de provedores. A documentação da Neon descreve
+exatamente isso: "all users, sessions, and organizations live in the `neon_auth` schema".
+
+Para confirmar a origem e o dono:
+
+```sql
+select nspname, pg_get_userbyid(nspowner) as dono
+from pg_namespace where nspname = 'neon_auth';
+
+select table_name from information_schema.tables
+where table_schema = 'neon_auth' order by 1;
+```
+
+Ele não atrapalha as migrações nem o RLS — as tabelas da aplicação estão em `public`, e as
+políticas leem `app.current_user_id()`, não `neon_auth`. O problema é outro: **passam a
+existir duas bases de usuários** (a nossa, em `public.users`, e a do Neon Auth). Se o Auth
+foi habilitado por engano, desabilite no console e remova o schema
+(`drop schema neon_auth cascade`) com o Auth desligado. Se quiser usá-lo de verdade, é uma
+decisão de arquitetura: o Neon Auth também roda Better Auth, mas as políticas de RLS e o
+`membership` da aplicação continuariam apontando para `public.users`.
 
 ### 1.4 Sem dados de demonstração em produção
 
@@ -428,6 +459,9 @@ Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 | Todo acesso redireciona para `vercel.com/login` | Deployment Protection ativa | ver seção 5 |
 | `/api/health` → 503 `rls:false` | `APP_DATABASE_URL` aponta para papel com `BYPASSRLS` ou superusuário | usar `nextgen_app` |
 | Latência alta em toda página | banco em outra região | mover para `sa-east-1` |
+| `P3018` / `P3009` nas migrações | `create role` recusado (42501) abortou a migração de RLS; o Prisma registra a falha e bloqueia as seguintes | o build corrige sozinho (`migrate resolve --rolled-back` + nova tentativa); o papel `nextgen_app` deve existir em Neon → Roles |
+| `/api/health` → `migrations: "falhou"` | migração abortada e não resolvida | veja `migrationFailed` no health; o próximo deploy tenta de novo |
+| Schema `neon_auth` no banco | Neon Auth habilitado no console | não é do projeto — ver 1.3.1 |
 
 ---
 

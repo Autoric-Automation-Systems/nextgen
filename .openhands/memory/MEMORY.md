@@ -23,3 +23,13 @@
   não resolve `.js` → `.ts`. Import sem extensão (moduleResolution Bundler).
 - `packages/db` precisa de `postinstall: prisma generate`; sem o hook a CI quebra no seed.
 - Testes: 44 core + 12 RLS + 9 storage. Suite RLS exige Postgres com `nextgen_app`.
+- **Neon: o dono do banco não pode criar papel.** `CREATE ROLE` responde 42501
+  (`permission denied to create role`); `ALTER ROLE ... PASSWORD` de outro papel também.
+  `nextgen_app` nasce em Neon Console → Roles, e o build só concede GRANT (idempotente,
+  em `packages/db/prisma/sql/app-role-grants.sql`). Migração que exige CREATEROLE aborta e
+  deixa o Prisma em P3009, bloqueando todos os deploys seguintes.
+- **Vercel e GitHub Actions não compartilham variáveis.** As credenciais do Neon estão só
+  na Vercel; por isso a migração roda no `prebuild` (`scripts/migrate-on-deploy.mjs`), só
+  com `VERCEL_ENV=production`, e nunca derruba o deploy.
+- Schema `neon_auth` no banco `nextgen-neon` = Neon Auth habilitado no console. Não é
+  criado por nenhuma migração deste repo (só `public` e `app`).
