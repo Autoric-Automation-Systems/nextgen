@@ -106,11 +106,24 @@ export function dbConfigPresence(env: Record<string, string | undefined> = proce
  * Presença das variáveis de aplicação (não do banco). Todas são obrigatórias para
  * login e upload; faltando qualquer uma, a tela quebra sem dizer o motivo.
  */
+/**
+ * Variáveis sem as quais o app não serve: sem segredo o Better Auth lança em toda
+ * página autenticada, e o sintoma é um 500 sem texto. Listar o nome evita a caça.
+ */
+export function missingAppConfig(env: Record<string, string | undefined> = process.env): string[] {
+  const required: [string, boolean][] = [
+    ["BETTER_AUTH_SECRET", Boolean(env.BETTER_AUTH_SECRET)],
+    ["MAIL_FROM", Boolean(env.MAIL_FROM) || Boolean(env.EMAIL_FROM)],
+  ];
+
+  return required.filter(([, present]) => !present).map(([name]) => name);
+}
+
 export function appConfigPresence(env: Record<string, string | undefined> = process.env) {
   return {
     authSecret: Boolean(env.BETTER_AUTH_SECRET),
     authUrl: Boolean(env.BETTER_AUTH_URL),
-    mailFrom: Boolean(env.MAIL_FROM),
+    mailFrom: Boolean(env.MAIL_FROM) || Boolean(env.EMAIL_FROM),
     resendKey: Boolean(env.RESEND_API_KEY),
     emailUser: Boolean(env.EMAIL_USER),
     emailPass: Boolean(env.EMAIL_PASS),

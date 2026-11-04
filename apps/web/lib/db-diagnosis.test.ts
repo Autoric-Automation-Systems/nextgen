@@ -1,6 +1,7 @@
 import { createServer } from "node:net";
 import { describe, expect, it } from "vitest";
 import {
+  missingAppConfig,
   appConfigPresence,
   dbConfigPresence,
   describeDbDetail,
@@ -165,5 +166,17 @@ describe("probeDatabaseEndpoints", () => {
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+  });
+});
+
+describe("missingAppConfig", () => {
+  it("aponta o segredo ausente, que derruba toda página autenticada", () => {
+    expect(missingAppConfig({ MAIL_FROM: "a@b.c" })).toEqual(["BETTER_AUTH_SECRET"]);
+  });
+
+  it("aceita EMAIL_FROM como remetente", () => {
+    expect(
+      missingAppConfig({ BETTER_AUTH_SECRET: "x".repeat(32), EMAIL_FROM: "a@b.c" }),
+    ).toEqual([]);
   });
 });

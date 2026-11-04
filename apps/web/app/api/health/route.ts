@@ -10,6 +10,7 @@ import {
   describeDbFailure,
   probeConnections,
   lastDeploy,
+  missingAppConfig,
   roleState,
   schemaState,
   probeDatabaseEndpoints,
@@ -35,7 +36,13 @@ export async function GET() {
 
     // `db: up` só com as tabelas no lugar: banco acessível e schema vazio derrubava
     // qualquer tela com 500 enquanto este endpoint dizia estar tudo bem.
-    const healthy = rls && migration.state === "aplicadas";
+    // `db: up` só com as tabelas no lugar: banco acessível e schema vazio derrubava
+    // qualquer tela com 500 enquanto este endpoint dizia estar tudo bem.
+    //
+    // Config ausente entra na conta pelo mesmo motivo: sem `BETTER_AUTH_SECRET` o Better
+    // Auth lança em toda página autenticada, e "ok" mandaria procurar o problema no banco.
+    const missing = missingAppConfig();
+    const healthy = rls && migration.state === "aplicadas" && missing.length === 0;
 
     return NextResponse.json(
       {
@@ -47,6 +54,7 @@ export async function GET() {
         smtp: await smtpState(),
         migrations: migration.state,
         migrationFailed: migration.failed,
+        missing,
         latencyMs: Date.now() - startedAt,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
       },
