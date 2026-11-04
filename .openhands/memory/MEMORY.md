@@ -51,6 +51,11 @@
 - **Domínios divergem**: `nextgen-three-ebon.vercel.app` é aberto; `nextgen-autoric.vercel.app`
   cai em SSO da Vercel (302 para `vercel.com/sso-api`). Sem usuário na tabela `users`
   (bootstrap-admin.sql) o link verifica e morre em `new_user_signup_disabled`.
+- **Ativos de marca**: `apps/web/public/{brand,icons/{ui,skills},dev}`. `lib/brand.ts` é o
+  único lugar com caminho de arquivo (SRP); `BrandLogo`/`SiteFooter`/`SkillIcon` só pedem
+  variante. `brand.test.ts` valida que todo caminho do manifesto existe — rename sem editar
+  o manifesto quebra o CI de propósito. Os SVGs atuais são placeholders (`<!-- PLACEHOLDER -->`).
+  Rodapé liga para `https://www.autoric.com.br` (Autoric).
 - **Sandbox reseta e leva `/tmp` junto**: `pnpm` e `psql` somem no meio da sessão. Para
   voltar: `npm i -g pnpm@9.15.4 --prefix /tmp/npmbin` e usar
   `export PATH="/tmp/npmbin/bin:$PATH"`. Testes do `@nextgen/db` (RLS) exigem Postgres
