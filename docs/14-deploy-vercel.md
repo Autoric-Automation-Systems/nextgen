@@ -260,6 +260,24 @@ com a lista não vazia ele responde `degraded` em vez de `ok`. Sem `BETTER_AUTH_
 Better Auth lança em toda página autenticada e o sintoma é um `500` sem texto — foi o que
 manteve `/dashboard` fora do ar depois de o banco já estar bom.
 
+### O domínio público não pode estar atrás da proteção da Vercel
+
+Confira antes de divulgar o endereço:
+
+```
+curl -s -o /dev/null -w "%{http_code}\n" https://seu-dominio/loign
+```
+
+`200` é o esperado. `302` para `vercel.com/sso-api` significa **Deployment Protection**
+ligada: o responsável que clicar no link do e-mail cai numa tela de login da Vercel, que
+ele não tem. Desligue em **Settings → Deployment Protection → Vercel Authentication** ou
+use o domínio de produção do projeto, que nasce sem proteção.
+
+Um projeto responde por vários nomes (`nextgen-three-ebon.vercel.app`,
+`nextgen-autoric.vercel.app`). Eles não são equivalentes: a proteção pode valer para um e
+não para o outro, e o login só aceita os que estão em `trustedOrigins`. O health mostra o
+endereço que o Better Auth considera canônico em `config.app.authBase`.
+
 `BETTER_AUTH_SECRET` **não pode ser trocado** depois que houver sessões: todos os cookies
 existentes deixam de valer e todo mundo é deslogado.
 

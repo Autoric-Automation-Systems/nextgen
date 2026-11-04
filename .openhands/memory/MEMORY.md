@@ -43,6 +43,14 @@
   NOLOGIN produz P1001 "can't reach database server", que engana o diagnóstico.
 - Sem token da API da Vercel não dá para alterar variável de ambiente por aqui; o
   `VERCEL_AUTOMATION_BYPASS_SECRET` serve só para furar o Deployment Protection.
+- **Login quebrado em produção tem 3 causas silenciosas** (o formulário responde "enviado"
+  para as três): `INVALID_ORIGIN` (origem fora de `trustedOrigins`), `DATABASE_URL_MIGRATE`
+  com valor que não é URL (Prisma falha na 1ª escrita = token do link), e URL/segredo
+  faltando. Sondas: `/api/health?login=1` (executa o link mágico para `example.com`),
+  `?smtp=1` (AUTH sem enviar), `mailRecent` (tabela `mail_log`).
+- **Domínios divergem**: `nextgen-three-ebon.vercel.app` é aberto; `nextgen-autoric.vercel.app`
+  cai em SSO da Vercel (302 para `vercel.com/sso-api`). Sem usuário na tabela `users`
+  (bootstrap-admin.sql) o link verifica e morre em `new_user_signup_disabled`.
 - **Sandbox reseta e leva `/tmp` junto**: `pnpm` e `psql` somem no meio da sessão. Para
   voltar: `npm i -g pnpm@9.15.4 --prefix /tmp/npmbin` e usar
   `export PATH="/tmp/npmbin/bin:$PATH"`. Testes do `@nextgen/db` (RLS) exigem Postgres
