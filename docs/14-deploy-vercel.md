@@ -79,20 +79,46 @@ fictícios. O primeiro acesso real é o do item 4.
 
 Projeto criado: **`nextgen-autoric`** → `https://nextgen-autoric.vercel.app`.
 
-O repositório já está pronto para importar como está. **Não** use o preset de monorepo
-com detecção automática sem revisar os três campos abaixo.
+### Os dois campos que não podem ficar no padrão
+
+| Campo | Errado | Certo |
+|---|---|---|
+| Root Directory | `./` (raiz do repo) | `apps/web` |
+| Framework Preset | Other | **Next.js** |
+
+Com Root Directory na raiz e preset *Other*, a Vercel não aplica o builder do Next.js:
+ela espera arquivos estáticos em `public/` e não cria a função serverless. O resultado é
+`404 NOT_FOUND` em **todas** as rotas, com `content-type: text/plain` — resposta da
+plataforma, não da aplicação. O `apps/web/vercel.json` também é ignorado, porque a Vercel
+só lê o `vercel.json` que está na Root Directory.
+
+O repositório já está pronto para importar como está.
 
 Na Vercel: **Add New → Project → importar `Autoric-Automation-Systems/nextgen`**.
 
 | Campo | Valor |
 |---|---|
-| Framework Preset | Next.js |
-| **Root Directory** | `apps/web` |
+| Framework Preset | **Next.js** |
+| **Root Directory** | **`apps/web`** |
 | Include files outside the root directory | habilitado (a Vercel liga sozinha ao detectar o workspace) |
-| Install Command | `pnpm install --frozen-lockfile` |
-| Build Command | `pnpm --filter @nextgen/db run build && next build` |
-| Output Directory | `.next` (padrão) |
+| Build Command | vazio — o `vercel.json` define |
+| Install Command | vazio — o `vercel.json` define |
+| Output Directory | vazio — padrão `.next` |
 | Node.js Version | 22.x |
+
+Se preferir preencher em vez de deixar vazio, use exatamente os valores do
+`apps/web/vercel.json`:
+
+```
+install: pnpm install --frozen-lockfile
+build:   pnpm --filter @nextgen/db run build && pnpm run build
+```
+
+Não use `next build` cru: fora do `pnpm run`, o binário `next` depende do `PATH` e o
+build falha com `next: not found` (código 127).
+
+Trocar a Root Directory depois exige **Redeploy** — a mudança não recompila o deploy
+existente.
 
 `apps/web/vercel.json` já declara framework, install e build, e fixa a região em `gru1`
 (São Paulo). Mantenha banco e função na mesma região: cada salto entre `us-east` e
@@ -233,6 +259,7 @@ Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 
 | Sintoma | Causa | Correção |
 |---|---|---|
+| `404 NOT_FOUND` em todas as rotas, `content-type: text/plain` | Root Directory na raiz + preset Other | Root `apps/web` + preset Next.js — ver seção 2 |
 | Build falha em `prisma generate` | `DATABASE_URL` ausente no build | a variável precisa existir também em Production *and* Preview |
 | Runtime: *Query engine … not found* | falta `rhel-openssl-3.0.x` | já declarado no schema; rode `prisma generate` no build |
 | Login responde ok, e-mail não chega | `mail: "missing"` no health | configure Resend + `MAIL_FROM` |
