@@ -396,9 +396,13 @@ export function usageWarnings(
 ): string[] {
   const warnings: string[] = [];
 
-  if (!env.BETTER_AUTH_URL && env.VERCEL_URL) {
+  // Em produção o domínio estável do projeto substitui `BETTER_AUTH_URL` sem prejuízo.
+  // Sem ele, o link aponta para a implantação, que responde atrás da proteção da Vercel
+  // e recusa a origem do domínio público (`INVALID_ORIGIN`).
+  const stableHost = env.VERCEL_ENV === "production" ? env.VERCEL_PROJECT_PRODUCTION_URL : null;
+  if (!env.BETTER_AUTH_URL && !stableHost && env.VERCEL_URL) {
     warnings.push(
-      "BETTER_AUTH_URL ausente: o link do e-mail aponta para a URL do deploy, que fica atrás da proteção da Vercel",
+      "sem BETTER_AUTH_URL nem VERCEL_PROJECT_PRODUCTION_URL: o link do e-mail aponta para a URL da implantação e cai na proteção da Vercel",
     );
   }
 

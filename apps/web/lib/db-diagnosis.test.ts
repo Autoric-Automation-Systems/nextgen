@@ -196,12 +196,22 @@ describe("usageWarnings", () => {
     const warnings = usageWarnings({ VERCEL_URL: "nextgen-abc.vercel.app" });
 
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toContain("BETTER_AUTH_URL");
+    expect(warnings[0]).toContain("VERCEL_PROJECT_PRODUCTION_URL");
   });
 
   it("não avisa quando o endereço público está definido", () => {
     expect(
       usageWarnings({ VERCEL_URL: "nextgen-abc.vercel.app", BETTER_AUTH_URL: "https://nextgen.app" }),
+    ).toEqual([]);
+  });
+
+  it("não avisa em produção, onde o domínio estável do projeto resolve", () => {
+    expect(
+      usageWarnings({
+        VERCEL_ENV: "production",
+        VERCEL_URL: "nextgen-abc.vercel.app",
+        VERCEL_PROJECT_PRODUCTION_URL: "nextgen-autoric.vercel.app",
+      }),
     ).toEqual([]);
   });
 
