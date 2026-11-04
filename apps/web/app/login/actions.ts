@@ -28,6 +28,10 @@ export async function requestMagicLink(_prev: LoginState, formData: FormData): P
       body: {
         email: parsed.data.email,
         callbackURL: parsed.data.next && parsed.data.next.startsWith("/") ? parsed.data.next : "/dashboard",
+        // Sem isto, a falha na verificação do link volta para `/dashboard`, que exige
+        // sessão e redireciona para cá — descartando o motivo. O usuário vê "voltou pro
+        // login" e nada mais.
+        errorCallbackURL: "/login",
       },
     });
   } catch {

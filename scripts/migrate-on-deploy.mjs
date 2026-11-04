@@ -17,6 +17,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { candidates, pickPassword } from "./lib/migration-candidates.mjs";
+import { bootstrapAdminFrom, bootstrapAdminSql } from "./lib/bootstrap-admin.mjs";
 import {
   isRolePrivilegeFailure,
   isWeakPasswordFailure,
@@ -193,3 +194,26 @@ if (!check.ok) {
 console.log("[migrate] papel de aplicação com login confirmado");
 
 logDeploy(url, "ok", `migrações aplicadas; login do papel conferido via ${password.name}`);
+
+/**
+ * Último passo, depois de schema e privilégios: sem isto, `disableSignUp` deixa o login
+ * inalcançável — o link chega, o clique volta para a tela de entrada e ninguém entra.
+ */
+const admin = bootstrapAdminFrom(process.env);
+
+if (!admin) {
+  console.log("[admin] BOOTSTRAP_ADMIN_EMAIL ausente; primeiro administrador não criado");
+  process.exit(strict ? 1 : 0);
+}
+
+const adminResult = run(["db", "execute", "--schema", schema, "--stdin"], url, bootstrapAdminSql(admin));
+
+if (!adminResult.ok) {
+  console.log("[admin] não foi possível criar o primeiro administrador");
+  console.log(adminResult.output.trim().split("\n").slice(0, 8).join("\n"));
+  logDeploy(url, "admin-erro", adminResult.output);
+  process.exit(strict ? 1 : 0);
+}
+
+console.log(`[admin] administrador garantido para ${admin.email} na escola ${admin.schoolSlug}`);
+logDeploy(url, "admin-ok", `administrador e escola ${admin.schoolSlug} garantidos`);

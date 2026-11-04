@@ -386,7 +386,27 @@ usuário nasce pela tela de login.
 
 Espere o deploy terminar com `migrations: "aplicadas"` no `/api/health`.
 
-Depois edite `scripts/bootstrap-admin.sql` com o seu e-mail e o nome da escola, cole no
+### Primeiro administrador
+
+Sem conta, o link do e-mail chega e o clique volta para o login: `disableSignUp` está
+ligado, então o sistema não cria usuário por conta própria. Duas formas de resolver.
+
+**Pela Vercel (recomendado, roda a cada deploy):** defina e redeploye.
+
+| Variável | Obrigatória | Exemplo |
+|---|---|---|
+| `BOOTSTRAP_ADMIN_EMAIL` | sim | `diretor@escola.com.br` |
+| `BOOTSTRAP_ADMIN_NAME` | não | `Maria Souza` |
+| `BOOTSTRAP_SCHOOL_NAME` | não | `Escola Gol de Ouro` |
+| `BOOTSTRAP_SCHOOL_LEGAL_NAME` | não | `Gol de Ouro Ltda` |
+| `BOOTSTRAP_SCHOOL_SLUG` | não | derivado do nome | 
+
+É idempotente: promove o que existe, não duplica. O resultado aparece em
+`/api/health` como `deploy: admin-ok`. Deixe a variável no lugar enquanto a escola
+tiver só um administrador; remova quando houver mais de um.
+
+**Pelo SQL Editor do Neon (manual):** edite `scripts/bootstrap-admin.sql` com o seu e-mail
+e o nome da escola, cole no
 **SQL Editor do Neon** (conexão *direct*, sem `-pooler`) e execute. Ele cria usuário, escola e
 vínculo de administrador, e é idempotente — pode rodar de novo para corrigir nome.
 

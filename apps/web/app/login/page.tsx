@@ -1,59 +1,16 @@
-"use client";
+import { LoginForm } from "./login-form";
 
-import { useActionState } from "react";
-import { requestMagicLink, type LoginState } from "./actions";
+/**
+ * A falha na verificação do link chega aqui como `?error=`, e não em `/dashboard`: a
+ * rota autenticada exige sessão e redirecionaria para cá sem o parâmetro, que é
+ * exatamente como "clicou e voltou para o login" ficava sem explicação.
+ */
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; error_description?: string }>;
+}) {
+  const { error } = await searchParams;
 
-const initial: LoginState = { status: "idle" };
-
-export default function LoginPage() {
-  const [state, action, pending] = useActionState(requestMagicLink, initial);
-
-  return (
-    <main className="wrap">
-      <div className="card auth-card">
-        <div className="brand" style={{ marginBottom: 18 }}>
-          <span className="brand-mark">NG</span>
-          NextGen
-        </div>
-
-        <h2 style={{ margin: "0 0 8px", fontSize: 22, letterSpacing: "-0.02em" }}>Entrar no painel</h2>
-        <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
-          Enviamos um link de acesso para o seu e-mail. Sem senha para vazar.
-        </p>
-
-        {state.status === "sent" ? (
-          <div className="notice ok" role="status">
-            Se este e-mail estiver cadastrado, o link chega em instantes. Ele vale por 15 minutos e
-            só pode ser usado uma vez.
-          </div>
-        ) : (
-          <form action={action}>
-            <div className="field">
-              <label htmlFor="email">E-mail</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                placeholder="voce@escola.com.br"
-              />
-            </div>
-            {state.status === "error" ? (
-              <p className="notice error" role="alert" style={{ marginBottom: 14 }}>
-                {state.message}
-              </p>
-            ) : null}
-            <button className="btn" style={{ width: "100%" }} disabled={pending}>
-              {pending ? "Enviando…" : "Enviar link de acesso"}
-            </button>
-          </form>
-        )}
-
-        <p className="muted" style={{ marginTop: 20 }}>
-          Aluno menor de 16 anos não tem login próprio: o acesso é sempre do responsável legal.
-        </p>
-      </div>
-    </main>
-  );
+  return <LoginForm error={error} />;
 }
