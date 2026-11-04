@@ -242,10 +242,21 @@ export async function roleState() {
   const client = createAppClient(ownerUrl);
 
   try {
-    const rows = await client.$queryRaw<{ exists: boolean; can_login: boolean }[]>`
+    const rows = await client.$queryRaw<
+      {
+        current: string;
+        exists: boolean;
+        can_login: boolean;
+        owner_createrole: boolean;
+        owner_super: boolean;
+      }[]
+    >`
       select
+        current_user as current,
         exists (select 1 from pg_roles where rolname = 'nextgen_app') as exists,
-        coalesce((select rolcanlogin from pg_roles where rolname = 'nextgen_app'), false) as can_login
+        coalesce((select rolcanlogin from pg_roles where rolname = 'nextgen_app'), false) as can_login,
+        (select rolcreaterole from pg_roles where rolname = current_user) as owner_createrole,
+        (select rolsuper from pg_roles where rolname = current_user) as owner_super
     `;
 
     return { checked: true, ...rows[0] };
