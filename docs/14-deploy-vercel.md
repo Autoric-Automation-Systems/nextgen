@@ -196,18 +196,57 @@ local seguir junto.
 | `APP_DATABASE_URL` | conexão pooled com usuário `nextgen_app` e senha | sim |
 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` | sim |
 | `BETTER_AUTH_URL` | `https://seudominio.com.br` (sem barra no fim) | sim |
-| `RESEND_API_KEY` | chave do Resend | sim, para login funcionar |
-| `MAIL_FROM` | `NextGen <nao-responda@seudominio.com.br>` | sim, para login funcionar |
+| `EMAIL_USER` | conta que envia (ex.: `escola@gmail.com`) | sim, sem Resend |
+| `EMAIL_PASS` | **senha de app** do Google, não a senha da conta | sim, sem Resend |
+| `MAIL_FROM` | remetente exibido; vazio = `NextGen <EMAIL_USER>` | não |
+| `RESEND_API_KEY` | chave do Resend (alternativa ao SMTP) | sim, sem SMTP |
 | `BLOB_PUBLIC_READ_WRITE_TOKEN` | store `public` | quando o upload entrar |
 | `BLOB_PRIVATE_READ_WRITE_TOKEN` | store `private` | quando o upload entrar |
 
 `BETTER_AUTH_SECRET` **não pode ser trocado** depois que houver sessões: todos os cookies
 existentes deixam de valer e todo mundo é deslogado.
 
-Sem `RESEND_API_KEY` + `MAIL_FROM`, o link mágico não é enviado e o login simplesmente não
+Sem transporte configurado, o link mágico não é enviado e o login simplesmente não
 acontece — de propósito. O `/api/health` responde `"mail": "missing"` nesse caso. O
 transporte de console (que imprime o link no log) é ignorado quando `VERCEL_ENV=production`,
 porque log de produção vira acesso à conta de qualquer pessoa.
+
+### E-mail: Gmail por SMTP ou Resend
+
+SMTP tem precedência quando `EMAIL_USER` + `EMAIL_PASS` existem; Resend só entra se não
+houver SMTP. Force um dos dois com `MAIL_TRANSPORT=smtp|resend|console`.
+
+Com Gmail, o padrão do código já resolve o resto: host `smtp.gmail.com` quando o usuário
+termina em `@gmail.com`, porta 465 (TLS implícito), `From` igual à conta autenticada.
+Para outro provedor, defina `EMAIL_HOST` e, se a porta for 587, `EMAIL_PORT=587`.
+
+```
+EMAIL_USER=escola@gmail.com
+EMAIL_PASS=abcd efgh ijkl mnop     ← senha de app, 16 caracteres, sem espaços
+```
+
+**`EMAIL_PASS` é senha de app.** Com 2FA ligado, o Gmail recusa a senha da conta com
+`535-5.7.8 Username and Password not accepted`; sem 2FA, o Google descontinuou "apps menos
+seguros" e o SMTP também é recusado. Gere em **Conta Google → Segurança → Senhas de app**.
+
+O health confirma que a porta abre a partir da Vercel, o que distingue senha errada de
+bloqueio de rede:
+
+```json
+"smtp": { "host": "smtp.gmail.com", "port": 465, "reachable": true }
+```
+
+Limites do Gmail que importam para escola de futebol:
+
+| Limite | Valor |
+|---|---|
+| destinatários por dia (conta gratuita) | 500 |
+| destinatários por dia (Workspace) | 2.000 |
+| mensagens por conexão | 100 |
+
+Um link mágico por login, mais convites de responsável, mais cobrança mensal: 500/dia
+atende um piloto, não uma rede de escolas. Quando passar de uma escola com movimento,
+troque para Resend ou SMTP transacional — a troca é só variável de ambiente.
 
 ### Pooled ou direct?
 
@@ -361,7 +400,9 @@ Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 | `404 NOT_FOUND` em todas as rotas, `content-type: text/plain` | Root Directory na raiz + preset Other | Root `apps/web` + preset Next.js — ver seção 2 |
 | Build falha em `prisma generate` | `DATABASE_URL` ausente no build | a variável precisa existir também em Production *and* Preview |
 | Runtime: *Query engine … not found* | falta `rhel-openssl-3.0.x` | já declarado no schema; rode `prisma generate` no build |
-| Login responde ok, e-mail não chega | `mail: "missing"` no health | configure Resend + `MAIL_FROM` |
+| Login responde ok, e-mail não chega | `mail: "missing"` no health | configure `EMAIL_USER` + `EMAIL_PASS` ou Resend |
+| Login 500 com `535` | senha da conta em vez de senha de app | gere senha de app no Google |
+| Login pendura e cai em timeout | `smtp.reachable: false` no health | porta bloqueada; use 587 ou Resend |
 | `INVALID_TOKEN` ao abrir o link | cookie/URL de origem divergente | `BETTER_AUTH_URL` igual ao domínio acessado; sem barra final |
 | Tudo vazio, sem erro | sessão sem `schoolId` resolvido | usuário sem `membership` ativa — ver item 4 |
 | Todo acesso redireciona para `vercel.com/login` | Deployment Protection ativa | ver seção 5 |

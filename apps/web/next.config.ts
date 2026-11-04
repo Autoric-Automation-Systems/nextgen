@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@nextgen/auth", "@nextgen/core", "@nextgen/db", "@nextgen/integrations"],
-  serverExternalPackages: ["@prisma/client", ".prisma/client"],
+  serverExternalPackages: ["@prisma/client", ".prisma/client", "nodemailer"],
   // O rastreador de arquivos não segue o link simbólico do pnpm até o engine do
   // Prisma, e a função sobe sem `libquery_engine-*.so.node` (erro só em runtime:
   // "could not locate the Query Engine for runtime"). Estes globs cobrem o caminho

@@ -20,11 +20,14 @@
   "dependencies": {
     "@nextgen/core": "workspace:*",
     "@nextgen/db": "workspace:*",
-    "better-auth": "1.7.16"
+    "better-auth": "1.7.16",
+    "nodemailer": "^10.3.1"
   },
   "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/nodemailer": "^8.0.2",
+    "smtp-server": "^3.21.3",
     "typescript": "5.9.3",
-    "vitest": "3.2.7",
-    "@types/node": "24.10.1"
+    "vitest": "3.2.7"
   }
 }

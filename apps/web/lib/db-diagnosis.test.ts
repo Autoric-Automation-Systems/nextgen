@@ -107,6 +107,8 @@ describe("appConfigPresence", () => {
       authUrl: false,
       mailFrom: true,
       resendKey: false,
+      emailUser: false,
+      emailPass: false,
       blobPublic: false,
       blobPrivate: false,
     });

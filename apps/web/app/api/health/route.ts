@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertRlsIsEnforced, prisma } from "@nextgen/db";
-import { mailTransport } from "@nextgen/auth/mail";
+import { mailTransport, probeSmtp, smtpConfig } from "@nextgen/auth/mail";
 import {
   appConfigPresence,
   dbConfigPresence,
@@ -32,6 +32,7 @@ export async function GET() {
         db: "up",
         rls,
         mail: mailTransport(),
+        smtp: await smtpState(),
         migrations: await migrationState(),
         latencyMs: Date.now() - startedAt,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
@@ -68,4 +69,16 @@ async function migrationState(): Promise<"aplicadas" | "ausentes"> {
   } catch {
     return "ausentes";
   }
+}
+
+/**
+ * Só quando o transporte é SMTP: confirma que a porta abre a partir da Vercel.
+ * Sem isso, senha errada e porta bloqueada produzem o mesmo "envio falhou".
+ */
+async function smtpState() {
+  const config = smtpConfig();
+  if (!config) return undefined;
+
+  const { reachable, banner, error } = await probeSmtp(config);
+  return { host: config.host, port: config.port, reachable, banner, error };
 }

@@ -88,6 +88,8 @@ export function appConfigPresence(env: Record<string, string | undefined> = proc
     authUrl: Boolean(env.BETTER_AUTH_URL),
     mailFrom: Boolean(env.MAIL_FROM),
     resendKey: Boolean(env.RESEND_API_KEY),
+    emailUser: Boolean(env.EMAIL_USER),
+    emailPass: Boolean(env.EMAIL_PASS),
     blobPublic: Boolean(env.BLOB_PUBLIC_READ_WRITE_TOKEN),
     blobPrivate: Boolean(env.BLOB_PRIVATE_READ_WRITE_TOKEN),
   };
