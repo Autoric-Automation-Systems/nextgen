@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
     "./next": "./src/next.ts",
-    "./mail": "./src/mail.ts"
+    "./mail": "./src/mail.ts",
+    "./base-url": "./src/base-url.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

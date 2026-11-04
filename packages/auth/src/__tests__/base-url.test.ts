@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultBaseURL } from "../server";
+import { defaultBaseURL } from "../base-url";
 
 describe("defaultBaseURL", () => {
   it("prefere o endereço configurado", () => {

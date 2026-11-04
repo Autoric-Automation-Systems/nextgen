@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertRlsIsEnforced, prisma } from "@nextgen/db";
 import { mailTransport, probeSmtp, smtpConfig, verifySmtp } from "@nextgen/auth/mail";
+import { defaultBaseURL } from "@nextgen/auth/base-url";
 import {
   appConfigPresence,
   dbConfigPresence,
@@ -36,7 +37,9 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const startedAt = Date.now();
   const deep = new URL(request.url).searchParams.get("smtp") === "1";
-  const config = { db: dbConfigPresence(), app: appConfigPresence() };
+  // O endereço resolvido vai junto: sem ele, `INVALID_ORIGIN` no login não tem como ser
+  // explicado — a origem recusada é justamente esta, e ela não é o domínio público.
+  const config = { db: dbConfigPresence(), app: { ...appConfigPresence(), authBase: defaultBaseURL() } };
 
   try {
     await prisma.$queryRaw`select 1`;
