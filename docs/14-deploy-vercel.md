@@ -286,25 +286,22 @@ Nenhum dos dois é obrigatório hoje: o upload ainda não está ligado a nenhuma
 ## 4. Primeiro acesso
 
 O login é por link mágico e **não existe auto-cadastro** (`disableSignUp: true`). Nenhum
-usuário nasce pela tela de login. Para o primeiro administrador, crie à mão:
+usuário nasce pela tela de login.
 
-```sql
--- rode na conexão direct, com o papel dono
-insert into users (id, name, email, email_verified)
-values (gen_random_uuid(), 'Ana Diretora', 'ana@escola.com.br', true);
+Edite `scripts/bootstrap-admin.sql` com o seu e-mail e o nome da escola, cole no **SQL
+Editor do Neon** (conexão *direct*, sem `-pooler`) e execute. Ele cria usuário, escola e
+vínculo de administrador, e é idempotente — pode rodar de novo para corrigir nome.
 
-insert into schools (id, name, slug, status)
-values (gen_random_uuid(), 'Escola Exemplo', 'escola-exemplo', 'active');
+Depois entre em `https://seudominio.com.br/login` com esse e-mail.
 
-insert into memberships (id, school_id, user_id, role, status)
-values (gen_random_uuid(),
-        (select id from schools where slug = 'escola-exemplo'),
-        (select id from users where email = 'ana@escola.com.br'),
-        'admin', 'active');
-```
+Dois detalhes que fazem esse SQL falhar se escrito à mão:
 
-Depois entre em `https://seudominio.com.br/login` com esse e-mail. O convite de responsável
-e aluno entra na fase de matrícula.
+- a tabela `schools` **não tem coluna `name`**: são `legal_name` (razão social) e
+  `trade_name` (nome fantasia), ambas obrigatórias;
+- `updated_at` não tem default no banco — o Prisma o preenche pela aplicação, então em SQL
+  manual ele precisa ir explícito.
+
+O convite de responsável e aluno entra na fase de matrícula.
 
 ---
 
