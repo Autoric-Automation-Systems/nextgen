@@ -171,12 +171,21 @@ describe("probeDatabaseEndpoints", () => {
 
 describe("missingAppConfig", () => {
   it("aponta o segredo ausente, que derruba toda página autenticada", () => {
-    expect(missingAppConfig({ MAIL_FROM: "a@b.c" })).toEqual(["BETTER_AUTH_SECRET"]);
+    const missing = missingAppConfig({ EMAIL_USER: "a", EMAIL_PASS: "b" });
+
+    expect(missing).toEqual(["BETTER_AUTH_SECRET"]);
   });
 
-  it("aceita EMAIL_FROM como remetente", () => {
+  it("SMTP basta como remetente, sem MAIL_FROM", () => {
     expect(
-      missingAppConfig({ BETTER_AUTH_SECRET: "x".repeat(32), EMAIL_FROM: "a@b.c" }),
+      missingAppConfig({ BETTER_AUTH_SECRET: "x".repeat(32), EMAIL_USER: "a", EMAIL_PASS: "b" }),
     ).toEqual([]);
+  });
+
+  it("exige par completo quando não há SMTP", () => {
+    const missing = missingAppConfig({ BETTER_AUTH_SECRET: "x".repeat(32) });
+
+    expect(missing).toHaveLength(1);
+    expect(missing[0]).toContain("RESEND_API_KEY");
   });
 });

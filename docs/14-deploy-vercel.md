@@ -255,6 +255,11 @@ local seguir junto.
 | `BLOB_PUBLIC_READ_WRITE_TOKEN` | store `public` | quando o upload entrar |
 | `BLOB_PRIVATE_READ_WRITE_TOKEN` | store `private` | quando o upload entrar |
 
+O `/api/health` confere isso por você: `missing` lista o que falta para o app servir, e
+com a lista não vazia ele responde `degraded` em vez de `ok`. Sem `BETTER_AUTH_SECRET`, o
+Better Auth lança em toda página autenticada e o sintoma é um `500` sem texto — foi o que
+manteve `/dashboard` fora do ar depois de o banco já estar bom.
+
 `BETTER_AUTH_SECRET` **não pode ser trocado** depois que houver sessões: todos os cookies
 existentes deixam de valer e todo mundo é deslogado.
 

@@ -111,19 +111,23 @@ export function dbConfigPresence(env: Record<string, string | undefined> = proce
  * página autenticada, e o sintoma é um 500 sem texto. Listar o nome evita a caça.
  */
 export function missingAppConfig(env: Record<string, string | undefined> = process.env): string[] {
-  const required: [string, boolean][] = [
-    ["BETTER_AUTH_SECRET", Boolean(env.BETTER_AUTH_SECRET)],
-    ["MAIL_FROM", Boolean(env.MAIL_FROM) || Boolean(env.EMAIL_FROM)],
-  ];
+  const missing: string[] = [];
 
-  return required.filter(([, present]) => !present).map(([name]) => name);
+  if (!env.BETTER_AUTH_SECRET) missing.push("BETTER_AUTH_SECRET");
+
+  // SMTP dispensa `MAIL_FROM` (o remetente cai para `EMAIL_USER`); o Resend não.
+  const smtp = Boolean(env.EMAIL_USER && env.EMAIL_PASS);
+  const resend = Boolean(env.RESEND_API_KEY && env.MAIL_FROM);
+  if (!smtp && !resend) missing.push("EMAIL_USER + EMAIL_PASS (ou RESEND_API_KEY + MAIL_FROM)");
+
+  return missing;
 }
 
 export function appConfigPresence(env: Record<string, string | undefined> = process.env) {
   return {
     authSecret: Boolean(env.BETTER_AUTH_SECRET),
     authUrl: Boolean(env.BETTER_AUTH_URL),
-    mailFrom: Boolean(env.MAIL_FROM) || Boolean(env.EMAIL_FROM),
+    mailFrom: Boolean(env.MAIL_FROM),
     resendKey: Boolean(env.RESEND_API_KEY),
     emailUser: Boolean(env.EMAIL_USER),
     emailPass: Boolean(env.EMAIL_PASS),
