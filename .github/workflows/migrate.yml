@@ -1,0 +1,59 @@
+name: migrate
+
+# Migração manual do banco de produção, sem precisar do repositório na máquina.
+# Secrets necessários: DATABASE_URL_MIGRATE (conexão direta, sem -pooler)
+# e APP_DB_PASSWORD (senha do papel nextgen_app).
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'digite migrate para confirmar'
+        required: true
+        type: string
+
+concurrency:
+  group: migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: inputs.confirm == 'migrate'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: aplicar migrações
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_MIGRATE }}
+        run: pnpm --filter @nextgen/db run migrate
+
+      - name: liberar login do papel de aplicação
+        env:
+          DB: ${{ secrets.DATABASE_URL_MIGRATE }}
+          PW: ${{ secrets.APP_DB_PASSWORD }}
+        run: |
+          if [ -z "$PW" ]; then
+            echo "APP_DB_PASSWORD não configurado" >&2
+            exit 1
+          fi
+          sudo apt-get install -y --no-install-recommends postgresql-client >/dev/null
+          # psql não interpola variáveis em -c, só em script via stdin.
+          printf "alter role nextgen_app login password :'pw';\n" \
+            | psql "$DB" -v ON_ERROR_STOP=1 -v pw="$PW"
+
+      - name: conferir papel
+        env:
+          DB: ${{ secrets.DATABASE_URL_MIGRATE }}
+        run: |
+          psql "$DB" -c "select rolname, rolsuper, rolbypassrls, rolcanlogin
+                         from pg_roles where rolname = 'nextgen_app';"

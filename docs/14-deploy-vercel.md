@@ -37,6 +37,23 @@ DATABASE_URL          → host com -pooler  (usada pelo app)
 DATABASE_URL_UNPOOLED → host sem -pooler  (usada pela migração)
 ```
 
+**A URL pooled precisa de parâmetros do PgBouncer.** Neon põe um pooler em modo
+*transaction* na frente do banco, e esse modo não suporta *prepared statement*. O Prisma usa
+prepared statements por padrão, então sem os parâmetros a aplicação sobe e falha na primeira
+query com `prepared statement "s0" already exists` ou `bind message supplies 0 parameters`:
+
+```
+postgresql://nextgen_app:SENHA@ep-xxx-pooler.sa-east-1.aws.neon.tech/nextgen  ?sslmode=require&pgbouncer=true&connection_limit=1
+```
+
+`connection_limit=1` porque cada instância de função é um processo curto: uma conexão por
+função evita esgotar o pool com lambdas ociosas.
+
+O contexto de tenant é aplicado com `set_config(..., true)`, que é escopo de transação — por
+isso convive com o modo *transaction*. Se algum caminho de código esquecer a transação, o
+contexto morre no fim do statement e a política devolve zero linhas: **falha fechada**, não
+vazamento.
+
 ### 1.2 Migrar e liberar o papel de aplicação
 
 ```bash
@@ -68,7 +85,25 @@ psql "<pooled>" -c "select rolname, rolsuper, rolbypassrls, rolcanlogin from pg_
 # esperado: rolsuper = f, rolbypassrls = f, rolcanlogin = t
 ```
 
-### 1.3 Sem dados de demonstração em produção
+### 1.3 Migrar sem ter o repositório na máquina
+
+O repositório traz o workflow **`migrate`** (`.github/workflows/migrate.yml`), disparado à
+mão: **Actions → migrate → Run workflow**, digitando `migrate` para confirmar.
+
+Antes, cadastre dois secrets em **Settings → Secrets and variables → Actions**:
+
+| Secret | Valor |
+|---|---|
+| `DATABASE_URL_MIGRATE` | a URL **sem** `-pooler`, do banco `nextgen-neon` |
+| `APP_DB_PASSWORD` | senha forte que você escolhe para o `nextgen_app` |
+
+O workflow roda as migrações, aplica a senha ao papel e imprime
+`rolsuper / rolbypassrls / rolcanlogin` para conferência — esperado `f, f, t`.
+
+Se o `create role` falhar por falta de `CREATEROLE` no seu projeto Neon, veja o quadro logo
+abaixo; o procedimento manual está em 1.2.
+
+### 1.4 Sem dados de demonstração em produção
 
 Não rode `pnpm db:seed` em produção: ele cria as escolas `demo` e `rival` com alunos
 fictícios. O primeiro acesso real é o do item 4.
@@ -163,8 +198,8 @@ local seguir junto.
 | `BETTER_AUTH_URL` | `https://seudominio.com.br` (sem barra no fim) | sim |
 | `RESEND_API_KEY` | chave do Resend | sim, para login funcionar |
 | `MAIL_FROM` | `NextGen <nao-responda@seudominio.com.br>` | sim, para login funcionar |
-| `BLOB_PUBLIC_READ_WRITE_TOKEN` | store público | quando o upload entrar |
-| `BLOB_PRIVATE_READ_WRITE_TOKEN` | store privado | quando o upload entrar |
+| `BLOB_PUBLIC_READ_WRITE_TOKEN` | store `public` | quando o upload entrar |
+| `BLOB_PRIVATE_READ_WRITE_TOKEN` | store `private` | quando o upload entrar |
 
 `BETTER_AUTH_SECRET` **não pode ser trocado** depois que houver sessões: todos os cookies
 existentes deixam de valer e todo mundo é deslogado.
@@ -185,6 +220,27 @@ O `withTenant()` abre transação e usa `set_config(..., true)`, que é local à
 pooling de transação a conexão fica presa ao backend durante a transação, então o contexto
 chega íntegro às políticas. É justamente por isso que a RLS precisa de transação e não de
 `SET` solto.
+
+### Vercel Blob: dois stores, e por quê
+
+O modo de acesso é propriedade do **store**, não do arquivo: um store é público ou privado
+na criação, e um arquivo privado não pode morar num store público. Cada store tem seu
+próprio token de leitura e escrita — daí as duas variáveis.
+
+| Store | Conteúdo | Entrega |
+|---|---|---|
+| `nextgen-public` | logo, hero, galeria do site | CDN, cache de 30 dias |
+| `nextgen-private` | foto de aluno e responsável, documentos, anamnese, vídeo de treino, comprovante | URL assinada, 15 min |
+
+**A foto do aluno fica no store privado, mesmo com o card público na web.** Isso não é
+timidez: URL de store público não pode ser despublicada, e o `uploadPublic` define cache de
+30 dias na borda. Revogar o consentimento de uso de imagem de uma criança precisa valer
+agora — com o arquivo num store público, ela pode continuar acessível por semanas e não há
+como recolher cópias. O card renderiza a foto por URL assinada, com TTL curto e checagem de
+`public_card_enabled` e consentimento de imagem.
+
+Nenhum dos dois é obrigatório hoje: o upload ainda não está ligado a nenhuma rota, e o
+`/api/health` não sonda o Blob. Crie os stores quando a fase de conteúdo começar.
 
 ---
 
