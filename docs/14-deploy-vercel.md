@@ -265,7 +265,7 @@ manteve `/dashboard` fora do ar depois de o banco já estar bom.
 Confira antes de divulgar o endereço:
 
 ```
-curl -s -o /dev/null -w "%{http_code}\n" https://seu-dominio/loign
+curl -s -o /dev/null -w "%{http_code}\n" https://seu-dominio/login
 ```
 
 `200` é o esperado. `302` para `vercel.com/sso-api` significa **Deployment Protection**
