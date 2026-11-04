@@ -6,6 +6,7 @@ import {
   dbConfigPresence,
   describeDbDetail,
   describeDbFailure,
+  probeDatabaseEndpoints,
 } from "@/lib/db-diagnosis";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,7 @@ export async function GET() {
         db: "down",
         reason: describeDbFailure(error),
         detail: describeDbDetail(error),
+        endpoints: await probeDatabaseEndpoints(),
         config,
         latencyMs: Date.now() - startedAt,
       },

@@ -4,6 +4,7 @@ import {
   dbConfigPresence,
   describeDbDetail,
   describeDbFailure,
+  probeDatabaseEndpoints,
   redactSecrets,
 } from "./db-diagnosis";
 
@@ -138,5 +139,21 @@ describe("appConfigPresence", () => {
       blobPrivate: false,
     });
     expect(JSON.stringify(presence)).not.toContain("segredo");
+  });
+});
+
+describe("probeDatabaseEndpoints", () => {
+  it("distingue endpoint vivo de morto, sem vazar host completo", async () => {
+    const url = (host: string, port: number) =>
+      `postgresql://nextgen_app:segredo@${host}:${port}/neondb`;
+
+    const endpoints = await probeDatabaseEndpoints(800, {
+      APP_DATABASE_URL: url("127.0.0.1", 55432),
+      DATABASE_URL: url("127.0.0.1", 1),
+    });
+
+    expect(endpoints[0]?.up).toBe(true);
+    expect(endpoints[1]?.up).toBe(false);
+    expect(JSON.stringify(endpoints)).not.toContain("segredo");
   });
 });

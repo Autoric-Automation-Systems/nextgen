@@ -83,6 +83,47 @@ export function appDatabaseUrl(env: Env = process.env): string | undefined {
 }
 
 /**
+ * Todas as URLs que podem servir a aplicação, na ordem em que o runtime tenta.
+ *
+ * Existe porque as variáveis podem apontar para endpoints diferentes, e um deles pode
+ * estar morto (projeto recriado, endpoint rotacionado). Sem essa lista, o diagnóstico
+ * vira adivinhação sobre qual nome está errado.
+ */
+export function appDatabaseCandidates(
+  env: Env = process.env,
+): { source: string; url: string }[] {
+  const list: { source: string; url: string }[] = [];
+  const password = pick(env, APP_PASSWORD_NAMES);
+
+  const add = (source: string, url: string | undefined) => {
+    if (url && !list.some((item) => item.url === url)) list.push({ source, url });
+  };
+
+  add("APP_DATABASE_URL", env.APP_DATABASE_URL);
+
+  if (password) {
+    for (const name of POOLED_URL_NAMES) {
+      const value = env[name];
+      if (!value) continue;
+      try {
+        const url = new URL(value);
+        url.username = "nextgen_app";
+        url.password = password;
+        add(`${name} + APP_DB_PASSWORD`, url.toString());
+      } catch {
+        // URL fora do formato padrão: ignora este nome.
+      }
+    }
+  }
+
+  // Último recurso: o próprio papel dono. RLS continua valendo por FORCE, mas o dono lê
+  // qualquer tabela — o health mostra `appIsOwner: true` para não passar despercebido.
+  for (const name of POOLED_URL_NAMES) add(name, env[name]);
+
+  return list;
+}
+
+/**
  * O que o health pode devolver. Não há URL aqui de propósito: `appUrl` carrega a
  * senha, e um objeto com ela acaba serializado em algum log ou resposta.
  */

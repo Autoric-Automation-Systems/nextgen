@@ -1,4 +1,5 @@
-import { directDatabaseUrl, resolveDatabaseConfig } from "@nextgen/db";
+import { connect } from "node:net";
+import { appDatabaseCandidates, directDatabaseUrl, resolveDatabaseConfig } from "@nextgen/db";
 
 /**
  * Traduz falha de conexão do Prisma em uma frase curta e segura para o `/api/health`.
@@ -102,4 +103,65 @@ export function appConfigPresence(env: Record<string, string | undefined> = proc
     blobPublic: Boolean(env.BLOB_PUBLIC_READ_WRITE_TOKEN),
     blobPrivate: Boolean(env.BLOB_PRIVATE_READ_WRITE_TOKEN),
   };
+}
+
+/**
+ * Abre um TCP em cada endpoint candidato e diz qual responde.
+ *
+ * "Can't reach database server" não distingue host errado de endpoint suspenso, e as
+ * variáveis da integração podem apontar para endpoints diferentes. O teste de porta
+ * resolve isso sem exigir senha nem consultar o banco.
+ *
+ * Só o primeiro rótulo do host sai na resposta: identifica o endpoint e não expõe o host
+ * completo nem as credenciais.
+ */
+function endpointOf(url: string): { host: string; port: number } | undefined {
+  try {
+    const parsed = new URL(url);
+    return { host: parsed.hostname, port: Number(parsed.port || 5432) };
+  } catch {
+    return undefined;
+  }
+}
+
+function label(host: string): string {
+  const first = host.split(".")[0] ?? host;
+  return first.length <= 16 ? first : `${first.slice(0, 15)}…`;
+}
+
+function reachable(host: string, port: number, timeoutMs: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = connect({ host, port });
+    const finish = (ok: boolean) => {
+      socket.removeAllListeners();
+      socket.destroy();
+      resolve(ok);
+    };
+
+    socket.setTimeout(timeoutMs);
+    socket.once("connect", () => finish(true));
+    socket.once("timeout", () => finish(false));
+    socket.once("error", () => finish(false));
+  });
+}
+
+export async function probeDatabaseEndpoints(
+  timeoutMs = 2500,
+  env: Record<string, string | undefined> = process.env,
+) {
+  const candidates = appDatabaseCandidates(env);
+
+  return Promise.all(
+    candidates.slice(0, 4).map(async (candidate) => {
+      const endpoint = endpointOf(candidate.url);
+      if (!endpoint) return { source: candidate.source, endpoint: "inválida", up: false };
+
+      return {
+        source: candidate.source,
+        endpoint: label(endpoint.host),
+        port: endpoint.port,
+        up: await reachable(endpoint.host, endpoint.port, timeoutMs),
+      };
+    }),
+  );
 }
