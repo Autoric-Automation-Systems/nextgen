@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
+import { SiteFooter } from "@/components/site-footer";
 
 const pillars = [
   {
@@ -24,10 +26,9 @@ export default function Home() {
     <main>
       <header className="topbar">
         <div className="wrap topbar-inner">
-          <div className="brand">
-            <span className="brand-mark">NG</span>
-            NextGen
-          </div>
+          <Link href="/" className="brand" aria-label="NextGen — início">
+            <BrandLogo height={26} />
+          </Link>
           <nav className="nav">
             <Link href="/login">Entrar</Link>
           </nav>
@@ -64,6 +65,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

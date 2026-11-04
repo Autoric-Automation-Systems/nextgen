@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { requireSession } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
 
@@ -18,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="topbar">
         <div className="wrap topbar-inner">
           <div className="brand">
-            <span className="brand-mark">NG</span>
+            <BrandLogo variant="mark" height={28} />
             <span>
               {session.memberships.find((m) => m.schoolId === session.schoolId)?.schoolName ?? "NextGen"}
               <span className="muted" style={{ display: "block", fontWeight: 400, fontSize: 12 }}>

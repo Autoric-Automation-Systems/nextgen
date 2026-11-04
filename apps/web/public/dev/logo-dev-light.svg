@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 28" role="img" aria-label="Autoric">
+  <!-- PLACEHOLDER: logo do desenvolvedor para fundo escuro. -->
+  <rect x="0" y="4" width="20" height="20" rx="6" fill="#e3e8ef"/>
+  <path d="M6.2 19.2 9.9 8.8h2.6l3.7 10.4h-2.4l-.7-2.2H9.3l-.7 2.2zm3.5-3.9h2.6l-1.3-4z" fill="#10331f"/>
+  <text x="27" y="19.5" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="0.2" fill="#e3e8ef">Autoric</text>
+</svg>

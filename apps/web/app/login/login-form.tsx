@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { requestMagicLink, type LoginState } from "./actions";
+import { BrandLogo } from "@/components/brand-logo";
 import { loginErrorMessage } from "./error-message";
 
 const initial: LoginState = { status: "idle" };
@@ -14,8 +15,7 @@ export function LoginForm({ error }: { error?: string }) {
     <main className="wrap">
       <div className="card auth-card">
         <div className="brand" style={{ marginBottom: 18 }}>
-          <span className="brand-mark">NG</span>
-          NextGen
+          <BrandLogo height={26} />
         </div>
 
         <h2 style={{ margin: "0 0 8px", fontSize: 22, letterSpacing: "-0.02em" }}>Entrar no painel</h2>

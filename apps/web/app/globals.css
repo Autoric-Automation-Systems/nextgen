@@ -116,3 +116,24 @@ tr:last-child td { border-bottom: none; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .section-title { font-size: 20px; letter-spacing: -0.02em; margin: 0; }
 .stat { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }
+
+/* Rodapé: identidade do produto à esquerda, assinatura do desenvolvedor à direita. */
+.footer { border-top: 1px solid var(--line); background: var(--surface); margin-top: auto; }
+.footer-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 20px 24px; font-size: 13px; flex-wrap: wrap;
+}
+.footer-dev {
+  display: inline-flex; align-items: center; gap: 8px;
+  text-decoration: none; opacity: 0.85; transition: opacity 0.15s ease;
+}
+.footer-dev:hover { opacity: 1; }
+.footer-dark { background: var(--brand); border-top-color: rgba(255, 255, 255, 0.12); }
+.footer-dark .muted { color: rgba(255, 255, 255, 0.72); }
+
+/* Reserva do ícone de atributo quando o arquivo ainda não existe. */
+.skill-code {
+  display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 4px;
+  border-radius: 7px; background: var(--brand-soft); color: var(--brand);
+  font-weight: 700; letter-spacing: 0.02em;
+}

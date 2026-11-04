@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/site-footer";
 import { LoginForm } from "./login-form";
 
 /**
@@ -12,5 +13,10 @@ export default async function LoginPage({
 }) {
   const { error } = await searchParams;
 
-  return <LoginForm error={error} />;
+  return (
+    <>
+      <LoginForm error={error} />
+      <SiteFooter />
+    </>
+  );
 }
