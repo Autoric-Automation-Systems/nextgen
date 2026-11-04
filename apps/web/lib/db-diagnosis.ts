@@ -266,3 +266,35 @@ export async function roleState() {
     await client.$disconnect().catch(() => {});
   }
 }
+
+/**
+ * Estado do schema visto pelo dono, quando o papel de aplicação não conecta.
+ *
+ * Sem isso, um papel bloqueado esconde se as migrações rodaram: a resposta diz só
+ * "não conecta", e o operador não sabe se falta migrar ou só liberar o papel.
+ */
+export async function schemaState() {
+  const ownerUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
+  if (!ownerUrl) return { checked: false };
+
+  const { createAppClient } = await import("@nextgen/db");
+  const client = createAppClient(ownerUrl);
+
+  try {
+    const rows = await client.$queryRaw<{ applied: number; failed: number; tables: number }[]>`
+      select
+        (select count(*) from _prisma_migrations
+          where finished_at is not null and rolled_back_at is null)::int as applied,
+        (select count(*) from _prisma_migrations
+          where finished_at is null and rolled_back_at is null)::int as failed,
+        (select count(*) from information_schema.tables
+          where table_schema = 'public' and table_type = 'BASE TABLE')::int as tables
+    `;
+
+    return { checked: true, ...rows[0] };
+  } catch (error) {
+    return { checked: false, reason: describeDbFailure(error) };
+  } finally {
+    await client.$disconnect().catch(() => {});
+  }
+}
