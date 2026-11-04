@@ -322,3 +322,48 @@ export async function lastDeploy() {
     await client.$disconnect().catch(() => {});
   }
 }
+
+/**
+ * Só o formato da senha do papel de aplicação — nunca o valor.
+ *
+ * "Papel existe, aceita login, dono conecta, app não" tem uma causa dominante: a senha
+ * gravada no banco não é a mesma da variável. Aspas coladas junto e espaço no fim
+ * produzem esse estado, e o erro na tela ("can't reach database server") não sugere isso.
+ */
+export function credentialShape() {
+  const raw =
+    process.env.APP_DB_PASSWORD ??
+    process.env.NEXTGEN_APP_PASSWORD ??
+    process.env.PGPASSWORD_APP;
+
+  if (!raw) return { present: false as const };
+
+  return {
+    present: true as const,
+    length: raw.length,
+    whitespace: /\s/.test(raw),
+    quotes: /['"]/.test(raw),
+    nonAscii: /[^\x20-\x7e]/.test(raw),
+  };
+}
+
+/** Traduz o conjunto de sondagens em uma causa provável, não em sintoma. */
+export function connectionHint(
+  connections: { name: string; ok: boolean }[],
+  role: { checked?: boolean; can_login?: boolean },
+): string | undefined {
+  const app = connections.find((item) => item.name.includes("nextgen_app"));
+  const owner = connections.find((item) => item.name === "pooler + dono");
+
+  if (!app || app.ok) return undefined;
+
+  if (role.checked && role.can_login === false) {
+    return "o papel nextgen_app existe mas está sem login — no SQL Editor do Neon: alter role nextgen_app login password '<a mesma senha de APP_DB_PASSWORD>';";
+  }
+
+  if (role.can_login && owner?.ok) {
+    return "o papel aceita login e o dono conecta: a senha de APP_DB_PASSWORD não é a mesma gravada no Neon (ou chegou com aspas/espaço) — alinhe as duas e redeploye";
+  }
+
+  return undefined;
+}

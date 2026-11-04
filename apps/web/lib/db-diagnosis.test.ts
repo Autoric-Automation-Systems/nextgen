@@ -1,3 +1,4 @@
+import { createServer } from "node:net";
 import { describe, expect, it } from "vitest";
 import {
   appConfigPresence,
@@ -143,17 +144,26 @@ describe("appConfigPresence", () => {
 });
 
 describe("probeDatabaseEndpoints", () => {
-  it("distingue endpoint vivo de morto, sem vazar host completo", async () => {
-    const url = (host: string, port: number) =>
-      `postgresql://nextgen_app:segredo@${host}:${port}/neondb`;
+  it("distingue endpoint vivo de morto, sem vazar segredo", async () => {
+    // Um socket real, aberto pelo teste: sem depender de Postgres no ambiente.
+    const server = createServer((socket) => socket.destroy());
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
 
-    const endpoints = await probeDatabaseEndpoints(800, {
-      APP_DATABASE_URL: url("127.0.0.1", 55432),
-      DATABASE_URL: url("127.0.0.1", 1),
-    });
+    const port = (server.address() as { port: number }).port;
+    const url = (host: string, target: number) =>
+      `postgresql://nextgen_app:segredo@${host}:${target}/neondb`;
 
-    expect(endpoints[0]?.up).toBe(true);
-    expect(endpoints[1]?.up).toBe(false);
-    expect(JSON.stringify(endpoints)).not.toContain("segredo");
+    try {
+      const endpoints = await probeDatabaseEndpoints(800, {
+        APP_DATABASE_URL: url("127.0.0.1", port),
+        DATABASE_URL: url("127.0.0.1", 1),
+      });
+
+      expect(endpoints[0]?.up).toBe(true);
+      expect(endpoints[1]?.up).toBe(false);
+      expect(JSON.stringify(endpoints)).not.toContain("segredo");
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

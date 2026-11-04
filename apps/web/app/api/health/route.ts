@@ -5,6 +5,8 @@ import {
   appConfigPresence,
   dbConfigPresence,
   describeDbDetail,
+  connectionHint,
+  credentialShape,
   describeDbFailure,
   probeConnections,
   lastDeploy,
@@ -51,15 +53,20 @@ export async function GET() {
       { status: healthy ? 200 : 503, headers: { "cache-control": "no-store" } },
     );
   } catch (error) {
+    const connections = await probeConnections();
+    const role = await roleState();
+
     return NextResponse.json(
       {
         status: "error",
+        hint: connectionHint(connections, role),
+        credentials: credentialShape(),
         db: "down",
         reason: describeDbFailure(error),
         detail: describeDbDetail(error),
         endpoints: await probeDatabaseEndpoints(),
-        connections: await probeConnections(),
-        role: await roleState(),
+        connections,
+        role,
         schema: await schemaState(),
         lastDeploy: await lastDeploy(),
         config,
