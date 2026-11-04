@@ -77,3 +77,18 @@ export function dbConfigPresence(env: Record<string, string | undefined> = proce
     pooled: /[?&]pgbouncer=true/.test(env.APP_DATABASE_URL ?? env.DATABASE_URL ?? ""),
   };
 }
+
+/**
+ * Presença das variáveis de aplicação (não do banco). Todas são obrigatórias para
+ * login e upload; faltando qualquer uma, a tela quebra sem dizer o motivo.
+ */
+export function appConfigPresence(env: Record<string, string | undefined> = process.env) {
+  return {
+    authSecret: Boolean(env.BETTER_AUTH_SECRET),
+    authUrl: Boolean(env.BETTER_AUTH_URL),
+    mailFrom: Boolean(env.MAIL_FROM),
+    resendKey: Boolean(env.RESEND_API_KEY),
+    blobPublic: Boolean(env.BLOB_PUBLIC_READ_WRITE_TOKEN),
+    blobPrivate: Boolean(env.BLOB_PRIVATE_READ_WRITE_TOKEN),
+  };
+}

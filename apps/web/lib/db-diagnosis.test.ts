@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { dbConfigPresence, describeDbDetail, describeDbFailure, redactSecrets } from "./db-diagnosis";
+import {
+  appConfigPresence,
+  dbConfigPresence,
+  describeDbDetail,
+  describeDbFailure,
+  redactSecrets,
+} from "./db-diagnosis";
 
 function prismaError(errorCode: string, message = "raw driver message") {
   const error = new Error(message);
@@ -90,5 +96,20 @@ describe("describeDbDetail", () => {
   it("redige antes de devolver", () => {
     expect(describeDbDetail(new Error("falhou em postgresql://u:p@h.neon.tech/db")))
       .toBe("falhou em <url>");
+  });
+});
+
+describe("appConfigPresence", () => {
+  it("só booleanos, sem valor", () => {
+    const presence = appConfigPresence({ BETTER_AUTH_SECRET: "segredo", MAIL_FROM: "a@b.c" });
+    expect(presence).toEqual({
+      authSecret: true,
+      authUrl: false,
+      mailFrom: true,
+      resendKey: false,
+      blobPublic: false,
+      blobPrivate: false,
+    });
+    expect(JSON.stringify(presence)).not.toContain("segredo");
   });
 });

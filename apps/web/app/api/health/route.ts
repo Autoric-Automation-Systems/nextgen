@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { assertRlsIsEnforced, prisma } from "@nextgen/db";
 import { mailTransport } from "@nextgen/auth/mail";
-import { dbConfigPresence, describeDbDetail, describeDbFailure } from "@/lib/db-diagnosis";
+import {
+  appConfigPresence,
+  dbConfigPresence,
+  describeDbDetail,
+  describeDbFailure,
+} from "@/lib/db-diagnosis";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +19,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const startedAt = Date.now();
+  const config = { db: dbConfigPresence(), app: appConfigPresence() };
 
   try {
     await prisma.$queryRaw`select 1`;
@@ -21,10 +27,12 @@ export async function GET() {
 
     return NextResponse.json(
       {
+        config,
         status: rls ? "ok" : "degraded",
         db: "up",
         rls,
         mail: mailTransport(),
+        migrations: await migrationState(),
         latencyMs: Date.now() - startedAt,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
       },
@@ -37,10 +45,27 @@ export async function GET() {
         db: "down",
         reason: describeDbFailure(error),
         detail: describeDbDetail(error),
-        config: dbConfigPresence(),
+        config,
         latencyMs: Date.now() - startedAt,
       },
       { status: 503, headers: { "cache-control": "no-store" } },
     );
+  }
+}
+
+/**
+ * Diz se as migrações chegaram ao banco. Sem isso, "db: up" esconde o caso em que a
+ * conexão funciona mas as tabelas não existem — a tela quebra com 500 e o health
+ * aparece saudável.
+ */
+async function migrationState(): Promise<"aplicadas" | "ausentes"> {
+  try {
+    const rows = await prisma.$queryRaw<{ n: bigint }[]>`
+      select count(*)::int as n from _prisma_migrations
+      where finished_at is not null and rolled_back_at is null
+    `;
+    return Number(rows[0]?.n ?? 0) > 0 ? "aplicadas" : "ausentes";
+  } catch {
+    return "ausentes";
   }
 }
