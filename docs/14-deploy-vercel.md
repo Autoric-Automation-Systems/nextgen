@@ -104,7 +104,7 @@ Na Vercel: **Add New → Project → importar `Autoric-Automation-Systems/nextge
 | Build Command | vazio — o `vercel.json` define |
 | Install Command | vazio — o `vercel.json` define |
 | Output Directory | vazio — padrão `.next` |
-| Node.js Version | 22.x |
+| Node.js Version | **24.x** |
 
 Se preferir preencher em vez de deixar vazio, use exatamente os valores do
 `apps/web/vercel.json`:
@@ -120,6 +120,24 @@ build falha com `next: not found` (código 127).
 Trocar a Root Directory depois exige **Redeploy** — a mudança não recompila o deploy
 existente.
 
+### Se preferir manter a Root Directory em `./`
+
+O repositório traz um `vercel.json` na raiz, lido **só** nesse caso (a Vercel lê apenas o
+`vercel.json` da Root Directory). Ele aponta o build para o app e o output para
+`apps/web/.next`, então funciona com preset *Other* e Root `./`:
+
+```json
+{
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @nextgen/db run build && pnpm --filter @nextgen/web run build",
+  "outputDirectory": "apps/web/.next"
+}
+```
+
+Prefira `apps/web` como raiz: é o layout padrão de monorepo, o `vercel.json` fica junto do
+app e não há `outputDirectory` apontando para fora da raiz — que é o tipo de configuração
+que quebra silenciosamente quando alguém move uma pasta.
+
 `apps/web/vercel.json` já declara framework, install e build, e fixa a região em `gru1`
 (São Paulo). Mantenha banco e função na mesma região: cada salto entre `us-east` e
 `sa-east` custa ~120 ms por consulta, e a lista de alunos faz várias.
@@ -127,6 +145,33 @@ existente.
 O build roda `prisma generate` antes do `next build` — sem isso o deploy sobe e morre em
 runtime com *"Query engine library for current platform could not be found"*, já que o
 binário precisa ser o `rhel-openssl-3.0.x` (declarado no `schema.prisma`).
+
+---
+
+### Versão do Node
+
+Use **24.x**. Não é preferência estética:
+
+| Versão | Situação em nov/2026 | Serve? |
+|---|---|---|
+| 20 | EOL desde abr/2026, removida da Vercel em out/2026 | não |
+| 22 | Maintenance LTS até abr/2027 | funciona, mas é a anterior |
+| **24** | **Active LTS até abr/2028** | **sim** |
+| 26 | LTS desde out/2026, poucas semanas | ainda não |
+
+Versão mais nova não é versão melhor aqui. Node 26 virou LTS em outubro de 2026: é recente
+demais para ser o runtime de um sistema que vai guardar dado de criança. O risco concreto
+não é sintaxe — é binário nativo: o *query engine* do Prisma e o `sharp` do `next/image`
+publicam builds por versão de Node, e o intervalo entre um Node novo e esses binários
+estarem estáveis é justamente onde aparecem falhas de runtime que só reproduzem em produção.
+
+Node 24 tem o que importa: ainda recebe correção de segurança por mais de um ano, tem
+binário publicado por todo o ecossistema, e é a mesma versão em que a suíte roda aqui
+(`v24.21.0`, 77 testes). Desenvolvimento e produção na mesma versão evita a classe de bug
+que aparece só num dos dois.
+
+O `package.json` fixa `engines.node: "24.x"` e há um `.nvmrc` com `24` para o ambiente
+local seguir junto.
 
 ---
 
