@@ -102,7 +102,7 @@ bloqueia se a idade não couber, exigindo `override_reason` + `approved_by`.
 |---|---|
 | `subjects` | `id`, `school_id`, `name`, `description`, `color`, `order` |
 | `chapters` | `id`, `subject_id`, `title`, `description`, `order`, `published_at` |
-| `contents` | `id`, `chapter_id`, `kind` (`video`/`audio`/`image`/`pdf`/`text`/`quiz`), `title`, `storage_key`, `duration_s`, `body`, `published_at`, `visibility` |
+| `contents` | `id`, `chapter_id`, `kind` (`video`/`audio`/`image`/`pdf`/`text`/`quiz`), `title`, `blob_pathname`, `content_type`, `bytes`, `duration_s`, `body`, `published_at`, `visibility` |
 | `content_assignments` | `content_id`, `class_group_id`, `available_from`, `available_until` |
 | `content_progress` | `student_id`, `content_id`, `seconds_watched`, `completed_at` |
 | `lesson_plans` | `id`, `school_id`, `author_user_id`, `title`, `category_id`, `duration_min`, `blocks jsonb`, `is_template` |

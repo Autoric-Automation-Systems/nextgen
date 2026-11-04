@@ -109,7 +109,8 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 - Versionamento de conteúdo e biblioteca compartilhada entre unidades
 
 **Melhorias sugeridas**
-- Vídeo hospedado em Cloudflare Stream (link assinado, sem download fácil).
+- Vídeo e áudio no Vercel Blob privado, entregue por URL assinada de 5–15 min (sem link permanente, sem download fácil).
+- Compressão no cliente antes do upload: clipe de avaliação até ~100 MB, 720p.
 - Player com marcação de "assistido" por tempo, não por clique.
 - Quiz curto ao final para fixação (sem nota pública).
 - Download offline de PDF/áudio no app do professor.

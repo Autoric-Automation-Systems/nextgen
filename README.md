@@ -74,7 +74,7 @@ O detalhamento está em [`docs/02-menores-lgpd.md`](docs/02-menores-lgpd.md).
 - **ORM:** Prisma
 - **Auth:** Better Auth (organizações, convites, passkeys, 2FA)
 - **Jobs:** Inngest ou Trigger.dev (cobrança, e-mail, régua, relatórios)
-- **Arquivos:** S3/Cloudflare R2 com URLs assinadas; vídeo via Cloudflare Stream
+- **Arquivos:** Vercel Blob em dois stores (público e privado), com URL assinada para mídia do aluno
 - **Pagamentos:** Asaas (Pix + boleto + cartão) com conta da própria escola
 - **E-mail:** Resend; **WhatsApp:** Meta Cloud API
 - **Infra:** Vercel + Neon/Supabase em `sa-east-1` (dados no Brasil)

@@ -33,10 +33,16 @@
 **Motivo:** o campo é o único lugar sem conectividade garantida.
 **Consequência:** complexidade de conflito concentrada em poucas entidades.
 
-### ADR-007 — Vídeo fora do storage principal
-**Decisão:** Cloudflare Stream, não R2 direto.
-**Motivo:** transcodificação, HLS, link assinado e custo previsível.
-**Consequência:** dependência de fornecedor; limite por plano.
+### ADR-007 — Vercel Blob como storage único, com dois stores
+**Decisão:** Vercel Blob para tudo (foto, PDF, áudio, vídeo curto), separado em store
+`public` (site) e `private` (mídia de aluno), com URL assinada de curta duração.
+**Motivo:** integração nativa com Next.js, `access: 'private'` com `presignUrl`, upload
+direto do browser com multipart, e um fornecedor a menos para operar.
+**Consequência:** Blob **não transcodifica** e **não serve HLS**; arquivo acima de 512 MB
+não é cacheado pela CDN. Vídeo é aceito como clipe curto e comprimido no cliente. Se uma
+escola exigir player adaptativo, avaliar Mux/Cloudflare Stream como complemento na v2.
+**Custo:** US$ 0,023/GB armazenado e US$ 0,05/GB transferido — o risco está no egress de
+vídeo, não no armazenamento; mitigar com limite mensal por escola.
 
 ## 2. Perguntas que preciso responder com você
 

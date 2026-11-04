@@ -23,7 +23,7 @@ flowchart TB
 
     subgraph Dados
         PG[(PostgreSQL<br/>sa-east-1)]
-        S3[(Object Storage<br/>fotos, PDFs, vídeos)]
+        BL[(Vercel Blob<br/>fotos, PDFs, áudio, vídeo)]
         RD[(Redis / fila)]
     end
 
@@ -31,7 +31,6 @@ flowchart TB
         AS[Asaas<br/>boleto, Pix, cartão]
         RS[Resend<br/>e-mail]
         WA[WhatsApp Cloud API]
-        ST[Cloudflare Stream]
     end
 
     W --> N
@@ -39,13 +38,12 @@ flowchart TB
     P --> N
     F --> N
     N --> R --> PG
-    R --> S3
+    R --> BL
     J --> RD
     R --> AS
     AS -. webhook .-> R
     J --> RS
     J --> WA
-    R --> ST
 ```
 
 ## 2. Stack recomendada
@@ -59,8 +57,8 @@ flowchart TB
 | ORM | **Prisma** | produtividade e migrações | Drizzle |
 | Auth | **Better Auth** | organizações, convites, passkeys, 2FA, sessão robusta | Auth.js, Clerk |
 | Jobs | **Inngest** | retry, cron, idempotência, observabilidade sem operar worker | Trigger.dev, BullMQ |
-| Arquivos | **Cloudflare R2** (ou S3) | custo baixo, egress barato, URLs assinadas | S3, Backblaze |
-| Vídeo | **Cloudflare Stream** | transcodificação, HLS, link assinado | Mux, Vimeo |
+| Arquivos | **Vercel Blob** (private + public) | integração nativa com Next.js, `access: 'private'` com URL assinada, multipart para vídeo | Cloudflare R2, S3 |
+| Vídeo | **Vercel Blob** (clipes curtos) | mesmo provedor, sem transcodificação; HLS só se necessário no futuro | Mux, Cloudflare Stream |
 | Pagamento | **Asaas** | Pix + boleto + cartão, webhooks, subconta | Iugu, Pagar.me |
 | E-mail | **Resend** | templates React, deliverability | Postmark, SES |
 | WhatsApp | **Meta Cloud API** via BSP | canal real do Brasil | Twilio, Z-API |
@@ -146,16 +144,82 @@ O campo não tem 4G confiável. Estratégia:
 
 **Limite:** fotos/vídeos grandes ficam em fila separada, com compressão no dispositivo.
 
-## 7. Armazenamento de arquivos
+## 7. Armazenamento de arquivos — Vercel Blob
 
-- Upload direto do cliente para o storage via URL pré-assinada (não passa pelo Next).
-- Bucket privado; leitura por URL assinada com expiração de 5–15 min.
-- Estrutura de chave: `school/{school_id}/student/{student_id}/{uuid}.jpg`.
-- Nome original nunca é usado como chave (evita path traversal e vazamento de nome).
-- Varredura de MIME e tamanho; imagem reprocessada (strip EXIF, inclusive geolocalização).
-- **EXIF é removido sempre** — foto de criança não pode carregar GPS.
-- Vídeo de avaliação: upload → transcodificação → só disponível após processamento.
-- Exclusão: job remove objeto + variantes + cache CDN.
+Todo arquivo (foto do aluno, PDF de conteúdo, áudio, vídeo de avaliação, comprovante,
+recibo) fica no **Vercel Blob**. Dois stores separados por sensibilidade, porque o modelo
+de acesso é decidido por store:
+
+| Store | `access` | Conteúdo | Servido por |
+|---|---|---|---|
+| `nextgen-public` | `public` | logo, hero, galeria do site, imagens de conteúdo público | CDN da Vercel, cacheável |
+| `nextgen-private` | `private` | foto de aluno, documentos, anamnese, vídeos de treino, comprovantes | URL assinada, expiração curta |
+
+### 7.1 Upload
+
+- **Sempre direto do cliente para o Blob**, nunca pelo corpo da função (limite de ~4,5 MB
+  no request da Vercel). Gerar `presignUrl` de `put` e subir do navegador.
+- Arquivo > 4,5 MB e vídeo usam **multipart**, com partes paralelas.
+- Pathname definido pelo servidor, nunca pelo cliente:
+
+```
+schools/{school_id}/students/{student_id}/{uuid-v7}.jpg
+schools/{school_id}/content/{content_id}/{uuid-v7}.mp4
+schools/{school_id}/finance/charges/{charge_id}.pdf
+```
+
+- `addRandomSuffix: true` em mídia de aluno — pathname previsível é pathname enumerável.
+- `contentType` sempre explícito e validado por *magic bytes* no servidor, não pelo
+  `Content-Type` do cliente.
+- Nome original do arquivo nunca vira pathname (evita path traversal e vazamento de nome).
+
+### 7.2 Leitura
+
+- Store privado: emitir URL assinada no servidor (`issueSignedToken` + `presignUrl`,
+  operação `get`) com validade de **5 a 15 minutos**; o browser/app baixa direto do Blob.
+- Nenhuma URL do store privado é gravada em banco — só o `pathname`. A URL é derivada na
+  hora, com escopo e expiração.
+- Imagens do site público usam `next/image` com o domínio do Blob em `remotePatterns`.
+- Vídeo/áudio: `<video>`/`<audio>` com URL assinada; sem HLS na v1.
+
+### 7.3 Privacidade
+
+- **EXIF é removido no cliente antes do upload** (canvas/`createImageBitmap`), porque o
+  Blob não processa imagem. Foto de criança não pode carregar GPS nem modelo do aparelho.
+- Redimensionar no cliente: thumb 320px para lista de chamada, versão 1080px para o card.
+- Documento com CPF: mascarar na renderização, nunca gerar thumbnail público.
+- Todo download de arquivo sensível gera evento em `audit_logs`.
+- Exclusão: `del(pathname)` + remoção da referência no banco. Conferir variantes/thumbnails
+  geradas pelo app, que são objetos separados.
+
+### 7.4 Vídeo — limite consciente
+
+O Blob armazena e entrega vídeo, mas **não transcodifica** e **não serve HLS adaptativo**.
+Consequências práticas:
+
+| Cenário | Decisão |
+|---|---|
+| Clipe de avaliação de 15–60 s, até ~100 MB | Vercel Blob privado ✅ |
+| Vídeo de aula de 5–15 min | Blob, mas comprimido no cliente (H.264 720p) e com atenção ao custo |
+| Arquivo > 512 MB | **não** é cacheado pela CDN: evita; se precisar, streaming dedicado |
+| Player adaptativo / múltiplas qualidades | Mux ou Cloudflare Stream (v2), se a escola exigir |
+
+O upload de vídeo é aceito apenas nos planos Escola e Clube, com limite mensal por escola
+para manter o custo previsível.
+
+### 7.5 Custos (referência)
+
+| Item | Preço |
+|---|---|
+| Armazenamento | US$ 0,023/GB/mês |
+| Transferência de dados | US$ 0,05/GB |
+| Operações simples (leitura) | US$ 0,40/milhão |
+| Operações avançadas (escrita, list, cópia) | US$ 5,00/milhão |
+| Requisições de CDN | 10 milhões incluídas |
+
+Com 5.000 alunos, ~40 fotos e ~3 vídeos curtos por aluno, o store privado fica na casa de
+50–150 GB e poucos dólares por mês. O risco não é armazenar: é **entregar** vídeo repetido
+sem cache. Monitorar transferência mensal e alertar em 80% do orçamento.
 
 ## 8. Financeiro: integração
 
@@ -224,8 +288,7 @@ retornadas ao front, nunca em log.
 |---|---|
 | Vercel Pro | US$ 20 |
 | Neon (Launch) | US$ 30–70 |
-| R2 (100 GB + egress) | US$ 5–15 |
-| Cloudflare Stream (500 vídeos) | US$ 25–60 |
+| Vercel Blob (150 GB + transferência) | US$ 15–45 |
 | Resend (50k e-mails) | US$ 20 |
 | Inngest | US$ 0–50 |
 | Sentry + Axiom | US$ 30–60 |
@@ -238,7 +301,7 @@ Com 50 escolas a R$ 399/mês, receita ≈ R$ 20k — margem confortável para o 
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Custo de vídeo explode | alto | limite por plano, Stream com lifecycle, vídeo só em plano Escola+ |
+| Custo de vídeo/transferência explode | alto | vídeo só em plano Escola+, limite mensal por escola, compressão no cliente, alerta de egress |
 | Gateway muda API | alto | camada de integração + contrato + testes de fixture |
 | Sync offline gera duplicidade | alto | idempotência por `client_generated_id` |
 | Vazamento entre tenants | crítico | RLS + testes em CI + revisão obrigatória |
