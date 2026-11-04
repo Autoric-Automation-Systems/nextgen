@@ -35,8 +35,8 @@ node scripts/check-deploy.mjs <url>   # sonda um deploy publicado
 
 ## Deploy
 
-Vercel com Root Directory `apps/web`; config em `apps/web/vercel.json` (e um
-`vercel.json` na raiz como reserva, caso alguém deixe a Root Directory em `./`).
+Vercel com Root Directory `apps/web` (obrigatório) e preset Next.js; config em
+`apps/web/vercel.json`. A Vercel só lê o `vercel.json` da Root Directory.
 Node **24.x** (`.nvmrc` + `engines`): 22 está em manutenção e 26 é LTS novo demais para
 binário nativo de Prisma/sharp. O runbook completo
 está em `docs/14-deploy-vercel.md`. Três coisas não podem regredir:

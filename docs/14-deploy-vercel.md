@@ -86,6 +86,10 @@ Projeto criado: **`nextgen-autoric`** → `https://nextgen-autoric.vercel.app`.
 | Root Directory | `./` (raiz do repo) | `apps/web` |
 | Framework Preset | Other | **Next.js** |
 
+Não existe atalho: mantenha a Root Directory em `./` e o build até roda, mas a Vercel não
+encontra a função do Next.js e serve `404 NOT_FOUND` em tudo. O preset *Other* trata o
+output como arquivos estáticos, e `.next` não é um site estático — é build de servidor.
+
 Com Root Directory na raiz e preset *Other*, a Vercel não aplica o builder do Next.js:
 ela espera arquivos estáticos em `public/` e não cria a função serverless. O resultado é
 `404 NOT_FOUND` em **todas** as rotas, com `content-type: text/plain` — resposta da
@@ -119,34 +123,6 @@ build falha com `next: not found` (código 127).
 
 Trocar a Root Directory depois exige **Redeploy** — a mudança não recompila o deploy
 existente.
-
-### Se preferir manter a Root Directory em `./`
-
-O repositório traz um `vercel.json` na raiz, lido **só** nesse caso (a Vercel lê apenas o
-`vercel.json` da Root Directory). Ele aponta o build para o app e o output para
-`apps/web/.next`, então funciona com preset *Other* e Root `./`:
-
-```json
-{
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @nextgen/db run build && pnpm --filter @nextgen/web run build",
-  "outputDirectory": "apps/web/.next"
-}
-```
-
-Prefira `apps/web` como raiz: é o layout padrão de monorepo, o `vercel.json` fica junto do
-app e não há `outputDirectory` apontando para fora da raiz — que é o tipo de configuração
-que quebra silenciosamente quando alguém move uma pasta.
-
-`apps/web/vercel.json` já declara framework, install e build, e fixa a região em `gru1`
-(São Paulo). Mantenha banco e função na mesma região: cada salto entre `us-east` e
-`sa-east` custa ~120 ms por consulta, e a lista de alunos faz várias.
-
-O build roda `prisma generate` antes do `next build` — sem isso o deploy sobe e morre em
-runtime com *"Query engine library for current platform could not be found"*, já que o
-binário precisa ser o `rhel-openssl-3.0.x` (declarado no `schema.prisma`).
-
----
 
 ### Versão do Node
 
