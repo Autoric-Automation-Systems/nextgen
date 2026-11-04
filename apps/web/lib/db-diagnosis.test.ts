@@ -77,9 +77,14 @@ describe("redactSecrets", () => {
 });
 
 describe("describeDbDetail", () => {
-  it("pega só a primeira linha não vazia", () => {
-    const error = new Error("\n  primeira linha  \nsegunda linha");
-    expect(describeDbDetail(error)).toBe("primeira linha");
+  it("junta a cadeia de cause em uma linha", () => {
+    const cause = new Error("engine faltando");
+    const error = new Error("Invalid invocation", { cause });
+    expect(describeDbDetail(error)).toBe("Invalid invocation | engine faltando");
+  });
+
+  it("trunca mensagem gigante", () => {
+    expect(describeDbDetail(new Error("x".repeat(5000))).length).toBe(700);
   });
 
   it("redige antes de devolver", () => {

@@ -47,11 +47,26 @@ export function describeDbFailure(error: unknown): string {
   return error.name;
 }
 
-/** Primeira linha da mensagem, já redigida. Só para operação; nunca dado de negócio. */
+/**
+ * Mensagem completa (com a cadeia de `cause`), redigida e truncada. Sem ela o
+ * diagnóstico pára em "Invalid invocation" e não diz qual runtime de engine faltou.
+ */
 export function describeDbDetail(error: unknown): string {
   if (!(error instanceof Error)) return "sem detalhe";
-  const firstLine = error.message.split("\n").map((l) => l.trim()).find(Boolean) ?? "";
-  return redactSecrets(firstLine).slice(0, 240);
+
+  const parts: string[] = [];
+  let current: unknown = error;
+  let depth = 0;
+  while (current instanceof Error && depth < 3) {
+    if (current.message) parts.push(current.message);
+    current = (current as { cause?: unknown }).cause;
+    depth += 1;
+  }
+
+  return redactSecrets(parts.join(" | "))
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 700);
 }
 
 /** Presença das variáveis, sem expor valor. Ajuda a distinguir "faltou" de "errado". */
