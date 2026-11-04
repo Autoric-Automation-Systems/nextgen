@@ -17,3 +17,28 @@ export function defaultBaseURL(env: Record<string, string | undefined> = process
 
   return "http://localhost:3000";
 }
+
+/**
+ * Origens aceitas pelo login: o endereço base mais os domínios do próprio projeto.
+ *
+ * Um projeto responde por vários nomes — o domínio estável, o da implantação e eventuais
+ * aliases. Se só o `baseURL` for aceito, abrir o site por outro deles resulta em
+ * `INVALID_ORIGIN` no login, com a mesma tela de "link enviado". Todos os nomes abaixo
+ * apontam para este mesmo código; `BETTER_AUTH_TRUSTED_ORIGINS` cobre domínio próprio.
+ */
+export function trustedOriginsFrom(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  const hosts = [
+    env.VERCEL_PROJECT_PRODUCTION_URL,
+    env.VERCEL_URL,
+    env.VERCEL_BRANCH_URL,
+  ].filter((host): host is string => Boolean(host));
+
+  const extra = (env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return [...new Set([...hosts.map((host) => `https://${host}`), ...extra])];
+}

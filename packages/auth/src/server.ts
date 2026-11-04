@@ -5,7 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import { createAdminClient } from "@nextgen/db";
 import { defaultMailer, type Mailer } from "./mail";
 import { loggingMailer } from "./mail-log";
-import { defaultBaseURL } from "./base-url";
+import { defaultBaseURL, trustedOriginsFrom } from "./base-url";
 
 /**
  * Cliente dono das tabelas. O módulo de autenticação é o único consumidor: ele
@@ -27,11 +27,7 @@ export function createAuth(options: AuthOptions = {}) {
   // Sem registro, "não chegou" não distingue endereço sem usuário de senha recusada.
   const mailer = options.mailer ?? loggingMailer(defaultMailer());
   const baseURL = options.baseURL ?? defaultBaseURL();
-  const trustedOrigins =
-    options.trustedOrigins ??
-    process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
-      .map((origin) => origin.trim())
-      .filter(Boolean);
+  const trustedOrigins = options.trustedOrigins ?? trustedOriginsFrom();
 
   return betterAuth({
     appName: "NextGen",

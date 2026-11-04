@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultBaseURL } from "../base-url";
+import { defaultBaseURL, trustedOriginsFrom } from "../base-url";
 
 describe("defaultBaseURL", () => {
   it("prefere o endereço configurado", () => {
@@ -28,5 +28,38 @@ describe("defaultBaseURL", () => {
 
   it("cai no localhost fora da Vercel", () => {
     expect(defaultBaseURL({})).toBe("http://localhost:3000");
+  });
+});
+
+describe("trustedOriginsFrom", () => {
+  it("aceita os domínios do projeto, não só o baseURL", () => {
+    const origins = trustedOriginsFrom({
+      VERCEL_PROJECT_PRODUCTION_URL: "nextgen-three-ebon.vercel.app",
+      VERCEL_URL: "nextgen-abc123-autoric.vercel.app",
+    });
+
+    expect(origins).toEqual([
+      "https://nextgen-three-ebon.vercel.app",
+      "https://nextgen-abc123-autoric.vercel.app",
+    ]);
+  });
+
+  it("inclui domínio próprio declarado à parte", () => {
+    const origins = trustedOriginsFrom({
+      VERCEL_URL: "nextgen-abc.vercel.app",
+      BETTER_AUTH_TRUSTED_ORIGINS: "https://nextgen.app, https://www.nextgen.app",
+    });
+
+    expect(origins).toContain("https://nextgen.app");
+    expect(origins).toContain("https://www.nextgen.app");
+  });
+
+  it("não repete origem", () => {
+    const origins = trustedOriginsFrom({
+      VERCEL_PROJECT_PRODUCTION_URL: "nextgen.vercel.app",
+      VERCEL_URL: "nextgen.vercel.app",
+    });
+
+    expect(origins).toEqual(["https://nextgen.vercel.app"]);
   });
 });
