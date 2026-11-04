@@ -3,6 +3,7 @@ import {
   appDatabaseUrl,
   directDatabaseUrl,
   resolveDatabaseConfig,
+  sslMode,
   userFromUrl,
 } from "../src/env";
 
@@ -36,7 +37,21 @@ describe("directDatabaseUrl", () => {
 describe("appDatabaseUrl", () => {
   it("usa APP_DATABASE_URL quando existe", () => {
     const url = "postgresql://nextgen_app:senha@ep-x-pooler/nextgen?pgbouncer=true";
-    expect(appDatabaseUrl({ APP_DATABASE_URL: url })).toBe(url);
+    const resolved = appDatabaseUrl({ APP_DATABASE_URL: url });
+
+    expect(resolved).toContain("nextgen_app");
+    expect(resolved).toContain("ep-x-pooler");
+    expect(sslMode(resolved)).toBe("require");
+  });
+
+  it("não sobrescreve sslmode escolhido explicitamente", () => {
+    const url = "postgresql://nextgen_app:senha@localhost:5432/nextgen?sslmode=disable";
+    expect(sslMode(appDatabaseUrl({ APP_DATABASE_URL: url }))).toBe("disable");
+  });
+
+  it("denuncia ausência de sslmode quando a URL não carrega parâmetro", () => {
+    expect(sslMode("postgresql://u:p@host/db")).toBe("ausente");
+    expect(sslMode(undefined)).toBe("ausente");
   });
 
   it("monta a URL do papel de aplicação a partir das variáveis PG*", () => {

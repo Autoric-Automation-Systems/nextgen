@@ -13,6 +13,31 @@ type Env = Record<string, string | undefined>;
 
 const POOLED_PARAMS = "sslmode=require&pgbouncer=true&connection_limit=1";
 
+/**
+ * Banco gerenciado exige TLS. URL sem `sslmode` faz o Prisma conectar em texto puro, o
+ * servidor derruba a conexão e o erro que aparece é P1001 "can't reach database server" —
+ * que manda procurar host errado quando o problema é o parâmetro que falta.
+ */
+function withTls(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.searchParams.has("sslmode")) parsed.searchParams.set("sslmode", "require");
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** Como o TLS foi resolvido. Vai para o health: `ausente` explica P1001 enganoso. */
+export function sslMode(url: string | undefined): string {
+  if (!url) return "ausente";
+  try {
+    return new URL(url).searchParams.get("sslmode") ?? "ausente";
+  } catch {
+    return "invalida";
+  }
+}
+
 /** `""` conta como ausente: a Vercel grava variável vazia, não remove. */
 function pick(env: Env, names: string[]): string | undefined {
   for (const name of names) {
@@ -56,7 +81,7 @@ export function directDatabaseUrl(env: Env = process.env): string | undefined {
  */
 export function appDatabaseUrl(env: Env = process.env): string | undefined {
   const explicit = pick(env, ["APP_DATABASE_URL"]);
-  if (explicit) return explicit;
+  if (explicit) return withTls(explicit);
 
   const password = pick(env, APP_PASSWORD_NAMES);
   if (!password) return undefined;
@@ -99,7 +124,7 @@ export function appDatabaseCandidates(
     if (url && !list.some((item) => item.url === url)) list.push({ source, url });
   };
 
-  add("APP_DATABASE_URL", env.APP_DATABASE_URL);
+  add("APP_DATABASE_URL", env.APP_DATABASE_URL && withTls(env.APP_DATABASE_URL));
 
   if (password) {
     for (const name of POOLED_URL_NAMES) {
@@ -109,7 +134,7 @@ export function appDatabaseCandidates(
         const url = new URL(value);
         url.username = "nextgen_app";
         url.password = password;
-        add(`${name} + APP_DB_PASSWORD`, url.toString());
+        add(`${name} + APP_DB_PASSWORD`, withTls(url.toString()));
       } catch {
         // URL fora do formato padrão: ignora este nome.
       }

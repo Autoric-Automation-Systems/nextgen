@@ -1,5 +1,11 @@
 import { connect } from "node:net";
-import { appDatabaseCandidates, directDatabaseUrl, resolveDatabaseConfig } from "@nextgen/db";
+import {
+  appDatabaseCandidates,
+  appDatabaseUrl,
+  directDatabaseUrl,
+  resolveDatabaseConfig,
+  sslMode,
+} from "@nextgen/db";
 
 /**
  * Traduz falha de conexão do Prisma em uma frase curta e segura para o `/api/health`.
@@ -85,6 +91,8 @@ export function dbConfigPresence(env: Record<string, string | undefined> = proce
     // Nomes que a integração Neon cria, para não parecer ausente o que está lá.
     unpooledUrl: Boolean(directDatabaseUrl(env)),
     pgIntegration: Boolean(env.PGHOST || env.PGPASSWORD),
+    // `ausente` aqui explica um P1001 que manda procurar host errado.
+    ssl: sslMode(appDatabaseUrl(env)),
   };
 }
 
