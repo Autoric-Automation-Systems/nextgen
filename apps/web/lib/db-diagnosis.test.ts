@@ -2,6 +2,7 @@ import { createServer } from "node:net";
 import { describe, expect, it } from "vitest";
 import {
   missingAppConfig,
+  usageWarnings,
   appConfigPresence,
   dbConfigPresence,
   describeDbDetail,
@@ -187,5 +188,24 @@ describe("missingAppConfig", () => {
 
     expect(missing).toHaveLength(1);
     expect(missing[0]).toContain("RESEND_API_KEY");
+  });
+});
+
+describe("usageWarnings", () => {
+  it("avisa quando o link do e-mail cairia na proteção da Vercel", () => {
+    const warnings = usageWarnings({ VERCEL_URL: "nextgen-abc.vercel.app" });
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("BETTER_AUTH_URL");
+  });
+
+  it("não avisa quando o endereço público está definido", () => {
+    expect(
+      usageWarnings({ VERCEL_URL: "nextgen-abc.vercel.app", BETTER_AUTH_URL: "https://nextgen.app" }),
+    ).toEqual([]);
+  });
+
+  it("não avisa fora de deploy, onde não há URL efêmera", () => {
+    expect(usageWarnings({})).toEqual([]);
   });
 });

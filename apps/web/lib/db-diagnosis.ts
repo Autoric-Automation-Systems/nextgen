@@ -322,22 +322,87 @@ export async function schemaState() {
  * Só existe porque o script de migração grava ali: o log do build fica na Vercel e não é
  * alcançável daqui, então sem essa linha o diagnóstico termina em "não sei se rodou".
  */
-export async function lastDeploy() {
+async function queryAsOwner<T>(run: (client: OwnerClient) => Promise<T>): Promise<T | null> {
   const ownerUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
-  if (!ownerUrl) return [];
+  if (!ownerUrl) return null;
 
   const { createAppClient } = await import("@nextgen/db");
-  const client = createAppClient(ownerUrl);
+  const client = createAppClient(ownerUrl) as unknown as OwnerClient;
 
   try {
-    return await client.$queryRaw<{ at: Date; status: string; detail: string | null }[]>`
-      select at, status, detail from public.deploy_log order by id desc limit 2
-    `;
+    return await run(client);
   } catch {
-    return [];
+    return null;
   } finally {
     await client.$disconnect().catch(() => {});
   }
+}
+
+type OwnerClient = {
+  $queryRaw: <T>(query: TemplateStringsArray, ...values: unknown[]) => Promise<T>;
+  $disconnect: () => Promise<void>;
+};
+
+export async function lastDeploy() {
+  return (
+    (await queryAsOwner(
+      (client) => client.$queryRaw<{ at: Date; status: string; detail: string | null }[]>`
+        select at, status, detail from public.deploy_log order by id desc limit 2
+      `,
+    )) ?? []
+  );
+}
+
+/**
+ * Últimas tentativas de envio de e-mail.
+ *
+ * "O e-mail não chegou" tem três causas com a mesma tela: destinatário sem usuário (o
+ * `disableSignUp` barra antes de enviar), senha de app recusada e remetente inválido.
+ * A lista distingue as três — inclusive o caso em que nada foi tentado.
+ */
+export async function mailRecent() {
+  return (
+    (await queryAsOwner(
+      (client) => client.$queryRaw<
+        { at: Date; kind: string; recipient: string; status: string; detail: string | null }[]
+      >`
+        select at, kind, recipient, status, detail from public.mail_log order by id desc limit 3
+      `,
+    )) ?? []
+  );
+}
+
+/**
+ * Quantos usuários existem. Zero explica sozinho um link mágico que nunca sai: o Better
+ * Auth está com `disableSignUp`, então e-mail desconhecido não gera envio nem erro visível.
+ */
+export async function userCount(): Promise<number | null> {
+  const rows = await queryAsOwner(
+    (client) => client.$queryRaw<{ total: bigint }[]>`select count(*)::bigint as total from public.users`,
+  );
+
+  if (!rows || rows.length === 0) return null;
+  return Number(rows[0]!.total);
+}
+
+/**
+ * Problemas que não derrubam o banco mas quebram o uso.
+ *
+ * Ficam separados de `missing` porque o serviço responde: o que não funciona é o login de
+ * quem chega, e um `ok` sem aviso manda procurar o problema no lugar errado.
+ */
+export function usageWarnings(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  const warnings: string[] = [];
+
+  if (!env.BETTER_AUTH_URL && env.VERCEL_URL) {
+    warnings.push(
+      "BETTER_AUTH_URL ausente: o link do e-mail aponta para a URL do deploy, que fica atrás da proteção da Vercel",
+    );
+  }
+
+  return warnings;
 }
 
 /**

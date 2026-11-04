@@ -4,6 +4,7 @@ import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { createAdminClient } from "@nextgen/db";
 import { defaultMailer, type Mailer } from "./mail";
+import { loggingMailer } from "./mail-log";
 
 /**
  * Cliente dono das tabelas. O módulo de autenticação é o único consumidor: ele
@@ -29,7 +30,8 @@ export type AuthOptions = {
 };
 
 export function createAuth(options: AuthOptions = {}) {
-  const mailer = options.mailer ?? defaultMailer();
+  // Sem registro, "não chegou" não distingue endereço sem usuário de senha recusada.
+  const mailer = options.mailer ?? loggingMailer(defaultMailer());
   const baseURL = options.baseURL ?? defaultBaseURL();
   const trustedOrigins =
     options.trustedOrigins ??

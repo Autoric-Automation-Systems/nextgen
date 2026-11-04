@@ -140,6 +140,44 @@ export function smtpConfig(env: Record<string, string | undefined> = process.env
  * Não autentica e não envia nada. Alvo é sempre o host da configuração, nunca um
  * parâmetro de requisição.
  */
+/**
+ * Autentica no SMTP sem enviar mensagem (`AUTH` + `NOOP`).
+ *
+ * `probeSmtp` só prova que a porta abre; a senha de app recusada pelo Gmail produz o
+ * mesmo "alcançável" e o mesmo silêncio na tela, porque o erro do envio não chega ao
+ * usuário (não se confirma existência de conta). Este é o único jeito de separar
+ * "rede ok" de "credencial ok" sem depender do log do deploy.
+ */
+export async function verifySmtp(
+  timeoutMs = 8_000,
+): Promise<{ ok: boolean; code?: string; detail?: string }> {
+  const config = smtpConfig();
+  if (!config) return { ok: false, code: "nao-configurado", detail: "EMAIL_USER/EMAIL_PASS ausentes" };
+
+  const transport = nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: { user: config.user, pass: config.pass },
+    pool: false,
+    connectionTimeout: timeoutMs,
+    greetingTimeout: timeoutMs,
+    socketTimeout: timeoutMs,
+  });
+
+  try {
+    await transport.verify();
+    return { ok: true };
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException & { response?: string };
+    // `response` do SMTP cita usuário e o código 535, nunca a senha.
+    const detail = (err.response ?? err.message ?? "").replace(/\s+/g, " ").slice(0, 160);
+    return { ok: false, code: err.code ?? "desconhecido", detail };
+  } finally {
+    transport.close();
+  }
+}
+
 export async function probeSmtp(
   config: { host: string; port: number },
   timeoutMs = 5_000,

@@ -25,8 +25,22 @@ BEGIN
     REVOKE UPDATE, DELETE ON audit_logs FROM nextgen_app;
   END IF;
 
+  -- Diagnóstico do dono: o runtime não lê destinatário de e-mail (dado pessoal).
+  IF EXISTS (SELECT 1 FROM information_schema.tables
+             WHERE table_schema = 'public' AND table_name = 'mail_log') THEN
+    REVOKE ALL ON mail_log FROM nextgen_app;
+    REVOKE ALL ON SEQUENCE mail_log_id_seq FROM nextgen_app;
+  END IF;
+
   ALTER DEFAULT PRIVILEGES IN SCHEMA public
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO nextgen_app;
+  -- Diagnóstico do dono: o runtime não lê destinatário de e-mail (dado pessoal).
+  IF EXISTS (SELECT 1 FROM information_schema.tables
+             WHERE table_schema = 'public' AND table_name = 'mail_log') THEN
+    REVOKE ALL ON mail_log FROM nextgen_app;
+    REVOKE ALL ON SEQUENCE mail_log_id_seq FROM nextgen_app;
+  END IF;
+
   ALTER DEFAULT PRIVILEGES IN SCHEMA public
     GRANT USAGE, SELECT ON SEQUENCES TO nextgen_app;
 END

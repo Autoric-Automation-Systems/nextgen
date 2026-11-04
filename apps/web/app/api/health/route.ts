@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertRlsIsEnforced, prisma } from "@nextgen/db";
-import { mailTransport, probeSmtp, smtpConfig } from "@nextgen/auth/mail";
+import { mailTransport, probeSmtp, smtpConfig, verifySmtp } from "@nextgen/auth/mail";
 import {
   appConfigPresence,
   dbConfigPresence,
@@ -10,9 +10,12 @@ import {
   describeDbFailure,
   probeConnections,
   lastDeploy,
+  mailRecent,
   missingAppConfig,
   roleState,
   schemaState,
+  usageWarnings,
+  userCount,
   probeDatabaseEndpoints,
 } from "@/lib/db-diagnosis";
 
@@ -25,8 +28,14 @@ export const dynamic = "force-dynamic";
  * ignora as políticas (superusuário ou BYPASSRLS) — o isolamento entre escolas
  * deixou de existir, mesmo com o login funcionando.
  */
-export async function GET() {
+/**
+ * `?smtp=1` acrescenta a autenticação no provedor. Fica fora do caminho normal porque
+ * abre conexão TLS e faz `AUTH`: caro para uma sonda que é chamada a cada deploy, e
+ * desnecessário quando ninguém está investigando e-mail.
+ */
+export async function GET(request: Request) {
   const startedAt = Date.now();
+  const deep = new URL(request.url).searchParams.get("smtp") === "1";
   const config = { db: dbConfigPresence(), app: appConfigPresence() };
 
   try {
@@ -51,10 +60,13 @@ export async function GET() {
         db: "up",
         rls,
         mail: mailTransport(),
-        smtp: await smtpState(),
+        smtp: await smtpState(deep),
         migrations: migration.state,
         migrationFailed: migration.failed,
         missing,
+        warnings: usageWarnings(),
+        users: await userCount(),
+        mailRecent: await mailRecent(),
         latencyMs: Date.now() - startedAt,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
       },
@@ -123,10 +135,12 @@ async function migrationState(): Promise<{
  * Só quando o transporte é SMTP: confirma que a porta abre a partir da Vercel.
  * Sem isso, senha errada e porta bloqueada produzem o mesmo "envio falhou".
  */
-async function smtpState() {
+async function smtpState(deep = false) {
   const config = smtpConfig();
   if (!config) return undefined;
 
   const { reachable, banner, error } = await probeSmtp(config);
-  return { host: config.host, port: config.port, reachable, banner, error };
+  const auth = deep ? await verifySmtp() : undefined;
+
+  return { host: config.host, port: config.port, reachable, banner, error, auth };
 }

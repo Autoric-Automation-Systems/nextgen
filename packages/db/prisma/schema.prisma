@@ -584,3 +584,19 @@ model AuditLog {
   @@index([schoolId, createdAt])
   @@map("audit_logs")
 }
+
+/// Tentativa de envio de e-mail. Diagnóstico operacional do dono do banco.
+///
+/// `recipient` vai mascarado e o corpo nunca é gravado: no link mágico o corpo é a
+/// credencial de acesso. O papel de runtime não lê esta tabela (ver app-role-grants).
+model MailLog {
+  id        BigInt   @id @default(autoincrement())
+  at        DateTime @default(now()) @db.Timestamptz(6)
+  kind      String
+  recipient String
+  status    String
+  detail    String?
+
+  @@index([at])
+  @@map("mail_log")
+}
