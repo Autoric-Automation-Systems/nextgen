@@ -4,9 +4,34 @@ Plataforma SaaS de gestão para **escolas de futebol**: matrícula, pedagogia, a
 habilidades, saúde, financeiro e site público — tudo em um só lugar, com conformidade
 LGPD e ECA Digital para alunos menores de idade.
 
-> **Status:** fase 0 — planejamento e especificação. Nenhuma linha de código de produção ainda.
+> **Status:** fase 0 — fundação de código entregue. Monorepo com schema, RLS, login por
+> link mágico, painel e lista de alunos rodando. Ver
+> [`docs/13-fundacao-implementada.md`](docs/13-fundacao-implementada.md).
 
 ---
+
+## Rodar localmente
+
+```bash
+pnpm install
+docker run -d --name nextgen-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nextgen \
+  -p 5432:5432 postgres:16-alpine
+docker exec nextgen-pg psql -U postgres -d nextgen -c \
+  "create role nextgen_app login password 'app' nosuperuser nobypassrls;"
+docker exec nextgen-pg psql -U postgres -d nextgen -c \
+  "grant connect on database nextgen to nextgen_app;"
+
+cp .env.example apps/web/.env.local
+pnpm db:migrate && pnpm db:seed
+pnpm dev
+```
+
+Abra `http://localhost:3000/login` e entre com `admin@demo.test` — o link mágico aparece no
+terminal. O seed cria duas escolas para você conferir o isolamento na prática.
+
+Para publicar, siga [`docs/14-deploy-vercel.md`](docs/14-deploy-vercel.md): banco com duas
+credenciais, migração, import do repo na Vercel e verificação com
+`node scripts/check-deploy.mjs <url>`.
 
 ## O problema
 
@@ -66,6 +91,8 @@ O detalhamento está em [`docs/02-menores-lgpd.md`](docs/02-menores-lgpd.md).
 | 10 | [Operação, segurança e LGPD na prática](docs/10-operacao-seguranca.md) | Engenharia, ops |
 | 11 | [Decisões e perguntas abertas](docs/11-decisoes-abertas.md) | Todos |
 | 12 | [Métricas e precificação do SaaS](docs/12-metricas-precificacao.md) | Negócio |
+| 13 | [Fundação implementada (fase 0)](docs/13-fundacao-implementada.md) | Engenharia |
+| 14 | [Deploy na Vercel](docs/14-deploy-vercel.md) | Engenharia, ops |
 
 ## Stack sugerida (resumo)
 

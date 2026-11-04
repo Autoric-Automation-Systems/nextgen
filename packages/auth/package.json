@@ -1,0 +1,30 @@
+{
+  "name": "@nextgen/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./next": "./src/next.ts",
+    "./mail": "./src/mail.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nextgen/core": "workspace:*",
+    "@nextgen/db": "workspace:*",
+    "better-auth": "1.7.16"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "3.2.7",
+    "@types/node": "24.10.1"
+  }
+}

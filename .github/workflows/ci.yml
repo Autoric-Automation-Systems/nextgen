@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # O papel de aplicação precisa ser criado antes das migrações rodarem como dono.
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextgen
+  APP_DATABASE_URL: postgresql://nextgen_app:app@localhost:5432/nextgen
+  BETTER_AUTH_SECRET: ci-secret-ci-secret-ci-secret-1234
+  BETTER_AUTH_URL: http://localhost:3000
+  BETTER_AUTH_SECURE_COOKIES: "false"
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nextgen
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Criar papel de aplicação (sem superusuário, sem BYPASSRLS)
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d nextgen -c \
+            "create role nextgen_app login password 'app' nosuperuser nobypassrls;"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d nextgen -c \
+            "grant connect on database nextgen to nextgen_app;"
+
+      - name: Migrar e popular banco de teste
+        run: |
+          pnpm --filter @nextgen/db exec prisma migrate deploy
+          pnpm --filter @nextgen/db run seed
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck
+
+      - name: Testes
+        run: pnpm turbo run test
+
+      - name: Build
+        run: pnpm turbo run build
