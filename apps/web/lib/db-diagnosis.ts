@@ -298,3 +298,27 @@ export async function schemaState() {
     await client.$disconnect().catch(() => {});
   }
 }
+
+/**
+ * O que o último build registrou em `deploy_log`.
+ *
+ * Só existe porque o script de migração grava ali: o log do build fica na Vercel e não é
+ * alcançável daqui, então sem essa linha o diagnóstico termina em "não sei se rodou".
+ */
+export async function lastDeploy() {
+  const ownerUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
+  if (!ownerUrl) return [];
+
+  const { createAppClient } = await import("@nextgen/db");
+  const client = createAppClient(ownerUrl);
+
+  try {
+    return await client.$queryRaw<{ at: Date; status: string; detail: string | null }[]>`
+      select at, status, detail from public.deploy_log order by id desc limit 2
+    `;
+  } catch {
+    return [];
+  } finally {
+    await client.$disconnect().catch(() => {});
+  }
+}

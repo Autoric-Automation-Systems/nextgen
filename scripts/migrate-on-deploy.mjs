@@ -43,6 +43,29 @@ function run(args, url, input) {
   }
 }
 
+/**
+ * Registra o resultado no próprio banco.
+ *
+ * O log do build só existe na Vercel, e quem diagnostica daqui não o alcança. Uma linha
+ * por deploy, lida pelo `/api/health` com a conexão do dono, responde "o passo rodou?" e
+ * "por que parou?" sem depender de log externo.
+ */
+function logDeploy(url, status, detail) {
+  const sql = `
+    create table if not exists public.deploy_log (
+      id serial primary key,
+      at timestamptz not null default now(),
+      status text not null,
+      detail text
+    );
+    insert into public.deploy_log (status, detail)
+    values ('${status}', $msg$${(detail ?? "").slice(0, 400)}$msg$);
+  `;
+
+  // Best-effort: falhar aqui não pode derrubar o build.
+  run(["db", "execute", "--schema", schema, "--stdin"], url, sql);
+}
+
 function bail(message, detail) {
   console.error(`[migrate] ${message}`);
   if (detail) console.error(detail.trim().split("\n").slice(0, 12).join("\n"));
@@ -74,6 +97,7 @@ if (!reachable) {
 
 const url = reachable.value;
 console.log(`[migrate] aplicando migrações com ${reachable.name}`);
+logDeploy(url, "iniciado", `conexão: ${reachable.name}; senha de app: ${pickPassword(process.env) ? "presente" : "ausente"}`);
 
 let migration = run(["migrate", "deploy", "--schema", schema], url);
 
@@ -113,6 +137,7 @@ const password = pickPassword(process.env);
 
 if (!password) {
   console.log("[migrate] sem senha de aplicação no ambiente; o papel já deve ter a sua");
+  logDeploy(url, "sem-senha", "nenhuma variável de senha do papel de aplicação no ambiente de build");
   process.exit(0);
 }
 
@@ -125,6 +150,7 @@ const passwordResult = run(["db", "execute", "--schema", schema, "--stdin"], url
 
 if (!passwordResult.ok) {
   console.log("[migrate] senha do nextgen_app não pôde ser alterada por SQL; use a do console");
+  logDeploy(url, "sem-alter", passwordResult.output);
   process.exit(strict ? 1 : 0);
 }
 
@@ -148,7 +174,10 @@ const check = run(
 if (!check.ok) {
   console.log("[migrate] o papel nextgen_app continua sem login");
   console.log("[migrate] cole no SQL Editor do Neon: alter role nextgen_app login password '<a senha da var APP_DB_PASSWORD>';");
+  logDeploy(url, "sem-login", check.output);
   process.exit(strict ? 1 : 0);
 }
 
 console.log("[migrate] papel de aplicação com login confirmado");
+
+logDeploy(url, "ok", `migrações aplicadas; login do papel conferido via ${password.name}`);
