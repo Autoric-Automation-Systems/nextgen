@@ -54,13 +54,23 @@ export async function GET(request: Request) {
 
     // `db: up` só com as tabelas no lugar: banco acessível e schema vazio derrubava
     // qualquer tela com 500 enquanto este endpoint dizia estar tudo bem.
-    // `db: up` só com as tabelas no lugar: banco acessível e schema vazio derrubava
-    // qualquer tela com 500 enquanto este endpoint dizia estar tudo bem.
     //
     // Config ausente entra na conta pelo mesmo motivo: sem `BETTER_AUTH_SECRET` o Better
     // Auth lança em toda página autenticada, e "ok" mandaria procurar o problema no banco.
+    //
+    // Zero usuários também: `disableSignUp` faz o link chegar e o clique voltar para o
+    // login, sem criar conta. É um deploy saudável em que ninguém entra.
     const missing = missingAppConfig();
-    const healthy = rls && migration.state === "aplicadas" && missing.length === 0;
+    const users = await userCount();
+    const warnings = usageWarnings();
+    if (users === 0) {
+      warnings.push(
+        "nenhum usuário cadastrado: o link do e-mail chega mas não abre sessão. Defina BOOTSTRAP_ADMIN_EMAIL e redeploye, ou rode scripts/bootstrap-admin.sql no Neon",
+      );
+    }
+
+    const healthy =
+      rls && migration.state === "aplicadas" && missing.length === 0 && users !== 0;
 
     return NextResponse.json(
       {
@@ -73,8 +83,8 @@ export async function GET(request: Request) {
         migrations: migration.state,
         migrationFailed: migration.failed,
         missing,
-        warnings: usageWarnings(),
-        users: await userCount(),
+        warnings,
+        users,
         mailRecent: await mailRecent(),
         latencyMs: Date.now() - startedAt,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
