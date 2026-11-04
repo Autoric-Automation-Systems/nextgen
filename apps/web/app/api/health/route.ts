@@ -36,7 +36,13 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: Request) {
   const startedAt = Date.now();
-  const deep = new URL(request.url).searchParams.get("smtp") === "1";
+  const params = new URL(request.url).searchParams;
+  const deep = params.get("smtp") === "1";
+
+  // `?login=1` dispara o link mágico de verdade e devolve o erro do Better Auth, que o
+  // formulário esconde de propósito (resposta igual para e-mail com e sem conta). O
+  // destino é o domínio reservado para testes: nenhuma caixa real recebe nada.
+  if (params.get("login") === "1") return probeLogin();
   // O endereço resolvido vai junto: sem ele, `INVALID_ORIGIN` no login não tem como ser
   // explicado — a origem recusada é justamente esta, e ela não é o domínio público.
   const config = { db: dbConfigPresence(), app: { ...appConfigPresence(), authBase: defaultBaseURL() } };
@@ -146,4 +152,32 @@ async function smtpState(deep = false) {
   const auth = deep ? await verifySmtp() : undefined;
 
   return { host: config.host, port: config.port, reachable, banner, error, auth };
+}
+
+/**
+ * Executa o mesmo caminho do formulário de login e devolve o motivo da falha.
+ *
+ * Só um diagnóstico: usa `example.com` (RFC 2606), que não tem caixa de destino, e não
+ * devolve nada de sessão. Sem isso, `INVALID_ORIGIN`, falha de SMTP e erro de escrita no
+ * banco chegam ao usuário com a mesma tela: "link enviado".
+ */
+async function probeLogin() {
+  const { auth } = await import("@nextgen/auth");
+
+  try {
+    await auth.api.signInMagicLink({
+      body: { email: "probe@example.com", callbackURL: "/dashboard" },
+      headers: new Headers({ origin: defaultBaseURL() }),
+    });
+
+    return NextResponse.json({ login: "ok" }, { headers: { "cache-control": "no-store" } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = (error as { body?: { code?: string } }).body?.code;
+
+    return NextResponse.json(
+      { login: "erro", code, detail: message.slice(0, 400) },
+      { status: 500, headers: { "cache-control": "no-store" } },
+    );
+  }
 }
