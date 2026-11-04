@@ -303,10 +303,32 @@ node scripts/check-deploy.mjs https://seudominio.com.br
 ok   / (landing) → 200
 ok   /login → 200
 ok   /dashboard sem sessão → 307
-ok   /api/health → 200 db=up rls=true (33ms)
+ok   /api/health → 200 db=up rls=true migrations=aplicadas mail=resend 33ms
 
 deploy íntegro
 ```
+
+Quando algo está errado, o próprio relatório aponta a correção:
+
+```
+FALHA /api/health → 503 db=up rls=false migrations=ausentes mail=missing 13ms
+       A aplicação conectou com papel que ignora RLS (superusuário ou BYPASSRLS).
+       Revise APP_DATABASE_URL: o isolamento entre escolas não está valendo.
+       Conexão funciona, mas as tabelas não existem.
+       Rode o workflow `migrate` (Actions → migrate → Run workflow).
+       variáveis ausentes: authSecret, authUrl, mailFrom, resendKey
+```
+
+Três estados são independentes e é fácil confundir um com o outro:
+
+| Campo | Significa |
+|---|---|
+| `db` | a conexão TCP/TLS com o Postgres abriu |
+| `migrations` | as tabelas existem naquele banco |
+| `rls` | o papel conectado respeita as políticas |
+
+`db: up` com `migrations: ausentes` é o caso mais traiçoeiro: o health parece metade
+saudável, e toda tela autenticada devolve 500.
 
 O script **nunca segue redirect**, e isso é deliberado: o SSO da Vercel devolve 200 na
 página de login, então seguir redirect faria um deploy trancado parecer saudável. Porta
