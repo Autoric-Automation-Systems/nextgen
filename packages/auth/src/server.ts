@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { createAdminClient } from "@nextgen/db";
+import { defaultMailer, type Mailer } from "./mail";
 
 /**
  * Cliente dono das tabelas. O módulo de autenticação é o único consumidor: ele
@@ -11,23 +12,14 @@ import { createAdminClient } from "@nextgen/db";
  */
 const authDb = createAdminClient();
 
-export type MailMessage = {
-  to: string;
-  subject: string;
-  text: string;
-  html?: string;
-};
+export * from "./mail";
 
-export type Mailer = {
-  send(message: MailMessage): Promise<void>;
-};
-
-/** Em desenvolvimento o link aparece no log; em produção, Resend (doc 06). */
-export const consoleMailer: Mailer = {
-  async send(message) {
-    console.info(`[mail] para=${message.to} assunto="${message.subject}"\n${message.text}`);
-  },
-};
+function defaultBaseURL(): string {
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
+  // Preview deployments têm URL própria e efêmera; usá-la evita "origem inválida".
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
 
 export type AuthOptions = {
   mailer?: Mailer;
@@ -37,13 +29,19 @@ export type AuthOptions = {
 };
 
 export function createAuth(options: AuthOptions = {}) {
-  const mailer = options.mailer ?? consoleMailer;
+  const mailer = options.mailer ?? defaultMailer();
+  const baseURL = options.baseURL ?? defaultBaseURL();
+  const trustedOrigins =
+    options.trustedOrigins ??
+    process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean);
 
   return betterAuth({
     appName: "NextGen",
-    baseURL: options.baseURL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+    baseURL,
     secret: options.secret ?? process.env.BETTER_AUTH_SECRET,
-    trustedOrigins: options.trustedOrigins,
+    trustedOrigins,
 
     database: prismaAdapter(authDb, { provider: "postgresql" }),
 

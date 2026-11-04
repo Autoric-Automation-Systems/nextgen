@@ -29,7 +29,20 @@ pnpm dev
 pnpm test         # regras + RLS (RLS exige Postgres com o papel nextgen_app)
 pnpm typecheck
 pnpm build
+
+node scripts/check-deploy.mjs <url>   # sonda um deploy publicado
 ```
+
+## Deploy
+
+Vercel com Root Directory `apps/web`; config em `apps/web/vercel.json`. O runbook completo
+está em `docs/14-deploy-vercel.md`. Três coisas não podem regredir:
+
+1. `APP_DATABASE_URL` diferente de `DATABASE_URL` — se o app conectar como dono, a RLS
+   some silenciosamente. `/api/health` responde `rls:false` e 503 nesse caso.
+2. `prisma generate` no build, com `binaryTargets` incluindo `rhel-openssl-3.0.x`.
+3. Nunca usar `console` como transporte de e-mail em produção: o link mágico no log é
+   acesso à conta de qualquer pessoa. O código já recusa isso quando `VERCEL_ENV=production`.
 
 Duas URLs de banco são obrigatórias e **precisam ser diferentes**: `DATABASE_URL`
 (dono, só migração e seed) e `APP_DATABASE_URL` (papel `nextgen_app`, sem superusuário).

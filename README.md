@@ -29,6 +29,10 @@ pnpm dev
 Abra `http://localhost:3000/login` e entre com `admin@demo.test` — o link mágico aparece no
 terminal. O seed cria duas escolas para você conferir o isolamento na prática.
 
+Para publicar, siga [`docs/14-deploy-vercel.md`](docs/14-deploy-vercel.md): banco com duas
+credenciais, migração, import do repo na Vercel e verificação com
+`node scripts/check-deploy.mjs <url>`.
+
 ## O problema
 
 Escolas de futebol (e projetos sociais, escolinhas e clubes de base) rodam hoje em uma
@@ -88,6 +92,7 @@ O detalhamento está em [`docs/02-menores-lgpd.md`](docs/02-menores-lgpd.md).
 | 11 | [Decisões e perguntas abertas](docs/11-decisoes-abertas.md) | Todos |
 | 12 | [Métricas e precificação do SaaS](docs/12-metricas-precificacao.md) | Negócio |
 | 13 | [Fundação implementada (fase 0)](docs/13-fundacao-implementada.md) | Engenharia |
+| 14 | [Deploy na Vercel](docs/14-deploy-vercel.md) | Engenharia, ops |
 
 ## Stack sugerida (resumo)
 

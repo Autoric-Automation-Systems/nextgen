@@ -4,6 +4,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  // `native` para o desenvolvimento local; o binário rhel é o que a função
+  // serverless da Vercel usa. Sem ele o deploy sobe e falha em runtime com
+  // "Query engine library for current platform could not be found".
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
