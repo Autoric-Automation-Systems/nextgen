@@ -173,3 +173,51 @@ export async function probeDatabaseEndpoints(
     }),
   );
 }
+
+/**
+ * Testa as combinações de conexão quando o Prisma não alcança o banco.
+ *
+ * "Can't reach database server" é o mesmo texto para senha errada, papel inexistente,
+ * pooler recusando e rede bloqueada. Aqui cada combinação (pooler/direto × papel de
+ * aplicação/dono) é tentada com timeout curto, e o código do erro do Prisma separa os
+ * casos: P1000 é autenticação, P1001 é rede, P2021 é schema.
+ *
+ * Só roda no caminho de falha — nunca no health saudável.
+ */
+export async function probeConnections(timeoutMs = 6000) {
+  const { createAppClient } = await import("@nextgen/db");
+  const appUrl = appDatabaseUrl();
+  const ownerPooled = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
+  const direct = directDatabaseUrl();
+
+  const attempts = [
+    { name: "pooler + nextgen_app", url: appUrl },
+    { name: "pooler + dono", url: ownerPooled },
+    { name: "direto + dono", url: direct },
+  ];
+
+  const withTimeout = (promise: Promise<unknown>) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+    ]);
+
+  return Promise.all(
+    attempts.map(async ({ name, url }) => {
+      if (!url) return { name, ok: false, code: "sem URL" };
+
+      const client = createAppClient(url);
+      try {
+        await withTimeout(client.$queryRaw`select 1`);
+        return { name, ok: true, code: "ok" };
+      } catch (error) {
+        const code = (error as { errorCode?: string; code?: string }).errorCode
+          ?? (error as { code?: string }).code
+          ?? (error as Error).message?.slice(0, 40);
+        return { name, ok: false, code: String(code) };
+      } finally {
+        await client.$disconnect().catch(() => {});
+      }
+    }),
+  );
+}

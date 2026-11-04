@@ -6,6 +6,7 @@ import {
   dbConfigPresence,
   describeDbDetail,
   describeDbFailure,
+  probeConnections,
   probeDatabaseEndpoints,
 } from "@/lib/db-diagnosis";
 
@@ -54,6 +55,7 @@ export async function GET() {
         reason: describeDbFailure(error),
         detail: describeDbDetail(error),
         endpoints: await probeDatabaseEndpoints(),
+        connections: await probeConnections(),
         config,
         latencyMs: Date.now() - startedAt,
       },
