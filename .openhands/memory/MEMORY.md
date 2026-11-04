@@ -43,5 +43,11 @@
   NOLOGIN produz P1001 "can't reach database server", que engana o diagnóstico.
 - Sem token da API da Vercel não dá para alterar variável de ambiente por aqui; o
   `VERCEL_AUTOMATION_BYPASS_SECRET` serve só para furar o Deployment Protection.
+- **Sandbox reseta e leva `/tmp` junto**: `pnpm` e `psql` somem no meio da sessão. Para
+  voltar: `npm i -g pnpm@9.15.4 --prefix /tmp/npmbin` e usar
+  `export PATH="/tmp/npmbin/bin:$PATH"`. Testes do `@nextgen/db` (RLS) exigem Postgres
+  local em 55432 e falham sem ele — não é regressão de código.
+- `BETTER_AUTH_SECRET` ausente derruba `/dashboard` com 500 sem texto (Better Auth lança em
+  `create-context`). O health agora devolve `missing` e responde `degraded`.
 - O build não tem log acessível: `public.deploy_log` (escrito por
   `scripts/migrate-on-deploy.mjs`, lido pelo health em `lastDeploy`) é a janela para ele.
