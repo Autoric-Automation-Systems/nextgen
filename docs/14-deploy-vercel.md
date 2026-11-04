@@ -77,6 +77,8 @@ fictícios. O primeiro acesso real é o do item 4.
 
 ## 2. Projeto na Vercel
 
+Projeto criado: **`nextgen-autoric`** → `https://nextgen-autoric.vercel.app`.
+
 O repositório já está pronto para importar como está. **Não** use o preset de monorepo
 com detecção automática sem revisar os três campos abaixo.
 
@@ -164,7 +166,29 @@ e aluno entra na fase de matrícula.
 
 ---
 
-## 5. Verificação
+## 5. Proteção de deploy
+
+No estado em que o projeto foi criado, **até a produção exige login da Vercel**: qualquer
+requisição devolve `302` para `vercel.com/sso-api`. Isso é o padrão de *Deployment
+Protection* e é ótimo enquanto o site é interno — e fatal quando as famílias forem acessar.
+
+Para o domínio de produção ficar aberto sem deixar preview aberto:
+
+**Settings → Deployment Protection → Vercel Authentication → Only Preview Deployments.**
+
+Para eu (ou qualquer automação) conseguir verificar antes disso, gere um **Protection
+Bypass for Automation** e rode:
+
+```bash
+VERCEL_AUTOMATION_BYPASS_SECRET=... node scripts/check-deploy.mjs https://nextgen-autoric.vercel.app
+```
+
+Sem esse segredo, a única leitura possível de fora é o `302` — que não diz nada sobre a
+aplicação ter subido.
+
+---
+
+## 6. Verificação
 
 O script não tem dependência e checa o que realmente importa:
 
@@ -181,6 +205,10 @@ ok   /api/health → 200 db=up rls=true (33ms)
 deploy íntegro
 ```
 
+O script **nunca segue redirect**, e isso é deliberado: o SSO da Vercel devolve 200 na
+página de login, então seguir redirect faria um deploy trancado parecer saudável. Porta
+fechada vira `BLOQ … → 302 para o SSO da Vercel` e código de saída 3.
+
 Falha em `rls=true` é bloqueante: significa que a aplicação está conectada com um papel
 que ignora as políticas. Não é bug de tela, é vazamento entre escolas.
 
@@ -189,7 +217,7 @@ for Automation** e rode com `VERCEL_AUTOMATION_BYPASS_SECRET=...`.
 
 ---
 
-## 6. Previews
+## 7. Previews
 
 Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 
@@ -201,7 +229,7 @@ Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 
 ---
 
-## 7. Problemas comuns
+## 8. Problemas comuns
 
 | Sintoma | Causa | Correção |
 |---|---|---|
@@ -210,12 +238,13 @@ Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 | Login responde ok, e-mail não chega | `mail: "missing"` no health | configure Resend + `MAIL_FROM` |
 | `INVALID_TOKEN` ao abrir o link | cookie/URL de origem divergente | `BETTER_AUTH_URL` igual ao domínio acessado; sem barra final |
 | Tudo vazio, sem erro | sessão sem `schoolId` resolvido | usuário sem `membership` ativa — ver item 4 |
+| Todo acesso redireciona para `vercel.com/login` | Deployment Protection ativa | ver seção 5 |
 | `/api/health` → 503 `rls:false` | `APP_DATABASE_URL` aponta para papel com `BYPASSRLS` ou superusuário | usar `nextgen_app` |
 | Latência alta em toda página | banco em outra região | mover para `sa-east-1` |
 
 ---
 
-## 8. Domínio
+## 9. Domínio
 
 **Settings → Domains**. Depois de apontar o domínio:
 
