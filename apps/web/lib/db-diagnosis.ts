@@ -34,6 +34,12 @@ export function redactSecrets(text: string): string {
     .replace(/\b(?:re|sk|pk)_[A-Za-z0-9_]{8,}\b/g, "<token>");
 }
 
+/** O código `P1xxx`/`P2xxx` do Prisma vem no texto, não em `.code`. */
+export function prismaCode(error: unknown): string | undefined {
+  const message = error instanceof Error ? error.message : String(error);
+  return /P\d{4}/.exec(message)?.[0];
+}
+
 export function describeDbFailure(error: unknown): string {
   if (!(error instanceof Error)) return "falha desconhecida";
 
@@ -211,13 +217,41 @@ export async function probeConnections(timeoutMs = 6000) {
         await withTimeout(client.$queryRaw`select 1`);
         return { name, ok: true, code: "ok" };
       } catch (error) {
-        const code = (error as { errorCode?: string; code?: string }).errorCode
-          ?? (error as { code?: string }).code
-          ?? (error as Error).message?.slice(0, 40);
-        return { name, ok: false, code: String(code) };
+        const code = prismaCode(error) ?? "desconhecido";
+        return { name, ok: false, code, detail: describeDbFailure(error) };
       } finally {
         await client.$disconnect().catch(() => {});
       }
     }),
   );
+}
+
+/**
+ * O papel de runtime existe e pode logar?
+ *
+ * Consulta feita com o papel dono, que conecta — sem isso, "não conecta" continua sendo
+ * a única informação, e a causa pode ser papel inexistente ou senha trocada, que pedem
+ * ações opostas: criar no console versus corrigir a variável.
+ */
+export async function roleState() {
+  const ownerUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
+
+  if (!ownerUrl) return { checked: false, reason: "sem conexão de dono" };
+
+  const { createAppClient } = await import("@nextgen/db");
+  const client = createAppClient(ownerUrl);
+
+  try {
+    const rows = await client.$queryRaw<{ exists: boolean; can_login: boolean }[]>`
+      select
+        exists (select 1 from pg_roles where rolname = 'nextgen_app') as exists,
+        coalesce((select rolcanlogin from pg_roles where rolname = 'nextgen_app'), false) as can_login
+    `;
+
+    return { checked: true, ...rows[0] };
+  } catch (error) {
+    return { checked: false, reason: describeDbFailure(error) };
+  } finally {
+    await client.$disconnect().catch(() => {});
+  }
 }

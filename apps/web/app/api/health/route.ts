@@ -7,6 +7,7 @@ import {
   describeDbDetail,
   describeDbFailure,
   probeConnections,
+  roleState,
   probeDatabaseEndpoints,
 } from "@/lib/db-diagnosis";
 
@@ -56,6 +57,7 @@ export async function GET() {
         detail: describeDbDetail(error),
         endpoints: await probeDatabaseEndpoints(),
         connections: await probeConnections(),
+        role: await roleState(),
         config,
         latencyMs: Date.now() - startedAt,
       },
