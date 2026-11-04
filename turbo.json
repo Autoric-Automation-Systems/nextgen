@@ -1,13 +1,23 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
-    "DATABASE_URL",
     "APP_DATABASE_URL",
+    "APP_DB_PASSWORD",
     "BETTER_AUTH_SECRET",
-    "BETTER_AUTH_URL",
     "BETTER_AUTH_SECURE_COOKIES",
+    "BETTER_AUTH_URL",
+    "BLOB_PRIVATE_READ_WRITE_TOKEN",
     "BLOB_PUBLIC_READ_WRITE_TOKEN",
-    "BLOB_PRIVATE_READ_WRITE_TOKEN"
+    "DATABASE_URL",
+    "DATABASE_URL_UNPOOLED",
+    "DIRECT_URL",
+    "MIGRATE_ON_BUILD",
+    "NEXTGEN_APP_PASSWORD",
+    "PGHOST",
+    "PGPASSWORD",
+    "PGPASSWORD_APP",
+    "POSTGRES_URL_NON_POOLING",
+    "VERCEL_ENV"
   ],
   "tasks": {
     "build": {

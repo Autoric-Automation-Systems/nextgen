@@ -123,8 +123,32 @@ if (!password) {
 const sql = `alter role nextgen_app login password $pw$${password.value}$pw$;`;
 const passwordResult = run(["db", "execute", "--schema", schema, "--stdin"], url, sql);
 
-if (passwordResult.ok) {
-  console.log(`[migrate] senha do papel atualizada (${password.name})`);
-} else {
+if (!passwordResult.ok) {
   console.log("[migrate] senha do nextgen_app não pôde ser alterada por SQL; use a do console");
+  process.exit(strict ? 1 : 0);
 }
+
+console.log(`[migrate] senha do papel atualizada (${password.name})`);
+
+/**
+ * Confirma o efeito em vez de presumir. `db execute` não devolve linhas, então a
+ * verificação falha alto: sem `rolcanlogin`, o sintoma na tela é "can't reach database
+ * server", que manda procurar host errado.
+ */
+const check = run(
+  ["db", "execute", "--schema", schema, "--stdin"],
+  url,
+  `do $$ begin
+     if not exists (select 1 from pg_roles where rolname = 'nextgen_app' and rolcanlogin)
+     then raise exception 'nextgen_app sem login';
+     end if;
+   end $$;`,
+);
+
+if (!check.ok) {
+  console.log("[migrate] o papel nextgen_app continua sem login");
+  console.log("[migrate] cole no SQL Editor do Neon: alter role nextgen_app login password '<a senha da var APP_DB_PASSWORD>';");
+  process.exit(strict ? 1 : 0);
+}
+
+console.log("[migrate] papel de aplicação com login confirmado");
