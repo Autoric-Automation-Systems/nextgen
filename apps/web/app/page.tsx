@@ -70,7 +70,9 @@ export default function Home() {
                 <Link className="btn" href="/login">
                   Entrar
                 </Link>
-                <Link className="btn btn-ghost" href="/escola">
+                {/* Direto no formulário: `/escola` existe para quem chega por link ou
+                    busca, não para custar um toque a quem já decidiu. */}
+                <Link className="btn btn-ghost" href="/escola/solicitar">
                   Cadastrar escola
                 </Link>
               </div>
