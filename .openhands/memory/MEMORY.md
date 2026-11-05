@@ -88,3 +88,19 @@
   apagados. `apple-touch-icon.png` foi recomposto com fundo branco opaco (iOS pinta preto
   atrás de PNG transparente). Paleta do logo = azul `#0e305b` + verde `#80b235`; os tokens
   `--brand #10331f` / `--accent #c9f24d` ainda são os do esboço (mismatch pendente).
+- **Rodapé não flutua só com `margin-top: auto`**: precisa de pai flex. `body` em
+  `globals.css` é `display:flex; flex-direction:column; min-height:100dvh` justamente por
+  isso; páginas públicas novas não precisam de wrapper. Cabeçalho público é
+  `components/site-header.tsx` (marca linkando para `/`), usado em `/login` e `/setup`
+  para não deixar o usuário sem saída.
+- **Logo do rodapé** é `public/dev/logo-icon.png` (lockup símbolo+wordmark+assinatura que o
+  dono enviou em `18a5f9a`); nada de recorte próprio. Rodapé escuro usa `filter: brightness(0)
+  invert(1)` em vez de um segundo arquivo claro.
+- **Verificar layout sem enxergar screenshot**: `chromium --headless --screenshot` grava PNG
+  e um decodificador PNG em Python puro mede faixas de cor (cabeçalho/rodapé) e bbox do logo.
+  `--dump-dom` **não** espera `setTimeout`, então iframe de medição não funciona; medir por
+  pixel é o caminho.
+- **Push**: o remote guardado aponta para `https://github.com/...` e pede senha;
+  usar `git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/...`,
+  pushar e **restaurar a URL** depois. `pnpm build` mata o `.next` do `next dev` em execução:
+  reiniciar o dev server depois do build.
