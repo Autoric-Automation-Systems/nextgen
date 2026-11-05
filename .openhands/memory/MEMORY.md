@@ -56,6 +56,12 @@
   variante. `brand.test.ts` valida que todo caminho do manifesto existe — rename sem editar
   o manifesto quebra o CI de propósito. Os SVGs atuais são placeholders (`<!-- PLACEHOLDER -->`).
   Rodapé liga para `https://www.autoric.com.br` (Autoric).
+- **Site público**: `/` sucinta (hero + 2 portas) → `/como-funciona` (detalhe). Escola entra
+  por `/escola` (entrar ou cadastrar) e `/escola/solicitar` grava pedido em `school_leads`.
+  `nextgen_app` só tem INSERT nessa tabela (`$executeRaw`, sem RETURNING); a exceção é
+  reaplicada em `app-role-grants.sql` porque o GRANT geral do deploy devolveria o SELECT.
+  Login é único (responsável, professor, admin); aluno <16 não tem conta.
+- **pnpm some do `/tmp`** quando o sandbox reinicia: `npm i -g pnpm@9.15.4 --prefix /tmp/npmbin`.
 - **Sandbox reseta e leva `/tmp` junto**: `pnpm` e `psql` somem no meio da sessão. Para
   voltar: `npm i -g pnpm@9.15.4 --prefix /tmp/npmbin` e usar
   `export PATH="/tmp/npmbin/bin:$PATH"`. Testes do `@nextgen/db` (RLS) exigem Postgres
