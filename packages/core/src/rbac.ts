@@ -41,11 +41,18 @@ export const ACTIONS = [
   "report:read",
   "audit:read",
   "platform:impersonate",
+  "platform:admin",
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
 export type Actor =
   | { kind: "anonymous" }
+  /**
+   * Operação da plataforma (NextGen), não de uma escola. Sem `schoolId` de propósito:
+   * quem opera o SaaS não pertence a tenant e não age dentro de um sem impersonação
+   * explícita. Enxerga estrutura e cadastro; nunca prontuário de aluno.
+   */
+  | { kind: "platform"; userId: string; role: "platform_support" }
   | {
       kind: "member";
       userId: string;
@@ -102,6 +109,7 @@ const PERMISSIONS: Record<Action, Role[]> = {
   "report:read": ["admin", "coordinator"],
   "audit:read": ["admin"],
   "platform:impersonate": ["platform_support"],
+  "platform:admin": ["platform_support"],
 };
 
 export type AccessRequest = {
@@ -114,6 +122,13 @@ export type AccessRequest = {
 
 export function can(actor: Actor, request: AccessRequest): boolean {
   if (actor.kind === "anonymous") return false;
+
+  // Administração da plataforma não tem escola: qualquer ação com alvo de escola
+  // exigiria impersonação, então aqui a resposta é não.
+  if (actor.kind === "platform") {
+    if (request.schoolId || request.studentId) return false;
+    return PERMISSIONS[request.action].includes("platform_support");
+  }
 
   const allowedRoles = PERMISSIONS[request.action];
   if (!allowedRoles.includes(actor.role)) return false;
@@ -141,4 +156,9 @@ export function assertCan(actor: Actor, request: AccessRequest): void {
 /** Ações que exigem 2FA (doc 06 §5). */
 export function requiresMfa(role: Role): boolean {
   return role === "admin" || role === "platform_support";
+}
+
+/** Papel efetivo do ator, para rotular a interface. */
+export function actorRole(actor: Actor): Role | null {
+  return actor.kind === "anonymous" ? null : actor.role;
 }

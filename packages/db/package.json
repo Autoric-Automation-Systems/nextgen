@@ -16,7 +16,8 @@
     "seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
     "build": "prisma generate",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:demo": "tsx prisma/seed-demo.ts"
   },
   "dependencies": {
     "@prisma/client": "6.19.3"

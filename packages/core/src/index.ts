@@ -3,3 +3,4 @@ export * from "./category";
 export * from "./rbac";
 export * from "./consent";
 export * from "./cpf";
+export * from "./skills";

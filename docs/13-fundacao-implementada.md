@@ -78,9 +78,48 @@ Quando duas categorias casam, a função devolve `ambiguous` em vez de escolher 
 | `/login` | pedido de link mágico (sem senha) |
 | `/dashboard` | requer sessão; métricas da escola |
 | `/alunos` | requer sessão; lista com regime etário e consentimento |
+| `/alunos/[id]` | ficha do aluno com o card na versão interna |
+| `/sistema` | só administração da plataforma; diretório de escolas |
+| `/sistema/card` | só plataforma; card interno e público lado a lado, com dado de demonstração |
 | `/api/auth/*` | Better Auth |
 
-Sem sessão, `/dashboard` e `/alunos` redirecionam para `/login`.
+Sem sessão, todo o painel redireciona para `/login`.
+
+## Menu por perfil e modo demonstração
+
+O menu é dado, não `if` espalhado pelo componente: `apps/web/lib/nav.ts` declara as seções
+e `navSectionsFor` decide quem vê o quê. Testes em `nav.test.ts` cobrem os quatro casos.
+
+| Perfil | Seções |
+|---|---|
+| dono/coordenação da escola | Escola (painel, alunos, turmas, pedagogia, avaliação, financeiro, site) |
+| professor | Escola, sem financeiro e sem site |
+| responsável | Aluno e família |
+| administração da plataforma | Escola (leitura) + Plataforma |
+
+Itens marcados `soon` aparecem apagados, sem link: o mapa do produto fica visível sem
+prometer tela que não existe.
+
+**Administração da plataforma** é reconhecida de duas formas: a lista
+`PLATFORM_ADMIN_EMAILS` (vírgula, ponto e vírgula ou espaço) e a coluna
+`users.is_platform_staff`. O login grava a coluna quando o e-mail está na lista, e é a
+coluna que a política `platform_directory` consulta — então revogar acesso é um `update`,
+sem depender de deploy. A lista sozinha não serve para a RLS, que não enxerga variável de
+ambiente.
+
+Quem opera a plataforma não tem vínculo com escola nenhuma, e várias telas exigem escola.
+`resolveWorkspace` devolve a **escola de demonstração** para esse caso, em modo leitura e
+rotulado como demonstração. É também o que permite revisar a interface com dado fictício
+sem tocar em escola real.
+
+## Card do aluno
+
+`apps/web/components/player-card.tsx`, com as regras do `08-avaliacao-e-card.md`:
+
+- 16 atributos em 4 pilares; barras por pilar e grade por código;
+- menor de 12 anos não tem nota: o card mostra idade e barras (`canShowCardRating`);
+- comportamento nunca aparece na variante pública;
+- card público exige opt-in da escola **e** consentimento de imagem vigente.
 
 ## Como rodar
 
@@ -108,10 +147,26 @@ O seed cria duas escolas (`demo` e `rival`) com alunos, turma, categorias e cons
 Entre em `http://localhost:3000/login` com `admin@demo.test`; o link aparece no terminal
 (em produção, vai por e-mail).
 
+Para ver o painel com conteúdo, rode também o seed de demonstração:
+
+```bash
+pnpm db:seed:demo   # Escola Teste: 5 alunos, 2 responsáveis, notas de dois ciclos
+```
+
+| Acesso | Perfil |
+|---|---|
+| `admin@escola-teste.test` | dono da Escola Teste |
+| `professor@escola-teste.test` | professor |
+| `responsavel@escola-teste.test` | responsável |
+
+Para entrar como administração da plataforma, coloque seu e-mail em
+`PLATFORM_ADMIN_EMAILS` e faça login: o menu passa a mostrar as seções Escola (em leitura,
+sobre a Escola Teste) e Plataforma.
+
 ## Verificação
 
 ```bash
-pnpm test        # 44 testes de regra + 12 de RLS (precisa do banco)
+pnpm test        # regras por pacote (core, auth, web) + 12 de RLS (precisa do banco)
 pnpm typecheck
 pnpm build
 ```

@@ -144,6 +144,7 @@ model School {
   guardians          Guardian[]
   students           Student[]
   studentGuardians   StudentGuardian[]
+  skillRatings       StudentSkillRating[]
   pickupPeople       PickupAuthorizedPerson[]
   seasons            Season[]
   categories         Category[]
@@ -324,6 +325,9 @@ model Student {
   nickname          String?
   birthDate         DateTime      @map("birth_date") @db.Date
   gender            String?
+  /// Posição principal em campo: goleiro, zagueiro, lateral, meio-campo, atacante.
+  position          String?
+  jerseyNumber      Int?          @map("jersey_number")
   photoPathname     String?       @map("photo_pathname")
   status            StudentStatus @default(active)
   notesInternal     String?       @map("notes_internal")
@@ -334,6 +338,7 @@ model Student {
   deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(6)
 
   school       School                   @relation(fields: [schoolId], references: [id])
+  skillRatings StudentSkillRating[]
   guardians    StudentGuardian[]
   pickupPeople PickupAuthorizedPerson[]
   enrollments  Enrollment[]
@@ -342,6 +347,31 @@ model Student {
   @@index([schoolId])
   @@index([schoolId, birthDate])
   @@map("students")
+}
+
+/// Nota de um atributo do card, em um ciclo de avaliação (doc 08).
+///
+/// Guarda o histórico: cada ciclo é uma linha por atributo. Sobrescrever apagaria a
+/// evolução, que é justamente o que o responsável acompanha.
+model StudentSkillRating {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  studentId     String   @map("student_id") @db.Uuid
+  seasonId      String?  @map("season_id") @db.Uuid
+  cycleLabel    String   @map("cycle_label")
+  /// Código do atributo (CTL, PAS…), conforme `packages/core/src/skills.ts`.
+  code          String
+  /// Escala 1–5, sem fração.
+  score         Int
+  ratedByUserId String?  @map("rated_by_user_id") @db.Uuid
+  ratedAt       DateTime @default(now()) @map("rated_at") @db.Timestamptz(6)
+
+  school  School  @relation(fields: [schoolId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, cycleLabel, code])
+  @@index([schoolId, studentId])
+  @@map("student_skill_ratings")
 }
 
 model StudentGuardian {

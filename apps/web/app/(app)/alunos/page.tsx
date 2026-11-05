@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { requireSession } from "@/lib/session";
 import { listStudents } from "@/lib/queries";
+import { resolveWorkspace } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +14,18 @@ const REGIME_LABEL: Record<string, string> = {
 
 export default async function StudentsPage() {
   const session = await requireSession();
-  const students = await listStudents({ schoolId: session.schoolId, userId: session.userId });
+  const workspace = await resolveWorkspace(session);
+  if (!workspace) return <p className="muted">Sua conta não tem escola. Fale com a administração.</p>;
+
+  const students = await listStudents({ schoolId: workspace.schoolId, userId: session.userId });
 
   return (
     <div className="stack">
       <div>
         <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>Alunos</h1>
         <p className="muted" style={{ margin: 0 }}>
-          {students.length} aluno(s) nesta escola. O domínio é filtrado pela RLS: pedir outra escola não
-          retorna nada.
+          {students.length} aluno(s) em {workspace.schoolName}. Clique no nome para abrir o card. O domínio é
+          filtrado pela RLS: pedir outra escola não retorna nada.
         </p>
       </div>
 
@@ -40,7 +45,9 @@ export default async function StudentsPage() {
             {students.map((student) => (
               <tr key={student.id}>
                 <td>
-                  <strong>{student.name}</strong>
+                  <Link href={`/alunos/${student.id}`}>
+                    <strong>{student.name}</strong>
+                  </Link>
                   {student.nickname ? <span className="muted"> · {student.nickname}</span> : null}
                 </td>
                 <td>

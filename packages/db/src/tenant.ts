@@ -32,6 +32,23 @@ export async function withTenant<T>(
   });
 }
 
+/**
+ * Bloco com usuário, sem escola.
+ *
+ * `withoutTenant` zera os dois sinais — e com isso a política de diretório não reconhece
+ * nem a administração da plataforma. Aqui o `user_id` vale e o `school_id` continua vazio:
+ * o usuário enxerga o diretório de escolas, não os dados de nenhuma delas.
+ */
+export async function withUser<T>(userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  if (!userId) throw new Error("withUser exige userId");
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`select set_config('app.school_id', '', true)`;
+    await tx.$executeRaw`select set_config('app.user_id', ${userId}, true)`;
+    return fn(tx);
+  });
+}
+
 /** Bloco sem tenant: usado por rotas de plataforma e jobs globais. */
 export async function withoutTenant<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
   return prisma.$transaction(async (tx) => {
@@ -46,8 +63,7 @@ export async function withoutTenant<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
  * Serve para o seletor de escola; o resultado alimenta `withTenant`, nunca a query em si.
  */
 export async function findSchoolIdForUser(userId: string, slug: string): Promise<string | null> {
-  return withoutTenant(async (tx) => {
-    await tx.$executeRaw`select set_config('app.user_id', ${userId}, true)`;
+  return withUser(userId, async (tx) => {
     const membership = await tx.membership.findFirst({
       where: { userId, status: "active", school: { slug } },
       select: { schoolId: true },

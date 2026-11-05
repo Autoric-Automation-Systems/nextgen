@@ -70,3 +70,14 @@
   `create-context`). O health agora devolve `missing` e responde `degraded`.
 - O build não tem log acessível: `public.deploy_log` (escrito por
   `scripts/migrate-on-deploy.mjs`, lido pelo health em `lastDeploy`) é a janela para ele.
+- **Plataforma e perfis**: `PLATFORM_ADMIN_EMAILS` (env) é a fonte, mas a RLS não lê env:
+  o login grava `users.is_platform_staff` e a política `platform_directory` (só `schools`,
+  SELECT) usa `app.is_platform_staff()`. `withoutTenant` zera `app.user_id` e cega essa
+  política — para o diretório use `withUser(userId, …)` (`packages/db/src/tenant.ts`).
+- **Menu do painel**: `apps/web/lib/nav.ts` (`NAV` + `navSectionsFor`) é a regra de quem vê
+  o quê; `components/sidebar.tsx` só desenha. Itens `soon` aparecem sem link.
+  `resolveWorkspace` cai na Escola Teste (`slug escola-teste`) quando o usuário é plataforma
+  sem vínculo — em modo leitura (`can: () => false`), rotulado "demonstração".
+- **Card do aluno**: `components/player-card.tsx` com `variant="internal" | "public"`.
+  `<12 anos` nunca mostra nota (`canShowCardRating`); comportamento só na interna; a landing
+  usa a pública. Seed de demo: `pnpm db:seed:demo` (id fixo `01940000-…`).

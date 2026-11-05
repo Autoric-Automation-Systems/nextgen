@@ -1,19 +1,23 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/session";
 import { getOverview } from "@/lib/queries";
+import { resolveWorkspace } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const session = await requireSession();
-  const overview = await getOverview({ schoolId: session.schoolId, userId: session.userId });
+  const workspace = await resolveWorkspace(session);
+  if (!workspace) return <p className="muted">Sua conta não tem escola. Fale com a administração.</p>;
+
+  const overview = await getOverview({ schoolId: workspace.schoolId, userId: session.userId });
 
   return (
     <div className="stack">
       <div>
         <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>Olá, {session.name.split(" ")[0]}</h1>
         <p className="muted" style={{ margin: 0 }}>
-          Visão da escola. Todos os números abaixo vêm de consultas já filtradas por escola no banco.
+          {workspace.schoolName}. Todos os números abaixo vêm de consultas já filtradas por escola no banco.
         </p>
       </div>
 

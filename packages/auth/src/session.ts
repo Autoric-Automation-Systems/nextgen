@@ -1,5 +1,6 @@
 import { prisma, withTenant } from "@nextgen/db";
 import type { Actor, Role } from "@nextgen/core";
+import { isPlatformAdmin } from "./platform-admin";
 
 export type MembershipSummary = {
   schoolId: string;
@@ -13,8 +14,10 @@ export type ResolvedSession = {
   name: string;
   email: string;
   actor: Actor;
-  schoolId: string;
+  /** Escola ativa. Nula só na operação da plataforma, que não pertence a tenant. */
+  schoolId: string | null;
   memberships: MembershipSummary[];
+  isPlatformAdmin: boolean;
 };
 
 /**
@@ -48,6 +51,18 @@ export async function listMemberships(userId: string): Promise<MembershipSummary
   });
 }
 
+/**
+ * `users.is_platform_staff`. Roda antes do tenant existir: a política `self_or_same_school`
+ * de `users` libera a própria linha com `app.user_id` no contexto.
+ */
+async function loadPlatformStaffFlag(userId: string): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`select set_config('app.user_id', ${userId}, true)`;
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { isPlatformStaff: true } });
+    return user?.isPlatformStaff ?? false;
+  });
+}
+
 /** IDs dos alunos sob responsabilidade do usuário, na escola dada. */
 async function guardianStudentIds(userId: string, schoolId: string): Promise<string[]> {
   return withTenant({ schoolId, userId }, async (tx) => {
@@ -66,7 +81,28 @@ export type ResolveInput = {
   name: string;
   email: string;
   preferredSchoolId?: string | null;
+  /** Já resolvido por quem chama, para o teste poder injetar o ambiente. */
+  platformStaff?: boolean;
 };
+
+/**
+ * Materializa no banco o que veio da variável de ambiente.
+ *
+ * A lista em env é imutável sem redeploy e invisível para a RLS. Gravar o sinal em
+ * `users.is_platform_staff` resolve as duas coisas: a política de diretório de escolas
+ * passa a valer, e revogar o acesso vira um `update` — sem esperar deploy e com registro
+ * de quando acabou. Falhar aqui não impede o login: a sessão já foi resolvida pela env.
+ */
+async function grantPlatformStaff(userId: string): Promise<void> {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`select set_config('app.user_id', ${userId}, true)`;
+      await tx.user.update({ where: { id: userId }, data: { isPlatformStaff: true } });
+    });
+  } catch {
+    // Coluna é conveniência para a RLS e para a revogação; a env continua valendo.
+  }
+}
 
 /**
  * Resolve a escola ativa e monta o ator. A escola vem do vínculo no banco, nunca
@@ -74,8 +110,29 @@ export type ResolveInput = {
  * existentes.
  */
 export async function resolveSession(input: ResolveInput): Promise<ResolvedSession | null> {
-  const memberships = await listMemberships(input.userId);
-  if (memberships.length === 0) return null;
+  const [memberships, platformStaff] = await Promise.all([
+    listMemberships(input.userId),
+    input.platformStaff === undefined ? loadPlatformStaffFlag(input.userId) : input.platformStaff,
+  ]);
+
+  const platformAdmin = isPlatformAdmin({ email: input.email, persisted: platformStaff });
+  if (platformAdmin && !platformStaff) await grantPlatformStaff(input.userId);
+
+  // Sem vínculo, só quem opera a plataforma entra. Qualquer outro é conta órfã: o login
+  // funciona e o sistema não tem o que mostrar, então a sessão não existe.
+  if (memberships.length === 0) {
+    if (!platformAdmin) return null;
+
+    return {
+      userId: input.userId,
+      name: input.name,
+      email: input.email,
+      actor: { kind: "platform", userId: input.userId, role: "platform_support" },
+      schoolId: null,
+      memberships: [],
+      isPlatformAdmin: true,
+    };
+  }
 
   const membership =
     memberships.find((m) => m.schoolId === input.preferredSchoolId) ?? memberships[0]!;
@@ -103,6 +160,7 @@ export async function resolveSession(input: ResolveInput): Promise<ResolvedSessi
     actor,
     schoolId: membership.schoolId,
     memberships,
+    isPlatformAdmin: platformAdmin,
   };
 }
 

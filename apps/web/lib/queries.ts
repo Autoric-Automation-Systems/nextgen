@@ -1,5 +1,5 @@
 import { withTenant } from "@nextgen/db";
-import { ageOn, canPublishPublicCard, type AgeRegime, ageRegime } from "@nextgen/core";
+import { ageOn, canPublishPublicCard, type AgeRegime, ageRegime, type Score } from "@nextgen/core";
 
 export type StudentRow = {
   id: string;
@@ -109,6 +109,105 @@ export async function getOverview(ctx: { schoolId: string; userId: string }): Pr
         name: category.name,
         students: perCategory.get(category.id) ?? 0,
       })),
+    };
+  });
+}
+
+export type StudentCard = {
+  id: string;
+  nickname: string;
+  fullName: string;
+  age: number;
+  category: string | null;
+  position: string | null;
+  jerseyNumber: number | null;
+  guardianNames: string[];
+  cycleLabel: string;
+  scores: Score[];
+  previousScores: Score[];
+  consent: "granted" | "missing" | "revoked";
+  publicCard: { allowed: boolean; reason?: string };
+  imageConsent: "granted" | "missing" | "revoked";
+};
+
+/**
+ * Card de um aluno, com o ciclo atual e o anterior.
+ *
+ * "Ciclo atual" é o `cycle_label` lançado mais recentemente — não o maior nome, porque
+ * ciclo renomeado ("T4" → "4º tri") quebraria a ordenação alfabética.
+ */
+export async function getStudentCard(
+  ctx: { schoolId: string; userId: string },
+  studentId: string,
+): Promise<StudentCard | null> {
+  return withTenant(ctx, async (tx) => {
+    const student = await tx.student.findFirst({
+      where: { id: studentId, deletedAt: null },
+      include: {
+        guardians: { include: { guardian: { include: { user: true } } } },
+        enrollments: {
+          where: { deletedAt: null },
+          include: { classGroup: { include: { category: true } } },
+        },
+        consents: { where: { purposeCode: { in: ["enrollment", "image_public", "public_card"] } } },
+        skillRatings: { orderBy: { ratedAt: "desc" } },
+      },
+    });
+
+    if (!student) return null;
+
+    const age = ageOn(student.birthDate, new Date());
+    const enrollment = student.enrollments.find((entry) => entry.status === "active") ?? student.enrollments[0];
+
+    const cycles: string[] = [];
+    for (const rating of student.skillRatings) {
+      if (!cycles.includes(rating.cycleLabel)) cycles.push(rating.cycleLabel);
+    }
+    const [currentCycle = "—", previousCycle] = cycles;
+
+    const scores = student.skillRatings
+      .filter((rating) => rating.cycleLabel === currentCycle)
+      .map((rating) => ({ code: rating.code, score: rating.score }));
+    const previousScores = previousCycle
+      ? student.skillRatings
+          .filter((rating) => rating.cycleLabel === previousCycle)
+          .map((rating) => ({ code: rating.code, score: rating.score }))
+      : [];
+
+    const enrollmentConsent = student.consents.find((entry) => entry.purposeCode === "enrollment");
+    const imageConsent = student.consents.find((entry) => entry.purposeCode === "image_public");
+
+    const imageStatus: StudentCard["imageConsent"] =
+      imageConsent?.status === "granted"
+        ? "granted"
+        : imageConsent?.status === "revoked"
+          ? "revoked"
+          : "missing";
+
+    const consent: StudentCard["consent"] =
+      enrollmentConsent?.status === "granted" ? "granted" : enrollmentConsent?.status === "revoked" ? "revoked" : "missing";
+
+    const publicCard = canPublishPublicCard({
+      age,
+      optedIn: student.publicCardEnabled,
+      imagePublicConsent: imageStatus,
+    });
+
+    return {
+      id: student.id,
+      nickname: student.nickname ?? student.fullName.split(" ")[0]!,
+      fullName: student.fullName,
+      age,
+      category: enrollment?.classGroup.category.name ?? null,
+      position: student.position,
+      jerseyNumber: student.jerseyNumber,
+      guardianNames: student.guardians.map((link) => link.guardian.user.name),
+      cycleLabel: currentCycle,
+      scores,
+      previousScores,
+      consent,
+      publicCard: { allowed: publicCard.allowed, reason: publicCard.reason },
+      imageConsent: imageStatus,
     };
   });
 }
