@@ -48,8 +48,10 @@
   com valor que não é URL (Prisma falha na 1ª escrita = token do link), e URL/segredo
   faltando. Sondas: `/api/health?login=1` (executa o link mágico para `example.com`),
   `?smtp=1` (AUTH sem enviar), `mailRecent` (tabela `mail_log`).
-- **Domínios divergem**: `nextgen-three-ebon.vercel.app` é aberto; `nextgen-autoric.vercel.app`
-  cai em SSO da Vercel (302 para `vercel.com/sso-api`). Sem usuário na tabela `users`
+- **Produção = `https://nextgen-three-ebon.vercel.app`** (confirmado por `/api/health` →
+  `config.app.authBase`). `nextgen-autoric.vercel.app` é projeto anterior e cai em SSO da
+  Vercel (302 para `vercel.com/sso-api`) — não é produção. Antes de dizer que o site está
+  fora do ar, olhe o `authBase`. Sem usuário na tabela `users`
   (bootstrap-admin.sql) o link verifica e morre em `new_user_signup_disabled`.
 - **Ativos de marca**: `apps/web/public/{brand,icons/{ui,skills},dev}`. `lib/brand.ts` é o
   único lugar com caminho de arquivo (SRP); `BrandLogo`/`SiteFooter`/`SkillIcon` só pedem

@@ -164,7 +164,12 @@ fictícios. O primeiro acesso real é o do item 4.
 
 ## 2. Projeto na Vercel
 
-Projeto criado: **`nextgen-autoric`** → `https://nextgen-autoric.vercel.app`.
+Projeto criado: **`nextgen-three-ebon`** → `https://nextgen-three-ebon.vercel.app`.
+
+Esse é o endereço de produção: `/api/health` responde `config.app.authBase` com ele, e é
+o nome que o link mágico usa para montar a URL de retorno. O antigo
+`nextgen-autoric.vercel.app` — de um projeto anterior — continua respondendo, mas atrás de
+*Deployment Protection*; não use para cadastro nem para teste de login.
 
 ### Os dois campos que não podem ficar no padrão
 
@@ -432,23 +437,22 @@ O convite de responsável e aluno entra na fase de matrícula.
 
 ## 5. Proteção de deploy
 
-No estado em que o projeto foi criado, **até a produção exige login da Vercel**: qualquer
-requisição devolve `302` para `vercel.com/sso-api`. Isso é o padrão de *Deployment
-Protection* e é ótimo enquanto o site é interno — e fatal quando as famílias forem acessar.
+O domínio de produção `nextgen-three-ebon.vercel.app` está **aberto** (verificado: `/login`
+responde `200`). O que continua trancado é `nextgen-autoric.vercel.app`, de um projeto
+anterior: qualquer requisição ali devolve `302` para `vercel.com/sso-api`, porque
+*Deployment Protection* está em **Vercel Authentication**.
 
-Para o domínio de produção ficar aberto sem deixar preview aberto:
+Um projeto responde por vários nomes e eles não são equivalentes: confira sempre qual é o
+`authBase` do health antes de concluir que o site está fora do ar — o `302` pode ser só o
+apelido errado.
 
-**Settings → Deployment Protection → Vercel Authentication → Only Preview Deployments.**
-
-Para eu (ou qualquer automação) conseguir verificar antes disso, gere um **Protection
-Bypass for Automation** e rode:
+Se um dia a produção for fechada por engano, reabra em **Settings → Deployment Protection →
+Vercel Authentication → Only Preview Deployments**. Para verificar de fora com a proteção
+ligada, gere um **Protection Bypass for Automation**:
 
 ```bash
-VERCEL_AUTOMATION_BYPASS_SECRET=... node scripts/check-deploy.mjs https://nextgen-autoric.vercel.app
+VERCEL_AUTOMATION_BYPASS_SECRET=... node scripts/check-deploy.mjs https://nextgen-three-ebon.vercel.app
 ```
-
-Sem esse segredo, a única leitura possível de fora é o `302` — que não diz nada sobre a
-aplicação ter subido.
 
 ---
 
