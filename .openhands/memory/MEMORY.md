@@ -81,3 +81,10 @@
 - **Card do aluno**: `components/player-card.tsx` com `variant="internal" | "public"`.
   `<12 anos` nunca mostra nota (`canShowCardRating`); comportamento só na interna; a landing
   usa a pública. Seed de demo: `pnpm db:seed:demo` (id fixo `01940000-…`).
+- **Marca**: o dono enviou o pacote de ícones (favicon/apple/android + `site.webmanifest`)
+  por upload no GitHub. O símbolo é raster (não há vetor): `brand/mark.png` (192px) e
+  `@2x.png` (384px) foram **recortados do ícone 512px** (bbox 11,79–505,433). O nome
+  "NextGen" é texto em `brand-logo.tsx`, não imagem; os SVGs placeholder de `brand/` foram
+  apagados. `apple-touch-icon.png` foi recomposto com fundo branco opaco (iOS pinta preto
+  atrás de PNG transparente). Paleta do logo = azul `#0e305b` + verde `#80b235`; os tokens
+  `--brand #10331f` / `--accent #c9f24d` ainda são os do esboço (mismatch pendente).

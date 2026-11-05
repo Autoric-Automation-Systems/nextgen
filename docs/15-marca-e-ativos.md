@@ -5,18 +5,22 @@ site, sem tocar em código.
 
 ```
 public/
-├── brand/          identidade do produto (NextGen)
-│   ├── logo.svg           lockup horizontal, fundo claro
-│   ├── logo-light.svg     mesmo lockup, fundo escuro
-│   ├── mark.svg           só o símbolo (avatar, app icon, cabeçalho estreito)
-│   ├── wordmark.svg       só o nome (rodapé, e-mail, assinatura)
-│   └── icon.svg           favicon; o Next publica como /icon.svg
+├── brand/
+│   ├── mark.png           símbolo oficial, largura 192px
+│   └── mark@2x.png        mesmo símbolo, largura 384px
 ├── icons/
 │   ├── ui/                ícones de interface (ações, navegação)
 │   └── skills/            um por atributo do card, nomeado pelo código
-└── dev/            logo do desenvolvedor (Autoric)
-    ├── logo-dev.svg       fundo claro
-    └── logo-dev-light.svg fundo escuro
+├── dev/                   logo do desenvolvedor (Autoric)
+│   ├── logo-dev.svg       fundo claro
+│   └── logo-dev-light.svg fundo escuro
+├── favicon.ico            pedido pelo navegador mesmo sem <link>
+├── favicon-16x16.png
+├── favicon-32x32.png
+├── apple-touch-icon.png   fundo opaco: o iOS pinta preto atrás de PNG transparente
+├── android-chrome-192x192.png
+├── android-chrome-512x512.png
+└── site.webmanifest       nome, cor de tema e os dois ícones de instalação
 ```
 
 ## Regras
@@ -25,17 +29,24 @@ public/
 quebra o site; substituir o conteúdo não quebra nada. Se precisar de outro nome, adicione ao
 manifesto — não espalhe o caminho pelo código.
 
-**Assinatura visual.** Os SVGs atuais são esboços funcionais (`<!-- PLACEHOLDER -->` no
-arquivo). Substitua pelo oficial mantendo nome e proporção: a altura é definida pelo
-componente, então um logo com proporção muito diferente fica esticado.
+**A marca é símbolo + texto.** Só o símbolo é imagem. O nome "NextGen" é renderizado como
+texto em `components/brand-logo.tsx`, então acompanha a fonte da interface, não borra ao
+ampliar e não precisa de uma versão por densidade.
 
-**SVG primeiro, raster depois.** SVG escala sem borrar e pesa poucos KB. Use PNG só se o
-original não existir em vetor, e nesse caso gere em `@2x` (ex.: `logo@2x.png`) mantendo o
-PNG base com o nome do SVG que ele substitui.
+**SVG primeiro, raster quando não houver vetor.** O símbolo chegou como PNG; ele é o único
+ativo raster do produto. O arquivo base foi recortado do ícone de 512px (sem a margem
+transparente) e reduzido para 192px de largura; o `@2x` tem 384px. Se o vetor aparecer,
+basta salvar `mark.svg`, apontar `MARK` para ele em `brand.ts` e apagar os PNGs — nenhum
+componente muda.
 
-**Cores vêm dos tokens.** Os arquivos usam as cores fixas `#10331f` (verde profundo) e
-`#c9f24d` (lima), porque SVG carregado por `<img>` não enxerga variável CSS. Se a paleta da
-escola mudar em `globals.css`, os logos precisam ser regerados.
+**O favicon não é o card.** Os tamanhos 16 e 32 são gerados do mesmo arquivo mestre; como o
+símbolo é largo, nos tamanhos pequenos ele fica com pouca margem. Se a marca mudar, gere o
+pacote de novo a partir do vetor.
+
+**Cores.** O símbolo usa as cores do arquivo original (azul `#0e305b` e verde `#80b235`),
+porque imagem carregada por `<img>` não enxerga variável CSS. Os tokens de interface
+(`--brand`, `--accent` em `globals.css`) ainda são os do esboço: unificar as duas paletas é
+uma decisão de marca, não um ajuste de código.
 
 ## Ícones de habilidade
 
@@ -53,7 +64,8 @@ Aparece no rodapé, ligado a `https://www.autoric.com.br`. O vínculo é declara
 | Peça | Onde | Responsabilidade |
 |---|---|---|
 | caminhos e proporções | `apps/web/lib/brand.ts` | único lugar que sabe o nome de um arquivo |
-| desenho da marca | `apps/web/components/brand-logo.tsx` | escolhe variante e superfície, nada mais |
+| marca (símbolo + nome) | `apps/web/components/brand-logo.tsx` | escolhe variante e desenha |
+| favicon e manifest | `apps/web/app/layout.tsx` | publica `metadata.icons` e `viewport.themeColor` |
 | assinatura do dev | `apps/web/components/site-footer.tsx` | rodapé com link para a Autoric |
 | ícone de atributo | `apps/web/components/skill-icon.tsx` | usa o arquivo se existir, senão o código |
 

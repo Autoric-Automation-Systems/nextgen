@@ -4,35 +4,44 @@
  * Os componentes não conhecem caminho de arquivo: pedem uma variante e recebem o caminho.
  * Assim, trocar o logo é substituir um arquivo; trocar de nome é editar este manifesto; e
  * nenhuma tela precisa ser tocada nos dois casos.
+ *
+ * O símbolo é o único ativo raster do produto: chegou como PNG (não existe vetor) e é
+ * servido em duas densidades. O nome "NextGen" é texto, não imagem — acompanha a fonte da
+ * interface e continua nítido em qualquer zoom.
  */
 
 export type BrandVariant = "full" | "mark" | "wordmark";
+/** Só o logo do desenvolvedor muda com o fundo; o símbolo do produto não. */
 export type Surface = "light" | "dark";
 
-type Asset = {
+export type Asset = {
   src: string;
-  /** Proporção largura/altura do viewBox — usada para reservar espaço e evitar salto. */
+  /** Proporção largura/altura do arquivo — usada para reservar espaço e evitar salto. */
   ratio: number;
   alt: string;
 };
 
-const LOGO: Asset = { src: "/brand/logo.svg", ratio: 168 / 40, alt: "NextGen" };
-const LOGO_LIGHT: Asset = { src: "/brand/logo-light.svg", ratio: 168 / 40, alt: "NextGen" };
-const MARK: Asset = { src: "/brand/mark.svg", ratio: 1, alt: "NextGen" };
-const WORDMARK: Asset = { src: "/brand/wordmark.svg", ratio: 168 / 40, alt: "NextGen" };
+/** Recorte do ícone de 512px, sem a margem transparente. */
+export const MARK: Asset = { src: "/brand/mark.png", ratio: 494 / 354, alt: "NextGen" };
+export const MARK_2X = "/brand/mark@2x.png";
+
+export const BRAND_NAME = "NextGen";
+/** Verde profundo da paleta, o mesmo usado em `theme-color`. */
+export const BRAND_COLOR = "#10331f";
 
 /**
- * `undefined` quando a variante não muda com o fundo — repetir o caminho seria duplicar a
- * mesma informação em dois lugares.
+ * Favicon e manifest.
+ *
+ * O navegador pede `/favicon.ico` mesmo sem `<link>`, então esse nome é fixo. Os demais
+ * entram pelo `metadata` do layout raiz.
  */
-export function brandAsset(variant: BrandVariant, surface: Surface = "light"): Asset {
-  if (variant === "mark") return MARK;
-  if (variant === "wordmark") return WORDMARK;
-
-  return surface === "dark" ? LOGO_LIGHT : LOGO;
-}
-
-export const FAVICON = "/brand/icon.svg";
+export const FAVICONS = {
+  ico: "/favicon.ico",
+  png32: "/favicon-32x32.png",
+  png16: "/favicon-16x16.png",
+  apple: "/apple-touch-icon.png",
+  manifest: "/site.webmanifest",
+} as const;
 
 /**
  * Assinatura do desenvolvedor.

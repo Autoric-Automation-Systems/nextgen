@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { DEV_CREDIT, brandAsset, devLogo, skillIconPath } from "./brand";
+import { DEV_CREDIT, FAVICONS, MARK, MARK_2X, devLogo, skillIconPath } from "./brand";
 
 const publicDir = path.join(__dirname, "..", "public");
 
@@ -9,26 +9,23 @@ function exists(publicPath: string) {
   return existsSync(path.join(publicDir, publicPath.replace(/^\//, "")));
 }
 
-describe("brandAsset", () => {
-  it("aponta para um arquivo que existe", () => {
-    for (const variant of ["full", "mark", "wordmark"] as const) {
-      for (const surface of ["light", "dark"] as const) {
-        expect(exists(brandAsset(variant, surface).src)).toBe(true);
-      }
+describe("MARK", () => {
+  it("aponta para o arquivo nas duas densidades", () => {
+    expect(exists(MARK.src)).toBe(true);
+    expect(exists(MARK_2X)).toBe(true);
+  });
+
+  it("declara a proporção real do recorte, para o cabeçalho não pular", () => {
+    expect(MARK.ratio).toBeGreaterThan(1);
+    expect(MARK.ratio).toBeLessThan(2);
+  });
+});
+
+describe("FAVICONS", () => {
+  it("todo arquivo do pacote de ícones existe", () => {
+    for (const publicPath of Object.values(FAVICONS)) {
+      expect(exists(publicPath), publicPath).toBe(true);
     }
-  });
-
-  it("troca o arquivo no fundo escuro, onde o texto escuro sumiria", () => {
-    expect(brandAsset("full", "dark").src).not.toBe(brandAsset("full", "light").src);
-  });
-
-  it("mantém o mesmo símbolo nas duas superfícies", () => {
-    expect(brandAsset("mark", "dark").src).toBe(brandAsset("mark", "light").src);
-  });
-
-  it("reserva a proporção do arquivo para o layout não pular", () => {
-    expect(brandAsset("mark").ratio).toBe(1);
-    expect(brandAsset("full").ratio).toBeGreaterThan(1);
   });
 });
 

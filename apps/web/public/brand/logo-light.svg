@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 40" role="img" aria-label="NextGen">
-  <!-- PLACEHOLDER: mesma marca para fundo escuro (texto claro). -->
-  <rect x="2" y="2" width="36" height="36" rx="10" fill="#c9f24d"/>
-  <path d="M11 31V11h3.6l6.4 9.2V11h3.6v20h-3.6L15 21.8V31z" fill="#10331f"/>
-  <text x="48" y="27" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.6" fill="#ffffff">NextGen</text>
-</svg>

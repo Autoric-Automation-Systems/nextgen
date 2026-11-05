@@ -43,6 +43,9 @@ a { color: inherit; }
 
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.02em; }
 
+.brand-lockup { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: -0.02em; }
+.brand-wordmark { font-size: 1.05em; line-height: 1; }
+
 .brand-mark {
   width: 28px; height: 28px; border-radius: 8px;
   background: var(--brand); color: var(--accent);
