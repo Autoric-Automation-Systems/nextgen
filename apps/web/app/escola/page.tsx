@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "Para escolas — NextGen",
@@ -17,17 +17,7 @@ export const metadata: Metadata = {
 export default function EscolaPage() {
   return (
     <>
-      <header className="topbar">
-        <div className="wrap topbar-inner">
-          <a href="/" className="brand" aria-label="NextGen — início">
-            <BrandLogo height={26} />
-          </a>
-          <nav className="nav">
-            <a href="/como-funciona">Como funciona</a>
-            <a href="/login">Entrar</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="wrap" style={{ padding: "56px 24px 72px" }}>
         <span className="eyebrow">Para escolas</span>

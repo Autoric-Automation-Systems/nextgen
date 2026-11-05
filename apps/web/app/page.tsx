@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
 import { PlayerCard } from "@/components/player-card";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "NextGen — gestão para escolas de futebol",
@@ -70,17 +70,7 @@ const SAMPLE_CARD = {
 export default function Home() {
   return (
     <>
-      <header className="topbar">
-        <div className="wrap topbar-inner">
-          <Link href="/" className="brand" aria-label="NextGen — início">
-            <BrandLogo height={26} />
-          </Link>
-          <nav className="nav">
-            <Link href="/como-funciona">Como funciona</Link>
-            <Link href="/login">Entrar</Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main>
         <section className="wrap hero-compact hero-split">

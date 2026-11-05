@@ -27,6 +27,17 @@ html, body {
 
 a { color: inherit; }
 
+/*
+ * Coluna de altura mínima: o rodapé usa `margin-top: auto` e, sem isto, página curta
+ * (login, setup) o deixava flutuando logo abaixo do cartão, no meio da tela.
+ */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
 .topbar {
@@ -94,6 +105,8 @@ h1 { font-size: 44px; line-height: 1.1; letter-spacing: -0.03em; margin: 18px 0 
 .field input:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
 
 .auth-card { max-width: 420px; margin: 64px auto; }
+/* A coluna do cartão ocupa o espaço livre; o rodapé fica no fim da janela. */
+.auth-main { flex: 1; width: 100%; }
 .muted { color: var(--ink-soft); font-size: 13px; line-height: 1.6; }
 .notice {
   border: 1px solid var(--line); background: #fffbeb; color: #7c2d12;
@@ -132,6 +145,8 @@ tr:last-child td { border-bottom: none; }
 }
 /* O logo fica em opacidade cheia: o gradiente já é claro e qualquer véu o apaga. */
 .footer-dev:hover .muted { color: var(--ink); }
+/* No rodapé escuro o arquivo claro vira branco puro: o gradiente azul desaparece. */
+.footer-dark .footer-dev-logo { filter: brightness(0) invert(1); }
 .footer-dark { background: var(--brand); border-top-color: rgba(255, 255, 255, 0.12); }
 .footer-dark .muted { color: rgba(255, 255, 255, 0.72); }
 .footer-dark .footer-dev:hover .muted { color: #ffffff; }

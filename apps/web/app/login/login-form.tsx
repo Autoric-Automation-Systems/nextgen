@@ -13,7 +13,7 @@ export function LoginForm({ error, needsSetup = false }: { error?: string; needs
   const reason = loginErrorMessage(error);
 
   return (
-    <main className="wrap">
+    <main className="wrap auth-main">
       <div className="card auth-card">
         <div className="brand" style={{ marginBottom: 18 }}>
           <BrandLogo height={26} />

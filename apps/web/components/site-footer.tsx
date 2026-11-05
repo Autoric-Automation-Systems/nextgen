@@ -1,4 +1,4 @@
-import { DEV_CREDIT, devLogo, devLogo2x, type Surface } from "@/lib/brand";
+import { DEV_CREDIT, type Surface } from "@/lib/brand";
 
 type Props = {
   surface?: Surface;
@@ -16,8 +16,6 @@ const FOOTER_LOGO_HEIGHT = 22;
  * página de destino recebe `window.opener` e o Referer com o caminho de onde o usuário veio.
  */
 export function SiteFooter({ surface = "light", schoolName }: Props) {
-  const logo = devLogo(surface);
-
   return (
     <footer className={`footer ${surface === "dark" ? "footer-dark" : ""}`}>
       <div className="wrap footer-inner">
@@ -34,11 +32,11 @@ export function SiteFooter({ surface = "light", schoolName }: Props) {
         >
           <span className="muted">Desenvolvido por</span>
           <img
-            src={logo.src}
-            srcSet={`${logo.src} 1x, ${devLogo2x(surface)} 2x`}
-            alt={logo.alt}
+            className="footer-dev-logo"
+            src={DEV_CREDIT.logo.src}
+            alt={DEV_CREDIT.logo.alt}
             height={FOOTER_LOGO_HEIGHT}
-            width={Math.round(FOOTER_LOGO_HEIGHT * logo.ratio)}
+            width={Math.round(FOOTER_LOGO_HEIGHT * DEV_CREDIT.logo.ratio)}
             style={{ display: "block", height: FOOTER_LOGO_HEIGHT, width: "auto" }}
             loading="lazy"
             decoding="async"

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { usersExist } from "@/lib/first-run";
 import { SetupForm } from "./setup-form";
 
@@ -17,6 +18,12 @@ export default async function SetupPage() {
 
   return (
     <>
+      <SiteHeader
+        links={[
+          { href: "/como-funciona", label: "Como funciona" },
+          { href: "/login", label: "Entrar" },
+        ]}
+      />
       <SetupForm />
       <SiteFooter />
     </>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
 import { LeadForm } from "./lead-form";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "Cadastrar escola — NextGen",
@@ -11,17 +11,7 @@ export const metadata: Metadata = {
 export default function SolicitarPage() {
   return (
     <>
-      <header className="topbar">
-        <div className="wrap topbar-inner">
-          <a href="/" className="brand" aria-label="NextGen — início">
-            <BrandLogo height={26} />
-          </a>
-          <nav className="nav">
-            <a href="/como-funciona">Como funciona</a>
-            <a href="/login">Entrar</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="wrap" style={{ padding: "40px 24px 64px" }}>
         <div className="auth-card" style={{ marginTop: 0, maxWidth: 520 }}>

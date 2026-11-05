@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { DEV_CREDIT, FAVICONS, MARK, MARK_2X, devLogo, devLogo2x, skillIconPath } from "./brand";
+import { DEV_CREDIT, FAVICONS, MARK, MARK_2X, skillIconPath } from "./brand";
 
 const publicDir = path.join(__dirname, "..", "public");
 
@@ -35,14 +35,10 @@ describe("DEV_CREDIT", () => {
     expect(new URL(DEV_CREDIT.url).protocol).toBe("https:");
   });
 
-  it("tem logo nas duas superfícies, em 1x e 2x", () => {
-    for (const surface of ["light", "dark"] as const) {
-      expect(exists(devLogo(surface).src)).toBe(true);
-      expect(exists(devLogo2x(surface))).toBe(true);
-    }
-
-    expect(devLogo("dark").src).not.toBe(devLogo("light").src);
-    expect(devLogo2x("dark")).not.toBe(devLogo2x("light"));
+  it("usa o lockup sem a linha de assinatura, que sumiria a 22px", () => {
+    expect(exists(DEV_CREDIT.logo.src)).toBe(true);
+    expect(DEV_CREDIT.logo.src).toBe("/dev/logo-icon.png");
+    expect(DEV_CREDIT.logo.ratio).toBeGreaterThan(3);
   });
 });
 

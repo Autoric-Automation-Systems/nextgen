@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "Como funciona — NextGen",
@@ -41,17 +41,12 @@ const modules = [
 export default function ComoFuncionaPage() {
   return (
     <>
-      <header className="topbar">
-        <div className="wrap topbar-inner">
-          <Link href="/" className="brand" aria-label="NextGen — início">
-            <BrandLogo height={26} />
-          </Link>
-          <nav className="nav">
-            <Link href="/escola">Para escolas</Link>
-            <Link href="/login">Entrar</Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader
+        links={[
+          { href: "/escola", label: "Para escolas" },
+          { href: "/login", label: "Entrar" },
+        ]}
+      />
 
       <main>
         <section className="wrap hero">

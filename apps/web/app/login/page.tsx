@@ -1,4 +1,5 @@
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { usersExist } from "@/lib/first-run";
 import { LoginForm } from "./login-form";
 
@@ -18,6 +19,12 @@ export default async function LoginPage({
 
   return (
     <>
+      <SiteHeader
+        links={[
+          { href: "/como-funciona", label: "Como funciona" },
+          { href: "/escola", label: "Para escolas" },
+        ]}
+      />
       <LoginForm error={error} needsSetup={needsSetup} />
       <SiteFooter />
     </>

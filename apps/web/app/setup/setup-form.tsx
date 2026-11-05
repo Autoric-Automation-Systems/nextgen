@@ -11,7 +11,7 @@ export function SetupForm() {
   const [state, action, pending] = useActionState(setupFirstSchool, initial);
 
   return (
-    <main className="wrap">
+    <main className="wrap auth-main">
       <div className="card auth-card">
         <div className="brand" style={{ marginBottom: 18 }}>
           <BrandLogo height={26} />
