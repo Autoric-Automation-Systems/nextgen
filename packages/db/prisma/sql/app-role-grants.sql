@@ -32,6 +32,14 @@ BEGIN
     REVOKE ALL ON SEQUENCE mail_log_id_seq FROM nextgen_app;
   END IF;
 
+  -- Formulário público de cadastro: escreve e não lê. O GRANT geral acima devolveria o
+  -- SELECT a cada deploy, então a exceção precisa ser reaplicada aqui.
+  IF EXISTS (SELECT 1 FROM information_schema.tables
+             WHERE table_schema = 'public' AND table_name = 'school_leads') THEN
+    GRANT INSERT ON school_leads TO nextgen_app;
+    REVOKE SELECT, UPDATE, DELETE ON school_leads FROM nextgen_app;
+  END IF;
+
   ALTER DEFAULT PRIVILEGES IN SCHEMA public
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO nextgen_app;
   -- Diagnóstico do dono: o runtime não lê destinatário de e-mail (dado pessoal).

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { requestMagicLink, type LoginState } from "./actions";
 import { BrandLogo } from "@/components/brand-logo";
@@ -18,9 +19,10 @@ export function LoginForm({ error }: { error?: string }) {
           <BrandLogo height={26} />
         </div>
 
-        <h2 style={{ margin: "0 0 8px", fontSize: 22, letterSpacing: "-0.02em" }}>Entrar no painel</h2>
+        <h2 style={{ margin: "0 0 8px", fontSize: 22, letterSpacing: "-0.02em" }}>Entrar</h2>
         <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
-          Enviamos um link de acesso para o seu e-mail. Sem senha para vazar.
+          Use o e-mail cadastrado pela escola. Enviamos um link de acesso — sem senha para
+          vazar.
         </p>
 
         {reason ? (
@@ -59,7 +61,12 @@ export function LoginForm({ error }: { error?: string }) {
         )}
 
         <p className="muted" style={{ marginTop: 20 }}>
-          Aluno menor de 16 anos não tem login próprio: o acesso é sempre do responsável legal.
+          Aluno menor de 16 anos não tem login próprio: o acesso é sempre do responsável
+          legal. Ainda não tem escola no NextGen?{" "}
+          <Link href="/escola" style={{ fontWeight: 600 }}>
+            Veja como cadastrar
+          </Link>
+          .
         </p>
       </div>
     </main>

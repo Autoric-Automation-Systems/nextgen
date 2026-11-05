@@ -1,72 +1,85 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
 
-const pillars = [
-  {
-    title: "Aluno no centro, não no banco",
-    body: "Matrícula, turma, categoria e responsável em um cadastro só. Categoria derivada do ano de nascimento, sem conflito no meio da temporada.",
-  },
-  {
-    title: "Consentimento com prova",
-    body: "Responsável recebe o e-mail, assina o termo versionado e o sistema guarda hash, IP e data. Revogar é um clique e vale imediatamente.",
-  },
-  {
-    title: "Avaliação que vira card",
-    body: "Notas por pilar, evolução por temporada e um perfil público bonito — desligado por padrão e nunca para menor de 12.",
-  },
-  {
-    title: "Financeiro que fecha",
-    body: "Mensalidade com vencimento escolhido no cadastro, boleto no e-mail do responsável, inadimplência visível no painel.",
-  },
-];
+export const metadata: Metadata = {
+  title: "NextGen — gestão para escolas de futebol",
+  description:
+    "Matrícula, turma, avaliação, saúde e mensalidade de escolas de futebol em um sistema só, com consentimento do responsável desde o primeiro cadastro.",
+};
 
+/**
+ * A raiz responde uma pergunta: "é para mim?". Quem quer detalhe clica em "Como funciona";
+ * quem já sabe o que quer escolhe a porta. Três parágrafos aqui empurram as duas portas
+ * para baixo da dobra e não convencem ninguém.
+ */
 export default function Home() {
   return (
-    <main>
+    <>
       <header className="topbar">
         <div className="wrap topbar-inner">
           <Link href="/" className="brand" aria-label="NextGen — início">
             <BrandLogo height={26} />
           </Link>
           <nav className="nav">
+            <Link href="/como-funciona">Como funciona</Link>
             <Link href="/login">Entrar</Link>
           </nav>
         </div>
       </header>
 
-      <section className="wrap hero">
-        <span className="eyebrow">Escolas de futebol</span>
-        <h1>
-          A escola inteira em um lugar.
-          <br />
-          A criança protegida em primeiro.
-        </h1>
-        <p className="lead">
-          O NextGen junta matrícula, pedagogia, avaliação de habilidades, saúde e financeiro. E resolve o
-          ponto que todo mundo empurra com a barriga: aluno menor de idade, consentimento do responsável
-          e dado sensível tratados como o resto do sistema depende deles.
-        </p>
-        <Link className="btn" href="/login">
-          Entrar no painel
-        </Link>
-        <p className="muted" style={{ marginTop: 16 }}>
-          Ambiente de desenvolvimento. O acesso é por link mágico enviado ao e-mail cadastrado.
-        </p>
-      </section>
+      <main>
+        <section className="wrap hero-compact">
+          <span className="eyebrow">Escolas de futebol</span>
+          <h1>A escola inteira em um lugar.</h1>
+          <p className="lead">
+            Matrícula, turma, categoria, avaliação, saúde e mensalidade. E o consentimento do
+            responsável tratado como parte do sistema, não como anexo.
+          </p>
+          <div className="hero-actions">
+            <Link className="btn" href="/como-funciona">
+              Saiba mais
+            </Link>
+            <Link className="btn btn-ghost" href="/login">
+              Já tenho acesso
+            </Link>
+          </div>
+        </section>
 
-      <section className="wrap" style={{ paddingBottom: 72 }}>
-        <div className="grid grid-3">
-          {pillars.map((pillar) => (
-            <article className="card" key={pillar.title}>
-              <h3>{pillar.title}</h3>
-              <p>{pillar.body}</p>
+        <section className="wrap" style={{ paddingBottom: 72 }}>
+          <div className="grid grid-2">
+            <article className="card door">
+              <h3>Sou responsável</h3>
+              <p>
+                Acompanhe matrícula, boletos e a evolução do seu filho. O acesso é pelo
+                e-mail que você cadastrou na escola — e é seu, não da criança.
+              </p>
+              <Link className="btn" href="/login">
+                Entrar como responsável
+              </Link>
             </article>
-          ))}
-        </div>
-      </section>
+
+            <article className="card door">
+              <h3>Sou administrador de escola</h3>
+              <p>
+                Matrícula, pedagogia, avaliação e financeiro sob o mesmo cadastro. Entre na
+                escola que você já administra ou peça o cadastro da sua.
+              </p>
+              <div className="door-actions">
+                <Link className="btn" href="/login">
+                  Entrar
+                </Link>
+                <Link className="btn btn-ghost" href="/escola">
+                  Cadastrar escola
+                </Link>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
 
       <SiteFooter />
-    </main>
+    </>
   );
 }

@@ -137,3 +137,22 @@ tr:last-child td { border-bottom: none; }
   border-radius: 7px; background: var(--brand-soft); color: var(--brand);
   font-weight: 700; letter-spacing: 0.02em;
 }
+
+/* Portas de entrada: duas escolhas claras, nunca uma lista de links. */
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.door { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.door h3 { font-size: 17px; margin: 0; }
+.door p { flex: 1; }
+.door .btn { margin-top: 4px; }
+
+/* Armadilha para robô: fora da tela, mas presente no HTML. Não usar `display: none`,
+   que alguns robôs ignoram. */
+.hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+/* Raiz sucinta: hero curto, portas na primeira rolagem. */
+.hero-compact { padding: 56px 0 40px; }
+.hero-compact h1 { font-size: 40px; margin: 14px 0 12px; }
+.hero-compact .lead { margin-bottom: 24px; }
+.door-actions { display: flex; gap: 10px; flex-wrap: wrap; }

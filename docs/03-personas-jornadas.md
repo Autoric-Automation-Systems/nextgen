@@ -150,3 +150,29 @@ Ver [`02-menores-lgpd.md`](02-menores-lgpd.md#64-maioridade).
 4. **Nunca mais de 3 toques** para chamada, pagamento e aprovação.
 5. **Confirmação destrutiva** com digitação do nome da escola em ações irreversíveis.
 6. **Acessibilidade**: contraste AA, fontes 16px+, área de toque 44px, funciona com uma mão.
+
+## 5. Entrada no produto (site público)
+
+Três portas, uma autenticação.
+
+| Rota | Público | Papel |
+|---|---|---|
+| `/` | todos | Diz em três linhas o que é e para quem. Duas portas e um "Saiba mais". |
+| `/como-funciona` | quem quer detalhe | Módulos, pilares e o modelo de menor de idade. |
+| `/escola` | administrador | Entrar na escola existente ou pedir cadastro. |
+| `/escola/solicitar` | escola nova | Formulário que grava um pedido de cadastro (`school_leads`). |
+| `/login` | todos os usuários | Um mecanismo só: e-mail com link. |
+
+**Por que a escola não se cadastra sozinha.** A escola é a controladora dos dados dos
+alunos. Criar uma escola é criar um controlador: exige contrato, definição de quem acessa o
+quê e base legal para tratar dado de menor. O formulário registra o pedido; a ativação é
+feita por quem opera a plataforma. Isso também evita escola fantasma consumindo tenant e
+nome de endereço público.
+
+**Por que o login é um só.** Responsável, professor e administração entram pelo mesmo lugar.
+Duas telas de login seriam duas chances de divergir validação, origem confiável e mensagem
+de erro. O que muda é a porta de entrada e o que a pessoa encontra depois do login.
+
+**Aluno não tem porta.** Menor de 16 não tem conta: o acesso é do responsável legal. Chamar
+a porta de "aluno/responsável" prometeria um login que o produto não oferece e não deve
+oferecer.
