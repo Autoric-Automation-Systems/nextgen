@@ -128,11 +128,13 @@ tr:last-child td { border-bottom: none; }
 }
 .footer-dev {
   display: inline-flex; align-items: center; gap: 8px;
-  text-decoration: none; opacity: 0.85; transition: opacity 0.15s ease;
+  text-decoration: none;
 }
-.footer-dev:hover { opacity: 1; }
+/* O logo fica em opacidade cheia: o gradiente já é claro e qualquer véu o apaga. */
+.footer-dev:hover .muted { color: var(--ink); }
 .footer-dark { background: var(--brand); border-top-color: rgba(255, 255, 255, 0.12); }
 .footer-dark .muted { color: rgba(255, 255, 255, 0.72); }
+.footer-dark .footer-dev:hover .muted { color: #ffffff; }
 
 /* Reserva do ícone de atributo quando o arquivo ainda não existe. */
 .skill-code {

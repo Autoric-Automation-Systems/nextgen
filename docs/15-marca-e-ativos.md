@@ -12,8 +12,10 @@ public/
 │   ├── ui/                ícones de interface (ações, navegação)
 │   └── skills/            um por atributo do card, nomeado pelo código
 ├── dev/                   logo do desenvolvedor (Autoric)
-│   ├── logo-dev.svg       fundo claro
-│   └── logo-dev-light.svg fundo escuro
+│   ├── autoric.png        wordmark, fundo claro (240x40)
+│   ├── autoric@2x.png     mesmo wordmark em 480x80
+│   ├── autoric-light.png  wordmark branco, fundo escuro
+│   └── autoric-light@2x.png
 ├── favicon.ico            pedido pelo navegador mesmo sem <link>
 ├── favicon-16x16.png
 ├── favicon-32x32.png
@@ -58,6 +60,18 @@ dá para subir os ícones um a um. Lista de códigos em `docs/08-avaliacao-e-car
 
 Aparece no rodapé, ligado a `https://www.autoric.com.br`. O vínculo é declarado em
 `DEV_CREDIT` (`apps/web/lib/brand.ts`) — o endereço não é digitado em cada rodapé.
+
+O arquivo é o **wordmark** da Autoric, recortado do lockup de `autoric.com.br`. Duas
+decisões valem registro:
+
+- **Sem a assinatura "automação e sistemas".** No lockup completo ela ocupa um terço da
+  altura; a 22px de altura de rodapé viraria um borrão cinza. Se um dia o rodapé ganhar
+  mais altura, o lockup inteiro volta a fazer sentido.
+- **Branco no rodapé escuro.** O gradiente azul (`#0070d0` → `#00c0f0`) sobre o verde
+  profundo `#10331f` praticamente desaparece; a versão clara é o mesmo desenho em branco.
+
+O logo é servido em 1x e 2x (`srcSet`) e fica em opacidade cheia: `.footer-dev` não aplica
+véu, porque o gradiente já é claro e qualquer transparência o apaga.
 
 ## Como o código consome
 

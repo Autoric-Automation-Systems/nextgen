@@ -48,16 +48,26 @@ export const FAVICONS = {
  *
  * O domínio é dado, não decoração: fica aqui para o rodapé não espalhar string mágica e
  * para a checagem de link externo ser feita em um lugar só.
+ *
+ * O arquivo é o wordmark da Autoric recortado do lockup original — a assinatura que fica
+ * abaixo dele ("automação e sistemas") some a 22px, então não entra. O gradiente azul do
+ * original é mantido; no rodapé escuro ele vira branco, porque azul sobre verde profundo
+ * desaparece.
  */
 export const DEV_CREDIT = {
   name: "Autoric",
   url: "https://www.autoric.com.br",
-  logo: { src: "/dev/logo-dev.svg", ratio: 132 / 28, alt: "Autoric" },
-  logoLight: { src: "/dev/logo-dev-light.svg", ratio: 132 / 28, alt: "Autoric" },
+  logo: { src: "/dev/autoric.png", ratio: 759 / 127, alt: "Autoric" },
+  logoLight: { src: "/dev/autoric-light.png", ratio: 759 / 127, alt: "Autoric" },
 } as const;
 
 export function devLogo(surface: Surface = "light") {
   return surface === "dark" ? DEV_CREDIT.logoLight : DEV_CREDIT.logo;
+}
+
+/** Versão 2x do logo do rodapé, para telas densas. */
+export function devLogo2x(surface: Surface = "light"): string {
+  return surface === "dark" ? "/dev/autoric-light@2x.png" : "/dev/autoric@2x.png";
 }
 
 /**

@@ -1,10 +1,13 @@
-import { DEV_CREDIT, devLogo, type Surface } from "@/lib/brand";
+import { DEV_CREDIT, devLogo, devLogo2x, type Surface } from "@/lib/brand";
 
 type Props = {
   surface?: Surface;
   /** Nome da escola; ausente no site do produto. */
   schoolName?: string;
 };
+
+/** O wordmark é baixo e largo: a 20px as hastes finas somem. */
+const FOOTER_LOGO_HEIGHT = 22;
 
 /**
  * Rodapé com a assinatura do desenvolvedor.
@@ -32,10 +35,11 @@ export function SiteFooter({ surface = "light", schoolName }: Props) {
           <span className="muted">Desenvolvido por</span>
           <img
             src={logo.src}
+            srcSet={`${logo.src} 1x, ${devLogo2x(surface)} 2x`}
             alt={logo.alt}
-            height={20}
-            width={Math.round(20 * logo.ratio)}
-            style={{ display: "block", height: 20, width: "auto" }}
+            height={FOOTER_LOGO_HEIGHT}
+            width={Math.round(FOOTER_LOGO_HEIGHT * logo.ratio)}
+            style={{ display: "block", height: FOOTER_LOGO_HEIGHT, width: "auto" }}
             loading="lazy"
             decoding="async"
           />
