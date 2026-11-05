@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { Sidebar } from "@/components/sidebar";
+import { SiteFooter } from "@/components/site-footer";
 import { navSectionsFor } from "@/lib/nav";
 import { resolveWorkspace } from "@/lib/workspace";
 import { requireSession } from "@/lib/session";
@@ -65,6 +66,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
 
         <main className="shell-content">{children}</main>
+
+        <SiteFooter />
       </div>
     </div>
   );

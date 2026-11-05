@@ -168,7 +168,7 @@ tr:last-child td { border-bottom: none; }
 .shell-main { display: flex; flex-direction: column; min-width: 0; }
 .shell-top { border-bottom: 1px solid var(--line); background: var(--surface); }
 .shell-top-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; }
-.shell-content { padding: 28px 24px 72px; }
+.shell-content { flex: 1; padding: 28px 24px 72px; }
 
 .sidebar { display: flex; flex-direction: column; gap: 20px; }
 .sidebar-section ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
