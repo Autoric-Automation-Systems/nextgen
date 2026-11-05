@@ -389,9 +389,16 @@ Espere o deploy terminar com `migrations: "aplicadas"` no `/api/health`.
 ### Primeiro administrador
 
 Sem conta, o link do e-mail chega e o clique volta para o login: `disableSignUp` está
-ligado, então o sistema não cria usuário por conta própria. Duas formas de resolver.
+ligado, então o sistema não cria usuário por conta própria.
 
-**Pela Vercel (recomendado, roda a cada deploy):** defina e redeploye.
+**Pela própria aplicação (recomendado):** abra `/setup`. Enquanto não existir nenhum
+usuário, a página cria o administrador e a escola numa transação, e já envia o link de
+acesso para o e-mail informado. Assim que a primeira conta existe, `/setup` responde 404
+e o caminho deixa de existir — o risco que sobra é o de uma instância recém-publicada e
+vazia ser reivindicada por quem chegar primeiro, então faça o primeiro acesso logo depois
+do deploy. A tela de login também mostra o atalho enquanto a instalação estiver vazia.
+
+**Pela Vercel (roda a cada deploy):** defina e redeploye.
 
 | Variável | Obrigatória | Exemplo |
 |---|---|---|

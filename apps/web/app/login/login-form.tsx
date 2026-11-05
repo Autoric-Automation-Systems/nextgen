@@ -8,7 +8,7 @@ import { loginErrorMessage } from "./error-message";
 
 const initial: LoginState = { status: "idle" };
 
-export function LoginForm({ error }: { error?: string }) {
+export function LoginForm({ error, needsSetup = false }: { error?: string; needsSetup?: boolean }) {
   const [state, action, pending] = useActionState(requestMagicLink, initial);
   const reason = loginErrorMessage(error);
 
@@ -24,6 +24,16 @@ export function LoginForm({ error }: { error?: string }) {
           Use o e-mail cadastrado pela escola. Enviamos um link de acesso — sem senha para
           vazar.
         </p>
+
+        {needsSetup ? (
+          <p className="notice" role="status" style={{ marginBottom: 16 }}>
+            Nenhuma escola cadastrada nesta instalação ainda.{" "}
+            <Link href="/setup" style={{ fontWeight: 600 }}>
+              Criar a primeira escola
+            </Link>
+            .
+          </p>
+        ) : null}
 
         {reason ? (
           <p className="notice error" role="alert" style={{ marginBottom: 16 }}>

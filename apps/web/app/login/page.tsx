@@ -1,4 +1,5 @@
 import { SiteFooter } from "@/components/site-footer";
+import { usersExist } from "@/lib/first-run";
 import { LoginForm } from "./login-form";
 
 /**
@@ -12,10 +13,12 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; error_description?: string }>;
 }) {
   const { error } = await searchParams;
+  // Sem escola, o link mágico não encontra usuário e a tela vira um beco sem saída.
+  const needsSetup = !(await usersExist());
 
   return (
     <>
-      <LoginForm error={error} />
+      <LoginForm error={error} needsSetup={needsSetup} />
       <SiteFooter />
     </>
   );

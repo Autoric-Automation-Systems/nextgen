@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     const warnings = usageWarnings();
     if (users === 0) {
       warnings.push(
-        "nenhum usuário cadastrado: o link do e-mail chega mas não abre sessão. Defina BOOTSTRAP_ADMIN_EMAIL e redeploye, ou rode scripts/bootstrap-admin.sql no Neon",
+        "nenhum usuário cadastrado: o login não cria conta, então o link do e-mail volta para a tela inicial. Abra /setup para criar a primeira escola (ou defina BOOTSTRAP_ADMIN_EMAIL e redeploye)",
       );
     }
 
