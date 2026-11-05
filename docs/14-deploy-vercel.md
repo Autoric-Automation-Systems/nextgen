@@ -393,15 +393,29 @@ Espere o deploy terminar com `migrations: "aplicadas"` no `/api/health`.
 
 ### Primeiro administrador
 
-Sem conta, o link do e-mail chega e o clique volta para o login: `disableSignUp` está
-ligado, então o sistema não cria usuário por conta própria.
+Sem conta, o link do e-mail chega e o clique volta para o login com
+`new_user_signup_disabled`: `disableSignUp` está ligado, então o Better Auth não cria
+usuário por conta própria.
 
-**Pela própria aplicação (recomendado):** abra `/setup`. Enquanto não existir nenhum
-usuário, a página cria o administrador e a escola numa transação, e já envia o link de
-acesso para o e-mail informado. Assim que a primeira conta existe, `/setup` responde 404
-e o caminho deixa de existir — o risco que sobra é o de uma instância recém-publicada e
-vazia ser reivindicada por quem chegar primeiro, então faça o primeiro acesso logo depois
-do deploy. A tela de login também mostra o atalho enquanto a instalação estiver vazia.
+**Pelo login (recomendado):** informe o e-mail e peça o link. Antes de enviar, o login
+resolve o caso em que ninguém conseguiria entrar e, se for o caso, cria usuário, escola e
+vínculo de administrador na mesma transação:
+
+| Situação | O que acontece |
+|---|---|
+| instalação sem nenhum usuário | qualquer e-mail vira administrador e ganha a escola `Escola Teste` com um aluno de exemplo |
+| e-mail em `PLATFORM_ADMIN_EMAILS` | vira administrador da plataforma (`is_platform_staff`) e recebe a escola de teste se ainda não tiver vínculo |
+| e-mail de pessoa já cadastrada, com vínculo | nada é criado; o link é enviado normalmente |
+| e-mail desconhecido, com o sistema já em uso | nada é criado; o clique cai em `new_user_signup_disabled` |
+
+Quem opera o produto entra pelo próprio `/login` e, sendo administrador da plataforma, vê
+todos os menus — escola, família e plataforma. `PLATFORM_ADMIN_EMAILS` é uma lista separada
+por vírgula; gravar na env **e** na coluna `users.is_platform_staff` é intencional (env
+adiciona, coluna mantém), então revogar acesso não depende de redeploy.
+
+Crie a escola de verdade depois: `/setup` continua disponível em instalação vazia para
+quem preferir já nomear a escola, e os dados da escola de teste se editam em "Site da
+escola".
 
 **Pela Vercel (roda a cada deploy):** defina e redeploye.
 
@@ -422,7 +436,7 @@ e o nome da escola, cole no
 **SQL Editor do Neon** (conexão *direct*, sem `-pooler`) e execute. Ele cria usuário, escola e
 vínculo de administrador, e é idempotente — pode rodar de novo para corrigir nome.
 
-Depois entre em `https://seudominio.com.br/login` com esse e-mail.
+Depois entre em `https://nextgen-three-ebon.vercel.app/login` com esse e-mail.
 
 Dois detalhes que fazem esse SQL falhar se escrito à mão:
 

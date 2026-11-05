@@ -8,7 +8,7 @@ import { loginErrorMessage } from "./error-message";
 
 const initial: LoginState = { status: "idle" };
 
-export function LoginForm({ error, needsSetup = false }: { error?: string; needsSetup?: boolean }) {
+export function LoginForm({ error }: { error?: string }) {
   const [state, action, pending] = useActionState(requestMagicLink, initial);
   const reason = loginErrorMessage(error);
 
@@ -21,19 +21,10 @@ export function LoginForm({ error, needsSetup = false }: { error?: string; needs
 
         <h2 style={{ margin: "0 0 8px", fontSize: 22, letterSpacing: "-0.02em" }}>Entrar</h2>
         <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
-          Use o e-mail cadastrado pela escola. Enviamos um link de acesso — sem senha para
-          vazar.
+          Um acesso só, para todos os perfis. Use o e-mail que a escola cadastrou: enviamos
+          um link — sem senha para vazar — e o sistema abre o menu do seu grupo
+          (responsável, professor, coordenação, administração da escola ou da plataforma).
         </p>
-
-        {needsSetup ? (
-          <p className="notice" role="status" style={{ marginBottom: 16 }}>
-            Nenhuma escola cadastrada nesta instalação ainda.{" "}
-            <Link href="/setup" style={{ fontWeight: 600 }}>
-              Criar a primeira escola
-            </Link>
-            .
-          </p>
-        ) : null}
 
         {reason ? (
           <p className="notice error" role="alert" style={{ marginBottom: 16 }}>
@@ -72,7 +63,8 @@ export function LoginForm({ error, needsSetup = false }: { error?: string; needs
 
         <p className="muted" style={{ marginTop: 20 }}>
           Aluno menor de 16 anos não tem login próprio: o acesso é sempre do responsável
-          legal. Ainda não tem escola no NextGen?{" "}
+          legal, e o card do aluno é o que a escola publica — não uma conta da criança.
+          Ainda não tem escola no NextGen?{" "}
           <Link href="/escola" style={{ fontWeight: 600 }}>
             Veja como cadastrar
           </Link>

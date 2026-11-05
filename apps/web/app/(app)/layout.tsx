@@ -20,9 +20,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const workspace = await resolveWorkspace(session);
 
   const sections = navSectionsFor({ isPlatformAdmin: session.isPlatformAdmin, role: workspace?.role ?? null });
-  const label = session.isPlatformAdmin
-    ? ROLE_LABEL.platform_support
-    : ROLE_LABEL[workspace?.role ?? session.memberships[0]?.role ?? ""];
+  // Quem opera a plataforma e também administra uma escola é as duas coisas: o rótulo do
+  // vínculo vem primeiro, porque é ele que descreve o que a pessoa pode fazer ali. O selo
+  // de plataforma continua visível ao lado.
+  const label = ROLE_LABEL[workspace?.role ?? (session.isPlatformAdmin ? "platform_support" : "")] ?? "Sem vínculo";
 
   return (
     <div className="shell">
@@ -33,15 +34,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         <div className="shell-school">
           <strong>{workspace?.schoolName ?? "NextGen"}</strong>
-          <span className="muted">{label ?? "Sem vínculo"}</span>
+          <span className="muted">{label}</span>
+          {session.isPlatformAdmin ? <span className="badge shell-demo">plataforma</span> : null}
           {workspace?.isDemo ? <span className="badge warn shell-demo">demonstração</span> : null}
         </div>
 
         <Sidebar sections={sections} />
 
-        {session.isPlatformAdmin ? (
+        {workspace?.readOnly ? (
           <p className="muted" style={{ marginTop: "auto", padding: "0 10px" }}>
-            Você opera a plataforma. As seções de escola aparecem para suporte, em modo leitura.
+            Você está vendo a plataforma, não uma escola sua: as seções aparecem em modo leitura.
           </p>
         ) : null}
       </aside>

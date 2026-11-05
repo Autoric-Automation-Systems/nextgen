@@ -5,9 +5,9 @@ import { schoolSlug, type FirstRunInput, type SetupResult } from "./setup-rules"
 /**
  * Setup da primeira escola.
  *
- * O login não cria conta: `disableSignUp` está ligado e o link mágico de um e-mail
- * desconhecido volta para `/login` sem sessão. Numa instalação nova, com `users = 0`,
- * isso significa que ninguém entra — por mais saudável que esteja o deploy.
+ * Caminho alternativo ao primeiro login, que já cria a escola de teste sozinho
+ * (`bootstrap-admin.ts`). Este aqui é o que permite começar com o nome real da escola em
+ * vez de "Escola Teste", e continua fechado depois do primeiro usuário.
  *
  * A conferência é refeita dentro da transação que grava, porque entre abrir a página e
  * enviar o formulário alguém pode ter criado a escola em outra aba.

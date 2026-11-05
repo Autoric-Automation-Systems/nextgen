@@ -4,6 +4,7 @@ import { z } from "zod";
 import { headers } from "next/headers";
 import { auth } from "@nextgen/auth";
 import { redirect } from "next/navigation";
+import { ensureBootstrapAdmin } from "@/lib/bootstrap-admin";
 
 const schema = z.object({
   email: z.string().trim().toLowerCase().email("e-mail inválido"),
@@ -20,6 +21,17 @@ export async function requestMagicLink(_prev: LoginState, formData: FormData): P
 
   if (!parsed.success) {
     return { status: "error", message: parsed.error.issues[0]?.message ?? "dados inválidos" };
+  }
+
+  // Numa instalação sem usuários, o link sai mas a verificação morre em
+  // `new_user_signup_disabled` (`disableSignUp`): o e-mail chega e não abre nada. Aqui o
+  // primeiro acesso cria o usuário e a escola antes de pedir o link. Falhar nesta etapa
+  // não pode impedir a tentativa de login, por isso o `catch` próprio.
+  try {
+    const outcome = await ensureBootstrapAdmin(parsed.data.email);
+    if (outcome.status !== "none") console.info("[login] primeiro acesso", outcome);
+  } catch {
+    // silêncio: o login abaixo é quem decide o que o usuário vê
   }
 
   try {

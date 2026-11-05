@@ -31,19 +31,21 @@ describe("navSectionsFor", () => {
     expect(sections[0]!.items).toContain("Meus filhos");
   });
 
-  it("administração da plataforma vê as três seções", () => {
+  it("administração da plataforma vê todas as seções", () => {
     const sections = labels({ isPlatformAdmin: true, role: null });
 
-    expect(sections.map((section) => section.id)).toEqual(["escola", "plataforma"]);
-    expect(sections[1]!.items).toContain("Escolas");
+    expect(sections.map((section) => section.id)).toEqual(["escola", "familia", "plataforma"]);
+    expect(sections[2]!.items).toContain("Escolas");
   });
 
-  it("plataforma sem vínculo não ganha a seção da família", () => {
-    const sections = labels({ isPlatformAdmin: true, role: null });
+  it("plataforma enxerga até a área da família, em leitura", () => {
+    const family = labels({ isPlatformAdmin: true, role: null }).find(
+      (section) => section.id === "familia",
+    );
 
-    // A seção da família é do responsável. Plataforma vê a escola em leitura, não a
-    // área pessoal de um responsável que ela não é.
-    expect(sections.map((section) => section.id)).not.toContain("familia");
+    // Suporte precisa reproduzir a tela que o responsável vê. Enxergar o item não dá
+    // escrita: `resolveWorkspace` marca a visão sem vínculo como somente leitura.
+    expect(family?.items).toContain("Meus filhos");
   });
 
   it("quem não tem papel não vê nada", () => {

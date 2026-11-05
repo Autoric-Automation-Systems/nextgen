@@ -58,14 +58,14 @@ export async function GET(request: Request) {
     // Config ausente entra na conta pelo mesmo motivo: sem `BETTER_AUTH_SECRET` o Better
     // Auth lança em toda página autenticada, e "ok" mandaria procurar o problema no banco.
     //
-    // Zero usuários também: `disableSignUp` faz o link chegar e o clique voltar para o
-    // login, sem criar conta. É um deploy saudável em que ninguém entra.
+    // Zero usuários: o primeiro login cria a conta e a escola de teste, mas até alguém
+    // entrar não há sessão nenhuma — vale avisar quem só olha o health.
     const missing = missingAppConfig();
     const users = await userCount();
     const warnings = usageWarnings();
     if (users === 0) {
       warnings.push(
-        "nenhum usuário cadastrado: o login não cria conta, então o link do e-mail volta para a tela inicial. Abra /setup para criar a primeira escola (ou defina BOOTSTRAP_ADMIN_EMAIL e redeploye)",
+        "nenhum usuário cadastrado: o primeiro login cria a conta (e a escola de teste) automaticamente. Entre em /login com o seu e-mail para reivindicar a instância",
       );
     }
 

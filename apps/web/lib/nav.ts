@@ -67,19 +67,21 @@ export type NavViewer = Pick<ResolvedSession, "isPlatformAdmin"> & {
 };
 
 /**
- * Plataforma enxerga as três seções; qualquer outro vê só a seção do seu papel.
+ * Plataforma enxerga todos os itens de todas as seções; qualquer outro vê só o que o seu
+ * papel alcança.
  *
- * A restrição é por seção, e não por item, de propósito: a administração da plataforma
- * precisa da visão completa para dar suporte, mas o item "Financeiro" continua existindo
- * porque ela verá a tela — não porque ganhou permissão de escrita nela.
+ * Quem opera o SaaS precisa conseguir olhar a tela que a escola e a família veem — é assim
+ * que se responde "o boleto não aparece para o responsável" sem pedir print. Enxergar o
+ * menu não concede escrita: `resolveWorkspace` entrega essas telas em modo leitura quando
+ * não há vínculo, e cada página continua checando o papel.
  */
 export function navSectionsFor(viewer: NavViewer): NavSection[] {
   const isPlatform = viewer.isPlatformAdmin;
 
   return NAV.map((section) => {
     const items = section.items.filter((item) => {
-      if (section.id === "plataforma") return isPlatform;
-      if (isPlatform) return item.platform === true;
+      if (isPlatform) return true;
+      if (section.id === "plataforma") return false;
       return viewer.role !== null && item.roles.includes(viewer.role);
     });
 

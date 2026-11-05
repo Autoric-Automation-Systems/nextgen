@@ -85,9 +85,6 @@ export default function Home() {
               <Link className="btn" href="/como-funciona">
                 Saiba mais
               </Link>
-              <Link className="btn btn-ghost" href="/login">
-                Já tenho acesso
-              </Link>
             </div>
             <p className="muted hero-card-note">
               O card do aluno é o mesmo que o professor alimenta na avaliação. Acima de 12 anos ele
@@ -105,32 +102,30 @@ export default function Home() {
         <section className="wrap" style={{ paddingBottom: 72 }}>
           <div className="grid grid-2">
             <article className="card door">
-              <h3>Sou responsável</h3>
+              <h3>Já tem acesso</h3>
               <p>
-                Acompanhe matrícula, boletos e a evolução do seu filho. O acesso é pelo
-                e-mail que você cadastrou na escola — e é seu, não da criança.
+                Um único login, para todo mundo: responsável, professor, coordenação,
+                administração da escola e quem opera o NextGen. Você informa o e-mail e o
+                sistema identifica a que escola ele pertence e qual é o seu papel — o menu
+                que abre é o do seu grupo, não uma escolha sua na entrada.
               </p>
               <Link className="btn" href="/login">
-                Entrar como responsável
+                Entrar
               </Link>
             </article>
 
             <article className="card door">
-              <h3>Sou administrador de escola</h3>
+              <h3>Ainda não tem escola aqui</h3>
               <p>
-                Matrícula, pedagogia, avaliação e financeiro sob o mesmo cadastro. Entre na
-                escola que você já administra ou peça o cadastro da sua.
+                O cadastro da escola é feito com a gente: você informa os dados e recebe o
+                convite para criar o acesso de administração. A partir daí, é você quem
+                cadastra professores, turmas e alunos.
               </p>
-              <div className="door-actions">
-                <Link className="btn" href="/login">
-                  Entrar
-                </Link>
-                {/* Direto no formulário: `/escola` existe para quem chega por link ou
-                    busca, não para custar um toque a quem já decidiu. */}
-                <Link className="btn btn-ghost" href="/escola/solicitar">
-                  Cadastrar escola
-                </Link>
-              </div>
+              {/* Direto no formulário: `/escola` existe para quem chega por link ou
+                  busca, não para custar um toque a quem já decidiu. */}
+              <Link className="btn btn-ghost" href="/escola/solicitar">
+                Cadastrar minha escola
+              </Link>
             </article>
           </div>
         </section>
