@@ -14,7 +14,10 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
   return (
     <nav className="sidebar" aria-label="Seções">
       {sections.map((section) => (
-        <div className="sidebar-section" key={section.id}>
+        <div
+          className={section.id === "ajuda" ? "sidebar-section is-help" : "sidebar-section"}
+          key={section.id}
+        >
           <p className="sidebar-title">{section.title}</p>
           <ul>
             {section.items.map((item) => {
@@ -28,11 +31,25 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
                       <span>{item.label}</span>
                       <em>em breve</em>
                     </span>
+                  ) : item.external ? (
+                    <a
+                      className="sidebar-link"
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={item.hint}
+                    >
+                      <span>{item.label}</span>
+                      <span aria-hidden>↗</span>
+                    </a>
                   ) : (
                     <Link
                       className={active ? "sidebar-link is-active" : "sidebar-link"}
                       href={item.href}
                       aria-current={active ? "page" : undefined}
+                      // `title` é a única superfície onde o `hint` cabe sem poluir o menu;
+                      // o texto completo fica para quem precisa, no tooltip.
+                      title={item.hint}
                     >
                       <span>{item.label}</span>
                     </Link>

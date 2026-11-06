@@ -185,7 +185,9 @@ tr:last-child td { border-bottom: none; }
 .shell-top-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; }
 .shell-content { flex: 1; padding: 28px 24px 72px; }
 
-.sidebar { display: flex; flex-direction: column; gap: 20px; }
+.sidebar { display: flex; flex-direction: column; gap: 20px; flex: 1; }
+/* Ajuda fecha o menu, separada por uma linha: é apoio, não uma seção de trabalho. */
+.sidebar-section.is-help { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); }
 .sidebar-section ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .sidebar-title {
   margin: 0 0 8px; padding: 0 10px; font-size: 11px; font-weight: 700;
@@ -202,6 +204,24 @@ tr:last-child td { border-bottom: none; }
 .sidebar-link.is-soon em { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
 
 .shell-school { display: flex; flex-direction: column; gap: 4px; padding: 0 10px; }
+
+/* ── Ajuda: passos do primeiro dia e FAQ nativa (`details`, sem JS) ──────── */
+.help-steps {
+  margin: 16px 0 4px; padding-left: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  font-size: 14px; line-height: 1.6; color: var(--ink-soft);
+}
+.help-steps li::marker { color: var(--brand); font-weight: 700; }
+.help-steps a { color: var(--brand); font-weight: 600; }
+.faq { display: flex; flex-direction: column; gap: 8px; }
+.faq details {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 13px 16px;
+}
+.faq summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+.faq summary::marker { color: var(--brand); }
+.faq details[open] summary { margin-bottom: 8px; }
+.faq p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--ink-soft); }
 .shell-school strong { font-size: 14px; }
 .shell-demo { align-self: flex-start; }
 
@@ -220,11 +240,12 @@ tr:last-child td { border-bottom: none; }
 .player-card-cat { color: var(--card-accent); font-weight: 700; }
 .player-card-id { display: flex; align-items: center; gap: 12px; margin: 14px 0 16px; }
 .player-card-photo {
-  width: 54px; height: 54px; border-radius: 14px; flex: none;
+  width: 58px; height: 58px; border-radius: 15px; flex: none; overflow: hidden;
   display: grid; place-items: center; font-size: 22px; font-weight: 700;
   background: linear-gradient(160deg, var(--card-accent), rgba(255, 255, 255, 0.15));
   color: #08130c;
 }
+.player-card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .player-card-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .player-card-name strong { font-size: 17px; letter-spacing: -0.01em; }
 .player-card-name span { font-size: 12px; color: rgba(248, 250, 252, 0.68); }
@@ -247,17 +268,33 @@ tr:last-child td { border-bottom: none; }
 .player-card-grid dt { color: rgba(248, 250, 252, 0.55); letter-spacing: 0.04em; }
 .player-card-grid dd { margin: 0; font-weight: 700; color: var(--card-accent); }
 
+.player-card-locked {
+  margin: 0; padding: 11px 0 0; border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 11px; line-height: 1.4; color: rgba(248, 250, 252, 0.6);
+}
 .player-card-delta { margin: 10px 0 0; font-size: 12px; color: rgba(248, 250, 252, 0.72); }
 .player-card-delta strong { color: var(--card-accent); }
 .player-card-foot { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 11px; color: rgba(248, 250, 252, 0.55); }
 .player-card-seal { color: rgba(201, 242, 77, 0.9); }
 
-/* Card na chamada da raiz: inclinado de leve, como card de vitrine. */
-.hero-card { display: grid; place-items: center; }
-.hero-card .player-card { transform: rotate(-2.5deg); }
+/*
+ * Vitrine da raiz: dois cards lado a lado, inclinados em sentidos opostos como cards
+ * apoiados na mesa. No celular eles empilham — dois cards completos lado a lado a 360px
+ * de largura viram duas colunas de texto ilegível.
+ */
+.hero-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.hero-cards .player-card { max-width: none; padding: 14px; }
+.hero-cards .player-card:first-of-type { transform: rotate(-1.6deg); }
+.hero-cards .player-card:nth-of-type(2) { transform: rotate(1.6deg) translateY(12px); }
 @media (prefers-reduced-motion: no-preference) {
-  .hero-card .player-card { transition: transform 0.4s ease; }
-  .hero-card:hover .player-card { transform: rotate(0deg) translateY(-4px); }
+  .hero-cards .player-card { transition: transform 0.4s ease; }
+  .hero-cards:hover .player-card { transform: none; }
+}
+@media (max-width: 620px) {
+  .hero-cards { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 20px; }
+  .hero-cards .player-card { width: 100%; max-width: 340px; }
+  .hero-cards .player-card:first-of-type,
+  .hero-cards .player-card:nth-of-type(2) { transform: none; }
 }
 
 @media (max-width: 820px) {
@@ -265,10 +302,13 @@ tr:last-child td { border-bottom: none; }
   .shell-side { border-right: none; border-bottom: 1px solid var(--line); }
 }
 
-/* Hero com card: texto à esquerda, card à direita; no celular, empilhado. */
-.hero-split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 48px; align-items: center; }
+/* Hero com cards: texto à esquerda, vitrine à direita; no celular, empilhado. */
+.hero-split { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 40px; align-items: center; }
 .hero-card-note { max-width: 520px; margin: 18px 0 0; }
 @media (max-width: 900px) {
   .hero-split { grid-template-columns: 1fr; gap: 32px; }
 }
-.hero-card figcaption { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+.hero-cards figcaption {
+  grid-column: 1 / -1; margin-top: 2px; font-size: 12px; line-height: 1.6;
+  color: var(--ink-soft); text-align: center;
+}

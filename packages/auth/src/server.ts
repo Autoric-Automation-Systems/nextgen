@@ -4,6 +4,7 @@ import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { createAdminClient } from "@nextgen/db";
 import { defaultMailer, type Mailer } from "./mail";
+import { buildMagicLinkEmail } from "./magic-link-email";
 import { loggingMailer } from "./mail-log";
 import { defaultBaseURL, trustedOriginsFrom } from "./base-url";
 
@@ -15,6 +16,9 @@ import { defaultBaseURL, trustedOriginsFrom } from "./base-url";
 const authDb = createAdminClient();
 
 export * from "./mail";
+
+/** Um número só: o token e o texto do e-mail não podem divergir. */
+const EXPIRES_IN_MINUTES = 15;
 
 export type AuthOptions = {
   mailer?: Mailer;
@@ -68,16 +72,19 @@ export function createAuth(options: AuthOptions = {}) {
 
     plugins: [
       magicLink({
-        expiresIn: 60 * 15,
+        expiresIn: EXPIRES_IN_MINUTES * 60,
         // Sem auto-cadastro: só entra quem já foi convidado pela escola.
         disableSignUp: true,
         storeToken: "hashed",
         async sendMagicLink({ email, url }) {
-          await mailer.send({
-            to: email,
-            subject: "Seu link de acesso ao NextGen",
-            text: `Use o link para entrar (válido por 15 minutos):\n\n${url}\n\nSe não foi você, ignore este e-mail.`,
+          const content = buildMagicLinkEmail({
+            url,
+            email,
+            appUrl: baseURL,
+            expiresInMinutes: EXPIRES_IN_MINUTES,
           });
+
+          await mailer.send({ to: email, ...content });
         },
       }),
       nextCookies(),

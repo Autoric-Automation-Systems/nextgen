@@ -35,10 +35,11 @@ describe("DEV_CREDIT", () => {
     expect(new URL(DEV_CREDIT.url).protocol).toBe("https:");
   });
 
-  it("usa o lockup sem a linha de assinatura, que sumiria a 22px", () => {
+  it("usa a marca completa, com a linha de assinatura", () => {
     expect(exists(DEV_CREDIT.logo.src)).toBe(true);
-    expect(DEV_CREDIT.logo.src).toBe("/dev/logo-icon.png");
+    expect(DEV_CREDIT.logo.src).toBe("/dev/logo.png");
     expect(DEV_CREDIT.logo.ratio).toBeGreaterThan(3);
+    expect(DEV_CREDIT.logo.alt).toContain("Automation");
   });
 });
 

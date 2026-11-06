@@ -16,8 +16,14 @@ export const metadata: Metadata = {
  * para baixo da dobra e não convencem ninguém.
  */
 /**
- * Card de exemplo da chamada. Dado fictício, e escrito aqui — não vem do banco, para a
+ * Cards de exemplo da chamada. Dado fictício, escrito aqui — não vem do banco, para a
  * página inicial continuar estática e não depender de escola nenhuma existir.
+ *
+ * São dois de propósito: o de 13 anos mostra OVR e números; o de 11 mostra idade e só
+ * barras. A regra de faixa etária aparece na vitrine, não só no texto.
+ *
+ * Os retratos são ilustrações (`public/players`), não fotos de crianças: usar a imagem de
+ * um menor real numa página de vendas é exatamente o consentimento que o produto cobra.
  */
 const SAMPLE_CARD = {
   nickname: "Tiaguinho",
@@ -27,6 +33,7 @@ const SAMPLE_CARD = {
   age: 13,
   schoolName: "Escola Teste",
   cycleLabel: "2º ciclo",
+  photo: { src: "/players/boy.svg", alt: "Retrato ilustrado de um aluno de uniforme" },
   scores: [
     { code: "CTL", score: 4 },
     { code: "PAS", score: 4 },
@@ -67,6 +74,36 @@ const SAMPLE_CARD = {
   consentNote: "perfil autorizado pelo responsável",
 };
 
+const SAMPLE_CARD_GIRL = {
+  nickname: "Bia",
+  category: "Sub-11 · 2026",
+  position: "Meia",
+  jerseyNumber: 10,
+  age: 11,
+  schoolName: "Escola Teste",
+  cycleLabel: "2º ciclo",
+  photo: { src: "/players/girl.svg", alt: "Retrato ilustrado de uma aluna de uniforme" },
+  scores: [
+    { code: "CTL", score: 4 },
+    { code: "PAS", score: 5 },
+    { code: "FIN", score: 3 },
+    { code: "DRI", score: 4 },
+    { code: "VEL", score: 4 },
+    { code: "AGI", score: 5 },
+    { code: "RES", score: 4 },
+    { code: "FOR", score: 3 },
+    { code: "POS", score: 4 },
+    { code: "DEF", score: 3 },
+    { code: "VIS", score: 5 },
+    { code: "MOV", score: 4 },
+    { code: "DIS", score: 5 },
+    { code: "EQU", score: 5 },
+    { code: "RESI", score: 4 },
+    { code: "FOC", score: 4 },
+  ],
+  consentNote: "perfil autorizado pelo responsável",
+};
+
 export default function Home() {
   return (
     <>
@@ -93,9 +130,13 @@ export default function Home() {
             </p>
           </div>
 
-          <figure className="hero-card">
+          <figure className="hero-cards">
             <PlayerCard data={SAMPLE_CARD} variant="public" />
-            <figcaption>Exemplo de card: só técnico, físico e tático.</figcaption>
+            <PlayerCard data={SAMPLE_CARD_GIRL} variant="public" />
+            <figcaption>
+              Exemplos de card: aos 13 anos a nota aparece; aos 11, só as barras — sem número
+              para comparar criança com criança.
+            </figcaption>
           </figure>
         </section>
 

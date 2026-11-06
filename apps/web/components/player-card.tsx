@@ -28,6 +28,11 @@ export type PlayerCardData = {
   badges?: number;
   consentNote?: string | null;
   accent?: string;
+  /**
+   * Retrato do aluno. Sem ele o card cai na inicial do apelido — nunca num espaço vazio,
+   * porque um card "quebrado" parece aluno sem cadastro.
+   */
+  photo?: { src: string; alt: string };
 };
 
 const PILLAR_ORDER: Pillar[] = ["technical", "physical", "tactical", "behavioral"];
@@ -62,8 +67,12 @@ export function PlayerCard({
       </header>
 
       <div className="player-card-id">
-        <div className="player-card-photo" aria-hidden>
-          {data.nickname.slice(0, 1).toUpperCase()}
+        <div className="player-card-photo" aria-hidden={data.photo ? undefined : true}>
+          {data.photo ? (
+            <img src={data.photo.src} alt={data.photo.alt} width={60} height={60} decoding="async" />
+          ) : (
+            data.nickname.slice(0, 1).toUpperCase()
+          )}
         </div>
         <div className="player-card-name">
           <strong>{data.nickname}</strong>
@@ -96,17 +105,23 @@ export function PlayerCard({
         })}
       </ul>
 
-      <dl className="player-card-grid">
-        {skills.map((skill) => {
-          const entry = data.scores.find((score) => score.code === skill.code);
-          return (
-            <div key={skill.code}>
-              <dt>{skill.code}</dt>
-              <dd>{entry && showNumbers ? entry.score : "·"}</dd>
-            </div>
-          );
-        })}
-      </dl>
+      {/* Abaixo de 12 o card não tem nota — nem a geral, nem por fundamento. Em vez de
+          doze "·" que parecem dado faltando, o card diz o motivo. */}
+      {showNumbers ? (
+        <dl className="player-card-grid">
+          {skills.map((skill) => {
+            const entry = data.scores.find((score) => score.code === skill.code);
+            return (
+              <div key={skill.code}>
+                <dt>{skill.code}</dt>
+                <dd>{entry ? entry.score : "—"}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      ) : (
+        <p className="player-card-locked">Sem nota até os 12 anos · evolução só pelas barras</p>
+      )}
 
       {showNumbers && improvement ? (
         <p className="player-card-delta">

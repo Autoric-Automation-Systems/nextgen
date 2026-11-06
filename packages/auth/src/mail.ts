@@ -83,6 +83,7 @@ export function resendMailer(apiKey: string, from: string): Mailer {
           to: [message.to],
           subject: message.subject,
           text: message.text,
+          html: message.html,
         }),
       });
 

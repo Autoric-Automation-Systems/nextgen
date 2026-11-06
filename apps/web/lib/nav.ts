@@ -20,10 +20,12 @@ export type NavItem = {
   platform?: boolean;
   /** `soon` = planejado; aparece apagado, sem link, para o mapa ficar honesto. */
   status?: "ready" | "soon";
+  /** Destino fora do app: abre em outra aba e não passa pelo roteador do Next. */
+  external?: boolean;
 };
 
 export type NavSection = {
-  id: "escola" | "familia" | "plataforma";
+  id: "escola" | "familia" | "plataforma" | "ajuda";
   title: string;
   items: NavItem[];
 };
@@ -36,8 +38,8 @@ export const NAV: NavSection[] = [
       { href: "/dashboard", label: "Painel", hint: "Visão do mês", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/alunos", label: "Alunos", hint: "Cadastro e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/turmas", label: "Turmas", hint: "Categorias e horários", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
-      { href: "/pedagogia", label: "Pedagogia", hint: "Matérias, capítulos e conteúdo", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/avaliacao", label: "Avaliação", hint: "Ciclos, notas e card", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
+      { href: "/pedagogia", label: "Pedagogia", hint: "Matérias, capítulos e conteúdo", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/financeiro", label: "Financeiro", hint: "Mensalidades, boletos e gastos", roles: ["admin"], platform: true, status: "soon" },
       { href: "/site", label: "Site da escola", hint: "Página pública, logo e cores", roles: ["admin"], platform: true, status: "soon" },
     ],
@@ -57,7 +59,24 @@ export const NAV: NavSection[] = [
     items: [
       { href: "/sistema", label: "Escolas", hint: "Diretório da plataforma", roles: [], platform: true },
       { href: "/sistema/card", label: "Card do aluno", hint: "Revisão da versão interna e da pública", roles: [], platform: true },
+      { href: "/sistema/email", label: "E-mail do acesso", hint: "Prévia do link mágico", roles: [], platform: true },
       { href: "/sistema/pedidos", label: "Pedidos de cadastro", hint: "Quem pediu para entrar", roles: [], platform: true, status: "soon" },
+    ],
+  },
+  {
+    id: "ajuda",
+    title: "Ajuda",
+    items: [
+      // `roles` vazio de propósito: quem libera esta seção é a seção, não o papel.
+      { href: "/ajuda", label: "Central de ajuda", hint: "Guias por perfil e perguntas frequentes", roles: [] },
+      { href: "/como-funciona", label: "Como o NextGen funciona", hint: "Visão geral do produto", roles: [] },
+      {
+        href: "https://www.autoric.com.br",
+        label: "Falar com a Autoric",
+        hint: "Quem desenvolve o NextGen",
+        roles: [],
+        external: true,
+      },
     ],
   },
 ];
@@ -68,7 +87,8 @@ export type NavViewer = Pick<ResolvedSession, "isPlatformAdmin"> & {
 
 /**
  * Plataforma enxerga todos os itens de todas as seções; qualquer outro vê só o que o seu
- * papel alcança.
+ * papel alcança. Ajuda é a exceção: fica visível para toda sessão, inclusive para quem
+ * ficou sem vínculo — é justamente quem mais precisa saber a quem perguntar.
  *
  * Quem opera o SaaS precisa conseguir olhar a tela que a escola e a família veem — é assim
  * que se responde "o boleto não aparece para o responsável" sem pedir print. Enxergar o
@@ -81,6 +101,7 @@ export function navSectionsFor(viewer: NavViewer): NavSection[] {
   return NAV.map((section) => {
     const items = section.items.filter((item) => {
       if (isPlatform) return true;
+      if (section.id === "ajuda") return true;
       if (section.id === "plataforma") return false;
       return viewer.role !== null && item.roles.includes(viewer.role);
     });

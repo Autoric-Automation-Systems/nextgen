@@ -6,8 +6,11 @@ type Props = {
   schoolName?: string;
 };
 
-/** O wordmark é baixo e largo: a 20px as hastes finas somem. */
-const FOOTER_LOGO_HEIGHT = 22;
+/**
+ * A marca completa tem três andares (símbolo, "autoric", assinatura). Abaixo de ~30px a
+ * linha de assinatura vira ruído, então o rodapé reserva 34.
+ */
+const FOOTER_LOGO_HEIGHT = 34;
 
 /**
  * Rodapé com a assinatura do desenvolvedor.
@@ -38,7 +41,6 @@ export function SiteFooter({ surface = "light", schoolName }: Props) {
             height={FOOTER_LOGO_HEIGHT}
             width={Math.round(FOOTER_LOGO_HEIGHT * DEV_CREDIT.logo.ratio)}
             style={{ display: "block", height: FOOTER_LOGO_HEIGHT, width: "auto" }}
-            loading="lazy"
             decoding="async"
           />
         </a>

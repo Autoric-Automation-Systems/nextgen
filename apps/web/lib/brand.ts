@@ -49,15 +49,16 @@ export const FAVICONS = {
  * O domínio é dado, não decoração: fica aqui para o rodapé não espalhar string mágica e
  * para a checagem de link externo ser feita em um lugar só.
  *
- * `logo-icon.png` é o lockup símbolo + "autoric" que a Autoric forneceu, sem a linha de
- * assinatura do site: a 22px de altura ela vira sujeira ilegível. O arquivo original é
- * usado como está, sem cópia reduzida — o navegador reduz com filtro melhor que um
- * downscale caseiro, e a proporção declarada evita o salto de layout.
+ * `logo.png` é a marca completa: símbolo, "autoric" e a linha de assinatura. Ela pede
+ * mais altura que o recorte curto — a assinatura tem poucos pixels e some abaixo de ~30px,
+ * por isso o rodapé usa 34. O arquivo original é usado como está, sem cópia reduzida: o
+ * navegador reduz com filtro melhor que um downscale caseiro, e a proporção declarada
+ * evita o salto de layout.
  */
 export const DEV_CREDIT = {
   name: "Autoric",
   url: "https://www.autoric.com.br",
-  logo: { src: "/dev/logo-icon.png", ratio: 1160 / 323, alt: "Autoric" },
+  logo: { src: "/dev/logo.png", ratio: 785 / 225, alt: "Autoric — Automation & Systems" },
 } as const;
 
 /**

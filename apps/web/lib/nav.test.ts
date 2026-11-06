@@ -11,7 +11,7 @@ describe("navSectionsFor", () => {
   it("administração da escola vê as seções da escola, e não a da plataforma", () => {
     const sections = labels({ isPlatformAdmin: false, role: "admin" });
 
-    expect(sections.map((section) => section.id)).toEqual(["escola"]);
+    expect(sections.map((section) => section.id)).toEqual(["escola", "ajuda"]);
     expect(sections[0]!.items).toContain("Financeiro");
     expect(sections[0]!.items).toContain("Site da escola");
   });
@@ -24,17 +24,17 @@ describe("navSectionsFor", () => {
     expect(items).not.toContain("Site da escola");
   });
 
-  it("responsável vê só a seção da família", () => {
+  it("responsável vê a seção da família e a Ajuda", () => {
     const sections = labels({ isPlatformAdmin: false, role: "guardian" });
 
-    expect(sections.map((section) => section.id)).toEqual(["familia"]);
+    expect(sections.map((section) => section.id)).toEqual(["familia", "ajuda"]);
     expect(sections[0]!.items).toContain("Meus filhos");
   });
 
   it("administração da plataforma vê todas as seções", () => {
     const sections = labels({ isPlatformAdmin: true, role: null });
 
-    expect(sections.map((section) => section.id)).toEqual(["escola", "familia", "plataforma"]);
+    expect(sections.map((section) => section.id)).toEqual(["escola", "familia", "plataforma", "ajuda"]);
     expect(sections[2]!.items).toContain("Escolas");
   });
 
@@ -48,8 +48,23 @@ describe("navSectionsFor", () => {
     expect(family?.items).toContain("Meus filhos");
   });
 
-  it("quem não tem papel não vê nada", () => {
-    expect(navSectionsFor({ isPlatformAdmin: false, role: null })).toEqual([]);
+  it("quem não tem papel vê só a Ajuda, que é para onde ele precisa ir", () => {
+    const sections = labels({ isPlatformAdmin: false, role: null });
+
+    expect(sections.map((section) => section.id)).toEqual(["ajuda"]);
+    expect(sections[0]!.items).toContain("Central de ajuda");
+  });
+
+  it("a Ajuda fecha o menu, depois das seções de trabalho", () => {
+    const ids = labels({ isPlatformAdmin: false, role: "admin" }).map((section) => section.id);
+
+    expect(ids.at(-1)).toBe("ajuda");
+  });
+
+  it("a Ajuda aparece para o responsável", () => {
+    const ids = labels({ isPlatformAdmin: false, role: "guardian" }).map((section) => section.id);
+
+    expect(ids).toEqual(["familia", "ajuda"]);
   });
 
   it("itens planejados aparecem marcados como `soon`", () => {
