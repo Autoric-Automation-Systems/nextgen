@@ -114,6 +114,14 @@
 - **Menu Ajuda**: seção `ajuda` em `lib/nav.ts`, liberada por seção (não por papel) e ancorada
   no rodapé do menu (`sidebar-section.is-help`). `/ajuda` é a central; `/como-funciona` já
   existia. Item externo passa por `external: true` → `<a target=_blank>`.
+- **Ação de servidor com `redirect()`**: `try/catch` em volta engole o `NEXT_REDIRECT` e a
+  tela mostra "não foi possível". Primeira linha do `catch`: `unstable_rethrow(error)`.
+  E ação que apaga a própria linha avisa por `?aviso=` (o componente do resultado some).
+- **RLS isola escola, não papel**: responsável/professor leem qualquer linha da escola se a
+  query deixar. Escopo por papel (professor → `teachers: { some: { userId } }`; responsável
+  fora de `/turmas`) é sempre explícito no código.
+- `class_group_teachers` tem unique `(class_group_id, user_id, from_date)` — revincular no
+  mesmo dia precisa reabrir o vínculo (`to_date = null`) em vez de inserir.
 - **`pnpm -r test` no local exige `pnpm db:seed` antes**: a suíte de RLS de `packages/db`
   procura as escolas/alunos do seed e falha com 6 testes vermelhos num banco só migrado.
 - **Casca fixa**: `body { height:100dvh; overflow:hidden }` + `body > main { flex:1;
