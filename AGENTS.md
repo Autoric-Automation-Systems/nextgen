@@ -57,6 +57,18 @@ Se a aplicação conectar como dono, a RLS deixa de valer.
 - Código (variáveis, funções, tabelas) em **inglês**.
 - Commits em português, no imperativo: `docs: adiciona matriz de retenção`.
 
+## Padrões de acabamento
+
+Tela, texto e e-mail seguem [`docs/16-padroes-de-acabamento.md`](docs/16-padroes-de-acabamento.md):
+construir como marca grande constrói, com as fontes citadas lá (WCAG 2.2 AA, WAI-ARIA APG,
+Apple HIG/Material 3, heurísticas de Nielsen, GOV.UK, guias de e-mail transacional, OWASP).
+Na prática, o que mais se esquece:
+
+- Toda tela tem os quatro estados desenhados: vazio, carregando, erro e sem permissão.
+- E-mail transacional tem versão em texto, preheader, botão **e** link por extenso, sem
+  imagem como conteúdo; a prévia é `/sistema/email`.
+- Não inventar cor, raio ou espaçamento: usar os tokens de `apps/web/app/globals.css`.
+
 ## Regras não negociáveis
 
 Leia `docs/02-menores-lgpd.md` antes de propor qualquer mudança que envolva aluno,

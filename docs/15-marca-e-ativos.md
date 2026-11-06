@@ -11,11 +11,13 @@ public/
 ├── icons/
 │   ├── ui/                ícones de interface (ações, navegação)
 │   └── skills/            um por atributo do card, nomeado pelo código
-├── dev/                   logo do desenvolvedor (Autoric)
-│   ├── autoric.png        wordmark, fundo claro (240x40)
-│   ├── autoric@2x.png     mesmo wordmark em 480x80
-│   ├── autoric-light.png  wordmark branco, fundo escuro
-│   └── autoric-light@2x.png
+├── players/               retratos ilustrados dos cards de exemplo
+│   ├── boy.svg
+│   └── girl.svg
+├── dev/                   marca do desenvolvedor (Autoric)
+│   ├── logo.png           lockup completo: símbolo, "autoric" e assinatura (785x225)
+│   ├── logo-icon.png      lockup sem a linha de assinatura (1160x323)
+│   └── icon.png           só o símbolo (442x442)
 ├── favicon.ico            pedido pelo navegador mesmo sem <link>
 ├── favicon-16x16.png
 ├── favicon-32x32.png
@@ -61,17 +63,19 @@ dá para subir os ícones um a um. Lista de códigos em `docs/08-avaliacao-e-car
 Aparece no rodapé, ligado a `https://www.autoric.com.br`. O vínculo é declarado em
 `DEV_CREDIT` (`apps/web/lib/brand.ts`) — o endereço não é digitado em cada rodapé.
 
-O arquivo é o **wordmark** da Autoric, recortado do lockup de `autoric.com.br`. Duas
-decisões valem registro:
+O rodapé usa o **lockup completo** (`dev/logo.png`): símbolo, "autoric" e a linha de
+assinatura. A 34px de altura a assinatura ainda é legível, que é o mínimo para ela fazer
+sentido — abaixo de 30px vira ruído. `dev/logo-icon.png` é o mesmo lockup sem a assinatura,
+guardado para quando o espaço for menor (cabeçalho de e-mail, por exemplo).
 
-- **Sem a assinatura "automação e sistemas".** No lockup completo ela ocupa um terço da
-  altura; a 22px de altura de rodapé viraria um borrão cinza. Se um dia o rodapé ganhar
-  mais altura, o lockup inteiro volta a fazer sentido.
-- **Branco no rodapé escuro.** O gradiente azul (`#0070d0` → `#00c0f0`) sobre o verde
-  profundo `#10331f` praticamente desaparece; a versão clara é o mesmo desenho em branco.
+O logo fica em opacidade cheia: o gradiente azul (`#0070d0` → `#00c0f0`) é claro e qualquer
+véu o apaga. No rodapé escuro ele recebe `filter: brightness(0) invert(1)` — filtro CSS não
+existe em cliente de e-mail, então o e-mail usa o arquivo colorido sobre fundo claro.
 
-O logo é servido em 1x e 2x (`srcSet`) e fica em opacidade cheia: `.footer-dev` não aplica
-véu, porque o gradiente já é claro e qualquer transparência o apaga.
+**Retratos de exemplo são ilustração, não foto.** `players/boy.svg` e `players/girl.svg`
+existem para a vitrine da raiz e para a revisão do card. Usar a foto de uma criança real
+numa página pública de vendas é exatamente o consentimento de imagem que o produto cobra de
+uma escola; ilustração não tem titular.
 
 ## Como o código consome
 

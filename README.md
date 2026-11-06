@@ -93,6 +93,8 @@ O detalhamento está em [`docs/02-menores-lgpd.md`](docs/02-menores-lgpd.md).
 | 12 | [Métricas e precificação do SaaS](docs/12-metricas-precificacao.md) | Negócio |
 | 13 | [Fundação implementada (fase 0)](docs/13-fundacao-implementada.md) | Engenharia |
 | 14 | [Deploy na Vercel](docs/14-deploy-vercel.md) | Engenharia, ops |
+| 15 | [Marca e arquivos de imagem](docs/15-marca-e-ativos.md) | Design, engenharia |
+| 16 | [Padrões de acabamento: tela, texto e e-mail](docs/16-padroes-de-acabamento.md) | Todos |
 
 ## Stack sugerida (resumo)
 
