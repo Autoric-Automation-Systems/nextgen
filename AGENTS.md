@@ -68,6 +68,10 @@ Na prática, o que mais se esquece:
 - E-mail transacional tem versão em texto, preheader, botão **e** link por extenso, sem
   imagem como conteúdo; a prévia é `/sistema/email`.
 - Não inventar cor, raio ou espaçamento: usar os tokens de `apps/web/app/globals.css`.
+- **Casca fixa**: cabeçalho, menu e rodapé ficam na tela; só o miolo rola. Toda página nova
+  entra em `<main>` como filho direto do `body` (ou em `.shell-content` no painel) — é isso
+  que a regra de altura em `globals.css` enxerga. Nunca colocar `max-width` no contêiner que
+  rola: o `.wrap` fica dentro.
 
 ## Regras não negociáveis
 

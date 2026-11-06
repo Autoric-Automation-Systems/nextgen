@@ -58,6 +58,44 @@ O e-mail é a única tela que ninguém abre no navegador antes do cliente. O pad
 - **Um aviso de segurança** quando a mensagem dá acesso: "se não foi você, ignore".
 - **Prévia obrigatória em `/sistema/email`** antes de anunciar mudança de e-mail.
 
+## Casca fixa: cabeçalho, menu e rodapé parados
+
+Dentro do produto, as três âncoras ficam na tela e **só o miolo rola**: cabeçalho no topo,
+menu à esquerda (ou no topo do miolo), rodapé embaixo. É o que a pessoa espera de um sistema
+em que ela navega o dia inteiro — perder o menu ao rolar é perder o mapa.
+
+Mecanismo, em `apps/web/app/globals.css`:
+
+| Regra | Por quê |
+|---|---|
+| `body { height: 100dvh; display: flex; flex-direction: column; overflow: hidden }` | a página não cresce; crescer é o que faz o documento inteiro rolar |
+| `body > main { flex: 1; min-height: 0; overflow-y: auto }` | o miolo é o único scroll |
+| `.shell { flex: 1; min-height: 0; overflow: hidden }` + `.shell-side`/`.shell-content` com scroll próprio | menu e miolo administram o próprio scroll; menu longo não empurra o conteúdo |
+| `scrollbar-gutter: stable` | a barra não aparece/desaparece entre telas curtas e longas, então nada desliza 8px ao navegar |
+| `overscroll-behavior: contain` | rolar até o fim do miolo não "puxa" a página inteira (e não arranca o usuário do contexto no trackpad) |
+
+Três armadilhas que este desenho evita:
+
+- **`position: fixed`** exige compensar com `padding` no conteúdo e quebra quando a altura da
+  barra muda (fonte maior, aviso do navegador). Altura de viewport com `flex` não tem esse
+  acoplamento.
+- **`min-height: 0`** no filho flex é obrigatório. Sem ele o item não encolhe abaixo do
+  conteúdo e o `overflow` nunca dispara — o sintoma é "a página toda rola mesmo com a regra
+  aplicada".
+- **O `.wrap` não pode ser o contêiner que rola.** Se `main` tem `max-width`, a barra de
+  rolagem nasce no meio da tela. Estrutura correta: `<main>` ocupa a largura toda e o
+  `.wrap` (1080px) fica dentro.
+
+No celular (≤ 820px) a regra é **suspensa de propósito**: altura de tela é o recurso
+escasso, e menu + rodapé parados deixariam menos da metade para o conteúdo. O cabeçalho
+continua parado (`position: sticky`), porque 64px compram a saída da tela; menu e rodapé
+rolam com o documento. Em impressão, tudo volta ao fluxo normal.
+
+Como validar (mede, não confia no olho): com a página longa aberta, `window.scrollY` tem de
+continuar `0`, `Math.round(document.scrollingElement.scrollHeight) === innerHeight`, e
+`footer.getBoundingClientRect().bottom` tem de bater com a altura da janela depois de rolar
+o miolo.
+
 ## Escala visual
 
 Não inventar valor novo: os tokens estão em `apps/web/app/globals.css`.
