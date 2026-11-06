@@ -116,9 +116,17 @@
   existia. Item externo passa por `external: true` → `<a target=_blank>`.
 - **`pnpm -r test` no local exige `pnpm db:seed` antes**: a suíte de RLS de `packages/db`
   procura as escolas/alunos do seed e falha com 6 testes vermelhos num banco só migrado.
-- **Verificar layout sem enxergar screenshot**: `chromium --headless --screenshot` + um
-  decodificador PNG em Python mede faixas de cor (cabeçalho/rodapé) e bbox do logo.
-  `--dump-dom` não espera `setTimeout`; medir por pixel é o caminho.
+- **Casca fixa**: `body { height:100dvh; overflow:hidden }` + `body > main { flex:1;
+  min-height:0; overflow-y:auto }`; no painel, `.shell`/`.shell-side`/`.shell-content` com o
+  mesmo desenho. Página nova precisa de `<main>` como filho direto do `body`, e o `.wrap`
+  (1080px) **dentro** dele — `main` com `max-width` põe a barra de rolagem no meio da tela.
+  Celular (≤820px) suspende só menu/rodapé; cabeçalho fica `sticky`.
+- **Verificar layout e rolagem de verdade**: Node 24 tem `WebSocket` global, então dá para
+  dirigir o chromium por CDP (`--remote-debugging-port=9222`, `Runtime.evaluate` +
+  `Page.captureScreenshot`) sem Playwright. É o único jeito de provar que header/rodapé
+  ficam parados depois de rolar. `document.querySelector('footer')` pega o `.player-card-foot`
+  do card — usar `.footer`. `--dump-dom` não espera `setTimeout`; para pixel, decodificador
+  PNG em Python.
 - **Push**: o remote guardado aponta para `https://github.com/...` e pede senha;
   usar `git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/...`,
   pushar e **restaurar a URL** depois. `pnpm build` mata o `.next` do `next dev` em execução:
