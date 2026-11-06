@@ -100,9 +100,22 @@
   isso; páginas públicas novas não precisam de wrapper. Cabeçalho público é
   `components/site-header.tsx` (marca linkando para `/`), usado em `/login` e `/setup`
   para não deixar o usuário sem saída.
-- **Logo do rodapé** é `public/dev/logo-icon.png` (lockup símbolo+wordmark+assinatura que o
-  dono enviou em `18a5f9a`); nada de recorte próprio. Rodapé escuro usa `filter: brightness(0)
-  invert(1)` em vez de um segundo arquivo claro.
+- **Logo do rodapé** é `public/dev/logo.png` (lockup completo, 785x225) a 34px de altura:
+  abaixo de ~30px a linha de assinatura some. Sem `loading="lazy"` — marca de rodapé com
+  lazy só pisca na rolagem. Rodapé escuro usa `filter: brightness(0) invert(1)`; filtro não
+  existe em cliente de e-mail, então e-mail usa o arquivo colorido sobre fundo claro.
+- **Padrão de acabamento** (pedido do dono): construir "como grande marca constrói", com as
+  fontes da literatura (WCAG 2.2 AA, WAI-ARIA APG, HIG/Material 3, Nielsen, GOV.UK, guias de
+  e-mail transacional, OWASP). Está em `docs/16-padroes-de-acabamento.md` + seção no
+  `AGENTS.md`. Toda tela com os quatro estados (vazio, carregando, erro, sem permissão).
+- **E-mail do link mágico**: `packages/auth/src/magic-link-email.ts` (HTML em tabela, 600px,
+  preheader, botão + link por extenso, versão texto). Prévia em `/sistema/email`.
+  `resendMailer` passou a enviar `html` — antes só saía texto.
+- **Menu Ajuda**: seção `ajuda` em `lib/nav.ts`, liberada por seção (não por papel) e ancorada
+  no rodapé do menu (`sidebar-section.is-help`). `/ajuda` é a central; `/como-funciona` já
+  existia. Item externo passa por `external: true` → `<a target=_blank>`.
+- **`pnpm -r test` no local exige `pnpm db:seed` antes**: a suíte de RLS de `packages/db`
+  procura as escolas/alunos do seed e falha com 6 testes vermelhos num banco só migrado.
 - **Verificar layout sem enxergar screenshot**: `chromium --headless --screenshot` + um
   decodificador PNG em Python mede faixas de cor (cabeçalho/rodapé) e bbox do logo.
   `--dump-dom` não espera `setTimeout`; medir por pixel é o caminho.
