@@ -4,3 +4,4 @@ export * from "./rbac";
 export * from "./consent";
 export * from "./cpf";
 export * from "./skills";
+export * from "./class-group";

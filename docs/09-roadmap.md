@@ -38,7 +38,7 @@ Objetivo: base técnica e jurídica para não retrabalhar.
 - [ ] Escola, unidades, salas, identidade visual
 - [ ] Alunos, responsáveis, vínculo, pessoas autorizadas
 - [ ] Convite ao responsável + consentimentos + portal do responsável (mínimo)
-- [ ] Categorias por temporada + turmas + matrícula
+- [x] Categorias por temporada + turmas + matrícula — ver [17](17-turmas-e-matricula.md)
 - [ ] Atestado médico com validade
 - [ ] Kit de emergência
 - [ ] Chamada (app do professor PWA, offline)

@@ -68,6 +68,11 @@ Na prática, o que mais se esquece:
 - E-mail transacional tem versão em texto, preheader, botão **e** link por extenso, sem
   imagem como conteúdo; a prévia é `/sistema/email`.
 - Não inventar cor, raio ou espaçamento: usar os tokens de `apps/web/app/globals.css`.
+- Ação que remove a própria linha da tabela devolve a mensagem por `?aviso=` (a linha e o
+  componente que mostraria o resultado somem juntos). Em action com `redirect`, o `catch`
+  precisa de `unstable_rethrow(error)` — sem isso o `NEXT_REDIRECT` vira "não foi possível".
+- Lista paginada/tabulada rola dentro do card (`.table-scroll`) em vez de esconder coluna no
+  celular.
 - **Casca fixa**: cabeçalho, menu e rodapé ficam na tela; só o miolo rola. Toda página nova
   entra em `<main>` como filho direto do `body` (ou em `.shell-content` no painel) — é isso
   que a regra de altura em `globals.css` enxerga. Nunca colocar `max-width` no contêiner que

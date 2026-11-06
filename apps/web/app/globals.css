@@ -121,7 +121,18 @@ h1 { font-size: 44px; line-height: 1.1; letter-spacing: -0.03em; margin: 18px 0 
   height: 42px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
   font-size: 14px; background: var(--surface); color: var(--ink);
 }
-.field input:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
+.field input, .field select, .field textarea {
+  height: 42px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
+  font-size: 14px; background: var(--surface); color: var(--ink); font-family: inherit;
+}
+.field textarea { height: auto; min-height: 76px; padding: 10px 12px; line-height: 1.5; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: 2px solid var(--brand-soft); border-color: var(--brand);
+}
+.field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 12px; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.check input { width: 16px; height: 16px; accent-color: var(--brand); }
 
 .auth-card { max-width: 420px; margin: 64px auto; }
 /* Coluna do cartão dentro da área que rola; o respiro vertical vem do `.auth-card`. */
@@ -151,6 +162,28 @@ tr:last-child td { border-bottom: none; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .section-title { font-size: 20px; letter-spacing: -0.02em; margin: 0; }
 .stat { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }
+
+/* Ocupação da turma: a barra diz "cheio" antes de o número ser lido. */
+.meter { height: 6px; border-radius: 999px; background: #eef1f5; overflow: hidden; min-width: 80px; }
+.meter-fill { height: 100%; background: var(--brand); border-radius: inherit; }
+.meter-fill.is-full { background: var(--warning); }
+.chip {
+  display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 10px;
+  border: 1px solid var(--line); border-radius: 999px; font-size: 13px; background: var(--surface);
+}
+.chip strong { font-weight: 600; }
+details.panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+details.panel > summary {
+  cursor: pointer; padding: 16px 20px; font-weight: 600; font-size: 14px; list-style: none;
+}
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary::after { content: "+"; float: right; color: var(--ink-soft); font-weight: 500; }
+details.panel[open] > summary::after { content: "–"; }
+details.panel > .panel-body { padding: 0 20px 20px; }
+/* Tabela larga rola dentro do próprio card; esconder coluna no mobile é perder dado. */
+.table-scroll { overflow-x: auto; }
+.table-scroll table { min-width: 620px; }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 
 /* Rodapé: identidade do produto à esquerda, assinatura do desenvolvedor à direita. */
 .footer { border-top: 1px solid var(--line); background: var(--surface); margin-top: auto; flex: none; }

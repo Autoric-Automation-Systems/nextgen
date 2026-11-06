@@ -37,7 +37,7 @@ export const NAV: NavSection[] = [
     items: [
       { href: "/dashboard", label: "Painel", hint: "Visão do mês", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/alunos", label: "Alunos", hint: "Cadastro e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
-      { href: "/turmas", label: "Turmas", hint: "Categorias e horários", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
+      { href: "/turmas", label: "Turmas", hint: "Categorias, horários e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/avaliacao", label: "Avaliação", hint: "Ciclos, notas e card", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/pedagogia", label: "Pedagogia", hint: "Matérias, capítulos e conteúdo", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/financeiro", label: "Financeiro", hint: "Mensalidades, boletos e gastos", roles: ["admin"], platform: true, status: "soon" },
