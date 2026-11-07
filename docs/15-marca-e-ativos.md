@@ -7,7 +7,8 @@ site, sem tocar em código.
 public/
 ├── brand/
 │   ├── mark.png           símbolo oficial, largura 192px
-│   └── mark@2x.png        mesmo símbolo, largura 384px
+│   ├── mark@2x.png        mesmo símbolo, largura 384px
+│   └── avatar-512.png     quadrado branco para avatar de perfil (Vercel, GitHub, apps)
 ├── icons/
 │   ├── ui/                ícones de interface (ações, navegação)
 │   └── skills/            um por atributo do card, nomeado pelo código
@@ -46,6 +47,11 @@ componente muda.
 **O favicon não é o card.** Os tamanhos 16 e 32 são gerados do mesmo arquivo mestre; como o
 símbolo é largo, nos tamanhos pequenos ele fica com pouca margem. Se a marca mudar, gere o
 pacote de novo a partir do vetor.
+
+**Avatar quadrado.** Ferramentas que mostram a marca em moldura redonda ou quadrada (o painel
+da Vercel, o GitHub, clientes de e-mail) não aceitam o símbolo largo. `brand/avatar-512.png` é
+o símbolo centralizado num quadrado branco de 512px, ocupando 75% da largura: a moldura redonda
+corta os cantos e não encosta na marca.
 
 **Cores.** O símbolo usa as cores do arquivo original (azul `#0e305b` e verde `#80b235`),
 porque imagem carregada por `<img>` não enxerga variável CSS. Os tokens de interface
