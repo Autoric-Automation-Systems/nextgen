@@ -324,8 +324,8 @@ Limites do Gmail que importam para escola de futebol:
 | destinatários por dia (Workspace) | 2.000 |
 | mensagens por conexão | 100 |
 
-Um link mágico por login, mais convites de responsável, mais cobrança mensal: 500/dia
-atende um piloto, não uma rede de escolas. Quando passar de uma escola com movimento,
+Um link por convite (não por login), mais avisos de mensalidade: 500/dia atende um
+piloto, não uma rede de escolas. Quando passar de uma escola com movimento,
 troque para Resend ou SMTP transacional — a troca é só variável de ambiente.
 
 ### Migração: no build da Vercel, não no GitHub Actions
@@ -386,8 +386,12 @@ Nenhum dos dois é obrigatório hoje: o upload ainda não está ligado a nenhuma
 
 ## 4. Primeiro acesso
 
-O login é por link mágico e **não existe auto-cadastro** (`disableSignUp: true`). Nenhum
-usuário nasce pela tela de login.
+O login é por **e-mail e senha** e **não existe auto-cadastro** (`disableSignUp: true`):
+nenhum usuário nasce pela tela de login.
+
+O link por e-mail continua, mas só em `/cadastro` e só para primeiro acesso ou convite:
+o clique leva a `/definir-senha`, onde a pessoa escolhe a senha que vai usar no login.
+Todo convite gasta um e-mail; login do dia a dia não gasta nenhum.
 
 Espere o deploy terminar com `migrations: "aplicadas"` no `/api/health`.
 
@@ -397,9 +401,9 @@ Sem conta, o link do e-mail chega e o clique volta para o login com
 `new_user_signup_disabled`: `disableSignUp` está ligado, então o Better Auth não cria
 usuário por conta própria.
 
-**Pelo login (recomendado):** informe o e-mail e peça o link. Antes de enviar, o login
-resolve o caso em que ninguém conseguiria entrar e, se for o caso, cria usuário, escola e
-vínculo de administrador na mesma transação:
+**Pelo cadastro (recomendado):** em `/cadastro`, informe o e-mail e peça o link. Antes de
+enviar, o cadastro resolve o caso em que ninguém conseguiria entrar e, se for o caso, cria
+usuário, escola e vínculo de administrador na mesma transação:
 
 | Situação | O que acontece |
 |---|---|
@@ -408,8 +412,8 @@ vínculo de administrador na mesma transação:
 | e-mail de pessoa já cadastrada, com vínculo | nada é criado; o link é enviado normalmente |
 | e-mail desconhecido, com o sistema já em uso | nada é criado; o clique cai em `new_user_signup_disabled` |
 
-Quem opera o produto entra pelo próprio `/login` e, sendo administrador da plataforma, vê
-todos os menus — escola, família e plataforma. `PLATFORM_ADMIN_EMAILS` é uma lista separada
+Quem opera o produto define a senha no link do primeiro acesso e depois entra por
+`/login`. Sendo administrador da plataforma, vê todos os menus — escola, família e plataforma. `PLATFORM_ADMIN_EMAILS` é uma lista separada
 por vírgula; gravar na env **e** na coluna `users.is_platform_staff` é intencional (env
 adiciona, coluna mantém), então revogar acesso não depende de redeploy.
 

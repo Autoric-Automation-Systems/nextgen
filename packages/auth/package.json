@@ -11,7 +11,8 @@
     "./next": "./src/next.ts",
     "./mail": "./src/mail.ts",
     "./magic-link-email": "./src/magic-link-email.ts",
-    "./base-url": "./src/base-url.ts"
+    "./base-url": "./src/base-url.ts",
+    "./password-rules": "./src/password-rules.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -4,9 +4,17 @@
  * também para o dono — por isso cada escrita abre o contexto da escola.
  */
 import { randomUUID, createHash } from "node:crypto";
+import { hashPassword } from "better-auth/crypto";
 import { createAdminClient } from "../src/client";
 
 const db = createAdminClient();
+
+/**
+ * Senha das contas de demonstração. Existe para o ambiente local abrir o painel sem
+ * depender de e-mail: o login é e-mail + senha, e conta sem credencial só entra pelo
+ * fluxo de "esqueci a senha".
+ */
+const DEMO_PASSWORD = "demo12345678";
 
 const schoolDemo = "01930000-0000-7000-8000-000000000001";
 const schoolRival = "01930000-0000-7000-8000-000000000002";
@@ -207,6 +215,20 @@ async function main() {
       },
     });
 
+    // Mesmo hash para todas: scrypt é caro de propósito, e gerar quatro vezes só
+    // atrasa o seed.
+    const passwordHash = await credentialHash();
+    await db.account.upsert({
+      where: { providerId_accountId: { providerId: "credential", accountId: u.id } },
+      update: { password: passwordHash },
+      create: {
+        userId: u.id,
+        providerId: "credential",
+        accountId: u.id,
+        password: passwordHash,
+      },
+    });
+
     await inSchool(u.school, u.id, async () => {
       await db.membership.upsert({
         where: { schoolId_userId: { schoolId: u.school, userId: u.id } },
@@ -337,6 +359,7 @@ async function main() {
   });
 
   console.log("seed ok");
+  console.log(`  senha de todas:  ${DEMO_PASSWORD}`);
   console.log("  login demo:      admin@demo.test / professor@demo.test");
   console.log("  responsável:     responsavel@demo.test");
   console.log("  outra escola:    admin@rival.test");
@@ -348,3 +371,10 @@ main()
     process.exitCode = 1;
   })
   .finally(() => db.$disconnect());
+
+/** Hash da senha de demonstração, calculado uma vez por execução. */
+let cachedHash: Promise<string> | null = null;
+function credentialHash(): Promise<string> {
+  cachedHash ??= hashPassword(DEMO_PASSWORD);
+  return cachedHash;
+}

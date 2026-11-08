@@ -12,7 +12,7 @@ apenas desenhado em `04-modulos.md`. Tudo aqui roda e é verificado pela CI.
 | Isolamento por escola (RLS) | `packages/db/prisma/migrations/*_rls` | testado |
 | Seed de duas escolas | `packages/db/prisma/seed.ts` | idempotente |
 | Regras puras (dinheiro, categoria, RBAC, consentimento) | `packages/core` | 44 testes |
-| Sessão e resolução de ator | `packages/auth` | link mágico |
+| Sessão e resolução de ator | `packages/auth` | e-mail + senha |
 | Storage (Vercel Blob, 2 stores) | `packages/integrations` | upload + URL assinada |
 | App Next.js (login, painel, alunos) | `apps/web` | build verde |
 
@@ -75,7 +75,11 @@ Quando duas categorias casam, a função devolve `ambiguous` em vez de escolher 
 | Rota | Comportamento |
 |---|---|
 | `/` | landing pública |
-| `/login` | pedido de link mágico (sem senha) |
+| `/login` | e-mail e senha; avisos de `?senha=1` e `?saida=1` |
+| `/cadastro` | pede o link de primeiro acesso/convite |
+| `/definir-senha` | exige sessão do link; define a senha inicial |
+| `/esqueci-senha` | pede o link de redefinição |
+| `/redefinir-senha` | troca a senha com o token do e-mail |
 | `/dashboard` | requer sessão; métricas da escola |
 | `/alunos` | requer sessão; lista com regime etário e consentimento |
 | `/alunos/[id]` | ficha do aluno com o card na versão interna |
@@ -84,6 +88,36 @@ Quando duas categorias casam, a função devolve `ambiguous` em vez de escolher 
 | `/api/auth/*` | Better Auth |
 
 Sem sessão, todo o painel redireciona para `/login`.
+
+## Autenticação: senha no dia a dia, link só no convite
+
+O login é **e-mail + senha**. O link mágico não abre o painel: ele existe para o primeiro
+acesso e para o convite da escola, e o clique sempre termina em `/definir-senha`.
+
+| Caminho | Para quê | Validade | Regras |
+|---|---|---|---|
+| `/login` | dia a dia | — | e-mail + senha; "Manter conectado" opcional |
+| `/cadastro` → `/definir-senha` | primeiro acesso/convite | 15 min, uso único | define a senha com sessão do link |
+| `/esqueci-senha` → `/redefinir-senha` | senha esquecida | 30 min, uso único | revoga as sessões antigas |
+
+Detalhes que mudam o comportamento:
+
+- Senha errada e e-mail sem conta devolvem a **mesma** mensagem. Separar as duas
+  transformaria o formulário em um verificador de quem tem acesso ao sistema.
+- "Manter conectado" marcado grava cookie com validade de 7 dias; desmarcado, o cookie
+  morre quando o navegador fecha. A sessão expira em 7 dias e é renovada a cada 24 h.
+- `disableSignUp: true`: ninguém cria conta pela API. Quem provisiona usuário é a escola
+  ou o bootstrap do primeiro acesso (`ensureBootstrapAdmin`).
+- Senha: 10 a 128 caracteres, sem as óbvias do `OBVIOUS` (ver `password-rules.ts`). A
+  regra "não pode conter o e-mail" roda onde o e-mail é conhecido — em `/definir-senha`,
+  pela sessão. Em `/redefinir-senha` o servidor só tem o token, e o token já foi para a
+  caixa certa: a regra é dispensada, e não é bug.
+- Tokens de link são gravados com hash (`storeToken: "hashed"`), de uso único.
+- O servidor recusa origem desconhecida (`403 INVALID_ORIGIN`) e limita tentativas
+  (`TOO_MANY_REQUESTS`), com mensagem própria em português.
+
+Os textos de cada falha ficam em `apps/web/app/login/error-message.ts`: o Better Auth
+devolve código em inglês na query, e é ali que ele vira frase útil.
 
 ## Menu por perfil e modo demonstração
 
@@ -144,8 +178,9 @@ pnpm dev
 ```
 
 O seed cria duas escolas (`demo` e `rival`) com alunos, turma, categorias e consentimento.
-Entre em `http://localhost:3000/login` com `admin@demo.test`; o link aparece no terminal
-(em produção, vai por e-mail).
+Entre em `http://localhost:3000/login` com `admin@demo.test` e a senha `demo12345678`.
+O link por e-mail aparece no terminal (em produção, vai pela caixa de entrada) e só é
+pedido em `/cadastro`, para primeiro acesso ou convite.
 
 Para ver o painel com conteúdo, rode também o seed de demonstração:
 

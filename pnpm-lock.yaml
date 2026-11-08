@@ -107,6 +107,9 @@ importers:
       '@types/node':
         specifier: 24.10.1
         version: 24.10.1
+      better-auth:
+        specifier: 1.7.16
+        version: 1.7.16(@prisma/client@6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3))(next@15.5.29(@types/node@24.10.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(prisma@6.19.3(typescript@5.9.3))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vitest@3.2.7(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.20.6))
       prisma:
         specifier: 6.19.3
         version: 6.19.3(typescript@5.9.3)

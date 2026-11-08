@@ -2,23 +2,24 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
-import { createAdminClient } from "@nextgen/db";
+import { authDb } from "./auth-db";
 import { defaultMailer, type Mailer } from "./mail";
 import { buildMagicLinkEmail } from "./magic-link-email";
+import { buildPasswordResetEmail } from "./password-reset-email";
 import { loggingMailer } from "./mail-log";
 import { defaultBaseURL, trustedOriginsFrom } from "./base-url";
-
-/**
- * Cliente dono das tabelas. O módulo de autenticação é o único consumidor: ele
- * precisa ler o usuário pelo e-mail antes de existir sessão (e portanto antes de
- * existir contexto de escola). Ver a migration 0004_auth_owner_bypass.
- */
-const authDb = createAdminClient();
+import { PASSWORD_MIN_LENGTH } from "./password-rules";
 
 export * from "./mail";
 
 /** Um número só: o token e o texto do e-mail não podem divergir. */
 const EXPIRES_IN_MINUTES = 15;
+
+/**
+ * Meia hora para o link de senha. Longo o bastante para o e-mail chegar depois do
+ * almoço, curto o bastante para não ser um passeio grátis se a caixa vazar.
+ */
+const RESET_EXPIRES_IN_MINUTES = 30;
 
 export type AuthOptions = {
   mailer?: Mailer;
@@ -40,6 +41,32 @@ export function createAuth(options: AuthOptions = {}) {
     trustedOrigins,
 
     database: prismaAdapter(authDb, { provider: "postgresql" }),
+
+    /**
+     * Senha é o login do dia a dia; o link mágico ficou só para criar o acesso.
+     *
+     * `disableSignUp` impede que qualquer pessoa crie conta e escola pela API: quem
+     * provisiona usuário é a escola (ou o bootstrap do primeiro acesso).
+     */
+    emailAndPassword: {
+      enabled: true,
+      disableSignUp: true,
+      minPasswordLength: PASSWORD_MIN_LENGTH,
+      resetPasswordTokenExpiresIn: RESET_EXPIRES_IN_MINUTES * 60,
+      // Senha nova derruba as sessões antigas: se o motivo do pedido foi invasão de
+      // conta, deixar o invasor logado anularia o reset.
+      revokeSessionsOnPasswordReset: true,
+      async sendResetPassword({ user, url }) {
+        const content = buildPasswordResetEmail({
+          url,
+          email: user.email,
+          appUrl: baseURL,
+          expiresInMinutes: RESET_EXPIRES_IN_MINUTES,
+        });
+
+        await mailer.send({ to: user.email, ...content });
+      },
+    },
 
     // Sessão de 7 dias, renovada por dia. Administrador exige 2FA (doc 10).
     session: {

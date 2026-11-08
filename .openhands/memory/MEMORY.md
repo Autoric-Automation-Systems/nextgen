@@ -135,6 +135,13 @@
   ficam parados depois de rolar. `document.querySelector('footer')` pega o `.player-card-foot`
   do card — usar `.footer`. `--dump-dom` não espera `setTimeout`; para pixel, decodificador
   PNG em Python.
+- **Verificação no navegador**: a ferramenta de browser clica antes da hidratação e dá
+  falso negativo em formulário React. Para provar comportamento de tela, dirigir o
+  chromium com `puppeteer-core` (`/tmp/pptr`, binário `/usr/bin/chromium`) esperando
+  `networkidle2`; sonda de estado vai num `<p data-probe>`, nunca em `document.title`.
+- `pnpm lint` pende (prompt do `next lint`, sem config); a CI roda só typecheck e test.
+  Neste shell, `pnpm` só existe via
+  `export PATH="/usr/local/lib/node_modules/corepack/shims:$PATH"`.
 - **Push**: o remote guardado aponta para `https://github.com/...` e pede senha;
   usar `git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/...`,
   pushar e **restaurar a URL** depois. `pnpm build` mata o `.next` do `next dev` em execução:

@@ -26,7 +26,8 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 **Objetivo:** garantir que o aluno certo esteja sob o responsável certo, com provas.
 
 - Conta de usuário (admin, coordenação, professor, financeiro, suporte)
-- Convite por e-mail com expiração; login por magic link, senha ou Google
+- Convite por e-mail com expiração → definição de senha; login do dia a dia por e-mail e
+  senha (Google na v2)
 - 2FA opcional para admins; obrigatório para suporte NextGen
 - Vínculo `student_guardian` com grau (pai, mãe, avô, tutor) e flags
   (`legal`, `financial`, `pickup_authorized`)

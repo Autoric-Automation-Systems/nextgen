@@ -117,7 +117,8 @@ tenant para permitir essa evolução.
 ## 5. Autenticação e autorização
 
 - Sessões em cookie `HttpOnly`, `Secure`, `SameSite=Lax`.
-- Login: magic link (padrão), senha opcional, Google (opcional), passkey (v2).
+- Login: e-mail + senha (padrão). O link mágico ficou restrito a cadastro e convite: ele
+  só abre `/definir-senha`, nunca o painel. Google e passkey ficam para a v2.
 - 2FA obrigatório para `admin` e `platform_support`.
 - RBAC por `membership.role` + escopo: `school`, `unit`, `class_group`, `self`.
 - Guards declarativos:

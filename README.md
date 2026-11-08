@@ -5,7 +5,7 @@ habilidades, saúde, financeiro e site público — tudo em um só lugar, com co
 LGPD e ECA Digital para alunos menores de idade.
 
 > **Status:** fase 0 — fundação de código entregue. Monorepo com schema, RLS, login por
-> link mágico, painel e lista de alunos rodando. Ver
+> e-mail e senha, painel e lista de alunos rodando. Ver
 > [`docs/13-fundacao-implementada.md`](docs/13-fundacao-implementada.md).
 
 ---
@@ -26,8 +26,13 @@ pnpm db:migrate && pnpm db:seed
 pnpm dev
 ```
 
-Abra `http://localhost:3000/login` e entre com `admin@demo.test` — o link mágico aparece no
-terminal. O seed cria duas escolas para você conferir o isolamento na prática.
+Abra `http://localhost:3000/login` e entre com `admin@demo.test` e a senha
+`demo12345678`. O seed cria duas escolas para você conferir o isolamento na prática.
+
+O link mágico continua existindo, mas só para **primeiro acesso e convite**: em
+`/cadastro` a pessoa pede o link, o e-mail aparece no terminal (em produção, na caixa de
+entrada) e o clique leva a `/definir-senha`, onde ela escolhe a senha do login. Depois
+disso, entra sempre por e-mail e senha.
 
 Para publicar, siga [`docs/14-deploy-vercel.md`](docs/14-deploy-vercel.md): banco com duas
 credenciais, migração, import do repo na Vercel e verificação com
