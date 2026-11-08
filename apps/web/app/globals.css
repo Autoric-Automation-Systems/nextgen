@@ -268,6 +268,35 @@ details.panel > .panel-body { padding: 0 20px 20px; }
 .sidebar-link.is-soon { color: #98a2b3; cursor: default; }
 .sidebar-link.is-soon em { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
 
+/* Submenu de módulo: recuado e discreto, para não competir com a navegação da escola. */
+.sidebar-section ul.sidebar-sub {
+  margin: 2px 0 4px 10px; padding: 2px 0 2px 10px; gap: 1px;
+  border-left: 1px solid var(--line);
+}
+.sidebar-sublink {
+  display: block; padding: 6px 10px; border-radius: 8px;
+  font-size: 13px; color: var(--ink-soft); text-decoration: none;
+}
+.sidebar-sublink:hover { background: var(--canvas); color: var(--ink); }
+.sidebar-sublink.is-active { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+
+/* Abas do módulo: no celular o submenu some e estas abas são a navegação interna. */
+.module-tabs {
+  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--line); padding-bottom: 2px;
+}
+.module-tabs::-webkit-scrollbar { display: none; }
+.module-tabs a {
+  padding: 8px 12px; border-radius: 8px 8px 0 0; white-space: nowrap;
+  font-size: 14px; color: var(--ink-soft); text-decoration: none;
+}
+.module-tabs a:hover { background: var(--canvas); color: var(--ink); }
+.module-tabs a[aria-current="page"] { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+
+.cell-value { display: flex; flex-direction: column; gap: 2px; }
+.cell-value .muted { font-size: 12px; }
+.cell-actions { text-align: right; }
+
 .shell-school { display: flex; flex-direction: column; gap: 4px; padding: 0 10px; }
 .shell-brand { padding: 0 10px; }
 .shell-account { display: flex; align-items: center; gap: 14px; }
@@ -417,6 +446,8 @@ details.panel > .panel-body { padding: 0 20px 20px; }
   }
   .sidebar-link.is-active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
   .sidebar-link.is-soon { border-style: dashed; }
+  /* Submenu não cabe numa faixa horizontal; as abas do módulo fazem esse papel. */
+  .sidebar-section ul.sidebar-sub { display: none; }
 
   /* A barra de aviso rola com a página e fica magra: sobra dela só conta e saída. */
   .shell-top { position: static; }

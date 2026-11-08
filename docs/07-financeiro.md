@@ -16,6 +16,10 @@ Duas arquiteturas possíveis:
 **Fallback para escolas sem gateway:** gerar **Pix copia-e-cola estático** + baixa manual +
 upload de comprovante. Ainda resolve 80% da dor.
 
+**O Asaas não é o gateway daqui.** Ele é usado só para a escola pagar a **assinatura da
+NextGen** — o outro dinheiro, que é receita nossa e pode passar por gateway. A mensalidade do
+aluno continua saindo da chave Pix da escola, sem intermediação. Ver doc 18.
+
 ## 2. Ciclo de vida da cobrança
 
 ```mermaid
@@ -90,8 +94,9 @@ Tudo em **centavos inteiros**. Nunca `float`. Arredondamento documentado em `pac
 | **Cartão recorrente** | famílias que preferem | reduz inadimplência, mas tem chargeback e taxa maior |
 | **Dinheiro/transferência** | exceção | baixa manual com comprovante |
 
-**Recomendação de produto:** oferecer Pix como default e cartão recorrente como opção
-"não me preocupo mais". Boleto fica para quem exige.
+**Recomendação de produto:** hoje o default é **Pix copia-e-cola com a chave da escola** e
+baixa manual; o responsável recebe o código por e-mail. Boleto registrado e cartão recorrente
+dependem de a escola ter gateway próprio — não vamos intermediar (doc 18).
 
 ## 6. Régua de cobrança
 
@@ -107,6 +112,19 @@ Configurável por escola, com templates aprovados:
 | D+10 | e-mail + telefone (tarefa) | risco de suspensão |
 | D+20 | carta/contato | negociação |
 | D+30 | decisão da escola | suspensão de acesso ao conteúdo (não à chamada) |
+
+### Envio ao responsável
+
+O primeiro passo da régua já está implementado: um e-mail por competência com Pix, valor,
+aluno e vencimento, em `/financeiro/envio`. A escola liga o envio automático e escolhe o dia
+(1 a 28); sem isso, o envio é manual, botão por cobrança.
+
+- O dia do envio é independente do vencimento: vencimento dia 10, envio dia 3.
+- **Um envio por cobrança por competência.** Reenviar é sempre um clique explícito.
+- Cobrança paga ou cancelada não entra no automático.
+- Job diário em `/api/cron/cobrancas`; se falhar um dia, alcança a cobrança no seguinte.
+
+Os demais passos da régua (D+1, D+5, WhatsApp) continuam planejados.
 
 **Regras**
 - Nunca cobrar o aluno; sempre o responsável financeiro.
@@ -220,15 +238,39 @@ virar arranjo de pagamento.
 - `normalizePixKey` (CPF/CNPJ sem pontuação, telefone com `+55`, e-mail e chave aleatória) e
   `pixPayload` com valor, txid da cobrança e texto sem acento.
 
-**Na tela.** `/financeiro` mostra recebido, a receber, vencido, despesas, saldo, inadimplentes,
-a lista da competência, planos, chave Pix e despesas do mês. Ações: gerar a competência
-(idempotente por `(studentId, competence)`), registrar pagamento total ou parcial, cancelar
-cobrança, copiar Pix, enviar por e-mail e marcar despesa como paga. `/meus-boletos` é a visão
-do responsável, limitada aos alunos sob sua guarda.
+**Na tela.** O financeiro é um **módulo com seções próprias**, não uma página única. O menu
+mostra `Financeiro` e abre a lista interna quando a pessoa está dentro dele; no celular, onde
+o submenu não cabe na faixa horizontal, a navegação fica nas abas do topo da seção.
+
+| Rota | Resolve | Ações |
+|---|---|---|
+| `/financeiro` | recebido, a receber, vencido, despesas, saldo e inadimplentes da competência | navegar mês a mês |
+| `/financeiro/mensalidades` | cobranças da competência, com valor, recebido e situação | gerar o mês (idempotente por `(studentId, competence)`), registrar pagamento total ou parcial, cancelar, copiar Pix, enviar por e-mail |
+| `/financeiro/despesas` | gastos do mês por categoria, com fornecedor e vencimento | lançar despesa, marcar como paga |
+| `/financeiro/planos` | valor mensal e dia de vencimento de cada plano | criar plano |
+| `/financeiro/envio` | envio automático ligado/desligado, dia do mês, quantas já saíram | ligar o automático e escolher o dia |
+| `/financeiro/pix` | chave, titular e cidade em uso, com exemplo de BR Code | cadastrar ou trocar a chave |
+
+A separação existe porque as quatro tarefas têm ritmos diferentes: despesa se lança quando
+acontece, mensalidade se gera uma vez por mês, Pix se configura uma vez e quase nunca se mexe.
+Numa página só, configurar a chave exigia passar por cinco cartões de números.
+
+Peças: guarda única no `layout.tsx` da rota e em `lib/finance.ts` (`financeContext`, que
+devolve `null` para responsável e para quem não tem `charge:read`); leitura por seção em
+`lib/billing.ts` (`listCompetenceInvoices`, `listExpenses`, `expenseTotals`), para a visão
+geral não carregar linhas que não vai mostrar.
+
+`/meus-boletos` é a visão do responsável, limitada aos alunos sob sua guarda.
 
 **Isolamento.** Toda query passa por `withTenant`; a escola vem de `app.current_school_id`,
 nunca do formulário. O responsável não entra em `/financeiro` — `charge:read` vale para ele
 apenas no âmbito dos próprios filhos.
 
-**O que falta para produção:** gateway (Asaas/Iugu) com webhook e conciliação, boleto
-registrado, e-mail automático da régua, recibo em PDF, NFS-e, aging 16–90 dias e exportação.
+**Envio ao responsável (implementado).** `invoices.last_sent_at` e `send_count` guardam o
+histórico; `schools.invoice_send_automatic` e `invoice_send_day` guardam a decisão. A regra
+(`shouldDeliverToday`, em `packages/core/src/dunning.ts`) garante um envio por competência e
+tolera job atrasado. Manual e automático usam o mesmo `sendInvoiceEmail`, para o texto do
+e-mail e a escolha do destinatário não divergirem.
+
+**O que falta para produção:** conciliação bancária automática, boleto registrado, restante
+da régua (D+1, D+5, WhatsApp), recibo em PDF, NFS-e, aging 16–90 dias e exportação.

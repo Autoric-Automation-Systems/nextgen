@@ -113,7 +113,8 @@ Escala: **P** ≤ 3 dias · **M** ≤ 1 semana · **G** ≤ 2 semanas · **GG** 
 | ATT-01 | Chamada PWA offline + sync | GG |
 | PLN-01 | Plano de aula + templates | M |
 | FIN-01 | Planos, cobrança, pro-rata, competência | G |
-| FIN-02 | Integração Asaas + webhook idempotente | G |
+| FIN-02 | Assinatura da NextGen no Asaas + webhook idempotente (doc 18) | G |
+| FIN-02b | Envio da cobrança ao responsável por e-mail + job diário | G |
 | FIN-03 | Painel financeiro + inadimplência | M |
 | MED-01 | Atestado + kit de emergência | M |
 | NTF-01 | E-mail transacional + log | M |
@@ -131,7 +132,7 @@ Escala: **P** ≤ 3 dias · **M** ≤ 1 semana · **G** ≤ 2 semanas · **GG** 
 | RPT-01 | Relatórios pedagógicos + boletim | G |
 | SITE-01 | Site público + SEO + lead | G |
 | WPP-01 | WhatsApp transacional | M |
-| FIN-04 | Régua de cobrança | M |
+| FIN-04 | Restante da régua (D+1, D+5, WhatsApp) | M |
 | FIN-05 | Cartão recorrente | M |
 | ENR-02 | Lista de espera, experimental, reposição | M |
 | EXP-01 | Exportação completa | M |

@@ -9,7 +9,9 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 **Objetivo:** isolar escolas com segurança e permitir operação comercial do SaaS.
 
 - Cadastro de escola (CNPJ, responsável, trial de 14 dias)
-- Plano de assinatura, limite de alunos e features por plano
+- Plano de assinatura, limite de alunos e features por plano — contratado pela escola em
+  `/assinatura`, cobrado pelo **Asaas** (doc 18); é dinheiro da NextGen, separado das
+  mensalidades
 - Backoffice NextGen: escolas, faturas do SaaS, uso, suporte, feature flags
 - Impersonação auditada com escopo e expiração
 - Onboarding wizard e checklist de ativação
@@ -201,11 +203,20 @@ Detalhes em [`08-avaliacao-e-card.md`](08-avaliacao-e-card.md).
 - Painel: recebido, a receber, vencido, despesas, saldo, inadimplência, aging
 - Recibos e relatórios exportáveis
 
+O módulo tem cinco seções independentes — mensalidades, despesas, planos, envio e cadastro
+Pix — além da visão geral. Configurar a chave Pix é tarefa de uma vez; lançar despesa é do dia
+a dia; o envio é uma decisão de uma vez que vale todo mês. Cada uma vive na própria rota e no
+próprio item do menu.
+
+**Envio ao responsável (implementado).** Um e-mail por competência com Pix, valor, aluno e
+vencimento, disparado por um job diário quando a escola liga o automático e escolhe o dia
+(1–28). Reenvio é sempre manual. Detalhes em [`07-financeiro.md`](07-financeiro.md) §6.
+
 Detalhes em [`07-financeiro.md`](07-financeiro.md).
 
 **Regras**
 - O **pagador é o responsável financeiro**, nunca o aluno.
-- A conta de recebimento é da escola (gateway próprio ou subconta).
+- A conta de recebimento é da escola (Pix da própria escola; sem intermediação na v1).
 - Nenhuma cobrança é gerada para aluno `trial`, `pending_guardian` ou bolsista 100%.
 - Alterar plano no meio do ciclo gera ajuste proporcional, não nova cobrança cheia.
 - Negativação só após régua e nunca em nome do menor.
@@ -265,6 +276,27 @@ Detalhes em [`07-financeiro.md`](07-financeiro.md).
 
 ---
 
+## M12. Assinatura da plataforma e faturamento da NextGen — MVP
+
+**Objetivo:** cobrar a escola pelo uso do produto sem confundir com a mensalidade do aluno.
+
+- Tela `/assinatura` (só administração): plano atual, situação, teste, faturas e link de
+  pagamento
+- Contratação e troca de plano com CPF/CNPJ informado na hora (não persistido)
+- Trial de 14 dias; primeiro vencimento no fim do teste
+- Webhook do Asaas idempotente alimentando `saas_charges`
+- Sincronização manual de faturas para quando o webhook ainda não estiver configurado
+
+**Regras**
+- `invoices` nunca é tocada por evento de gateway; `saas_charges` nunca é tocada por baixa
+  manual de mensalidade.
+- Preço congelado na contratação (`price_cents`); reajuste exige ação explícita.
+- Cancelar não apaga faturas já emitidas.
+
+Detalhes em [`18-assinatura-e-envios.md`](18-assinatura-e-envios.md).
+
+---
+
 ## Matriz de dependências
 
 ```mermaid
@@ -283,6 +315,7 @@ flowchart TD
     M5 --> M9[M9 Comunicação]
     M8 --> M9
     M3 --> M11[M11 Relatórios]
+    M0 --> M12[M12 Assinatura]
 ```
 
 ## Melhorias de escopo sugeridas (fora do pedido original)

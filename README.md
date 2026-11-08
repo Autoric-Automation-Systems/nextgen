@@ -101,6 +101,7 @@ O detalhamento está em [`docs/02-menores-lgpd.md`](docs/02-menores-lgpd.md).
 | 15 | [Marca e arquivos de imagem](docs/15-marca-e-ativos.md) | Design, engenharia |
 | 16 | [Padrões de acabamento: tela, texto e e-mail](docs/16-padroes-de-acabamento.md) | Todos |
 | 17 | [Turmas e matrícula](docs/17-turmas-e-matricula.md) | Produto, engenharia |
+| 18 | [Assinatura da NextGen e envio da cobrança](docs/18-assinatura-e-envios.md) | Produto, engenharia, financeiro |
 
 ## Stack sugerida (resumo)
 

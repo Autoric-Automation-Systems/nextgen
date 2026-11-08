@@ -1,6 +1,13 @@
 # NextGen — memória do projeto
 
 - SaaS de gestão para escolas de futebol. Repo `Autoric-Automation-Systems/nextgen`.
+- **Painel no celular**: abaixo de 700px toda tabela com `.table-cards` vira lista de cartões
+  (rótulo em `td::before` via `data-label`); abaixo de 820px o menu é faixa horizontal e o
+  submenu de módulo some, substituído por `.module-tabs`. Contrato em
+  `docs/16-padroes-de-acabamento.md`.
+- **Financeiro é módulo roteado**: `/financeiro` (visão geral) +
+  `mensalidades|despesas|planos|pix`. Guarda em `apps/web/lib/finance.ts` (`financeContext`);
+  página barrada devolve `<FinanceDenied />`, nunca `redirect("/financeiro")` (laço).
 - Docs 01–13 em PT-BR (`docs/`); código em inglês. `docs/13-fundacao-implementada.md`
   descreve o que já existe em código — leia antes de assumir que algo é só especificação.
 - **Aluno é perfil tutelado, não usuário.** Sem login próprio antes dos 16; quem
@@ -154,3 +161,7 @@
   inadimplência e despesas para a família.
 - **Seed antes de testar tela**: `pnpm db:seed` cria planos, matrícula e chave Pix; sem ele
   `/financeiro` abre sem cobrança nenhuma e parece que a geração falhou.
+- **Asaas é só a assinatura da NextGen** (`saas_subscriptions`/`saas_charges`); a mensalidade
+  do aluno continua Pix na conta da escola. Ver `docs/18-assinatura-e-envios.md`. Envio ao
+  responsável: `invoices.last_sent_at` + cron `/api/cron/cobrancas` com `CRON_SECRET`; dia
+  1–28 porque fevereiro não tem 31. `SchoolStatus` é `cancelled`, com dois L.

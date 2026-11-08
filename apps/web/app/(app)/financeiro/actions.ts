@@ -3,18 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { withTenant } from "@nextgen/db";
 import {
+  DEFAULT_DELIVERY,
+  MAX_SEND_DAY,
   competenceLabel,
   dueDateFor,
   formatBRL,
   isCompetence,
+  isValidSendDay,
   monthlyCharge,
   pixPayload,
   toCents,
-  type Competence,
 } from "@nextgen/core";
-import { defaultMailer, loggingMailer } from "@nextgen/auth";
 import { requireSession } from "@/lib/session";
 import { resolveWorkspace } from "@/lib/workspace";
+import { SEND_FAILURE_MESSAGE, sendInvoiceEmail } from "@/lib/invoice-mail";
 
 export type FinanceState = { status: "idle" | "ok" | "error"; message?: string };
 
@@ -424,7 +426,8 @@ export async function savePixSettings(
  * Envia a cobrança por e-mail ao responsável financeiro.
  *
  * Falha de e-mail não desfaz a cobrança: a mensagem aparece na tela e a linha continua
- * lá para reenvio.
+ * lá para reenvio. O botão é sempre um reenvio explícito (`force`), ao contrário do job
+ * do dia combinado, que só manda uma vez por competência.
  */
 export async function emailInvoice(_prev: FinanceState, formData: FormData): Promise<FinanceState> {
   const context = await cashier();
@@ -433,88 +436,48 @@ export async function emailInvoice(_prev: FinanceState, formData: FormData): Pro
   const invoiceId = text(formData, "invoiceId");
   if (!invoiceId) return fail("Cobrança não identificada.");
 
-  const data = await withTenant(
+  const result = await sendInvoiceEmail(
     { schoolId: context.workspace.schoolId, userId: context.session.userId },
-    async (tx) => {
-      const invoice = await tx.invoice.findFirst({
-        where: { id: invoiceId },
-        include: {
-          student: {
-            select: {
-              fullName: true,
-              guardians: {
-                where: { isFinancial: true },
-                select: { guardian: { select: { user: { select: { email: true, name: true } } } } },
-              },
-            },
-          },
-          school: { select: { tradeName: true, pixKey: true, pixHolder: true, pixCity: true } },
-          payments: { select: { amount: true } },
-        },
-      });
-      if (!invoice) return null;
-      if (invoice.status === "canceled") return null;
-
-      const guardian = invoice.student.guardians[0]?.guardian.user;
-      if (!guardian?.email) return null;
-
-      const paid = invoice.payments.reduce((total, payment) => total + payment.amount, 0);
-      return {
-        to: guardian.email,
-        guardianName: guardian.name,
-        studentName: invoice.student.fullName,
-        schoolName: invoice.school.tradeName,
-        competence: invoice.competence as Competence,
-        dueDate: invoice.dueDate,
-        amount: Math.max(0, invoice.amount - paid),
-        pix: invoice.school.pixKey
-          ? pixPayload({
-              key: invoice.school.pixKey,
-              holder: invoice.school.pixHolder ?? invoice.school.tradeName,
-              city: invoice.school.pixCity ?? "Brasil",
-              amountCents: invoice.amount,
-              txid: invoice.id,
-            }).payload
-          : null,
-      };
-    },
+    invoiceId,
+    { force: true },
   );
 
-  if (!data) {
-    return fail(
-      "Não encontrei responsável financeiro com e-mail nesta cobrança. Cadastre o responsável antes de enviar.",
-    );
+  return result.ok
+    ? ok(`Cobrança enviada para ${result.to}.`)
+    : fail(SEND_FAILURE_MESSAGE[result.reason]);
+}
+
+/** Liga ou desliga o envio automático e escolhe o dia do mês. */
+export async function saveDeliverySettings(
+  _prev: FinanceState,
+  formData: FormData,
+): Promise<FinanceState> {
+  const context = await cashier();
+  if (!context) return fail("Só a administração da escola muda o envio de cobrança.");
+
+  const automatic = text(formData, "automatic") === "on";
+  const sendDay = Number.parseInt(text(formData, "sendDay"), 10);
+
+  if (automatic && !isValidSendDay(sendDay)) {
+    return fail(`Escolha um dia entre 1 e ${MAX_SEND_DAY}.`);
   }
 
-  const label = competenceLabel(data.competence);
-  const due = data.dueDate.toISOString().slice(0, 10).split("-").reverse().join("/");
-  const subject = `${data.schoolName} — mensalidade de ${label}`;
+  await withTenant(
+    { schoolId: context.workspace.schoolId, userId: context.session.userId },
+    (tx) =>
+      tx.school.update({
+        where: { id: context.workspace.schoolId },
+        data: {
+          invoiceSendAutomatic: automatic,
+          invoiceSendDay: isValidSendDay(sendDay) ? sendDay : DEFAULT_DELIVERY.sendDay,
+        },
+      }),
+  );
 
-  const lines = [
-    `Olá, ${data.guardianName ?? "responsável"}.`,
-    "",
-    `A mensalidade de ${data.studentName} referente a ${label} está disponível.`,
-    `Vencimento: ${due}`,
-    `Valor: ${formatBRL(data.amount)}`,
-  ];
-
-  if (data.pix) {
-    lines.push("", "Pague por Pix copiando o código abaixo no aplicativo do seu banco:", "", data.pix);
-  } else {
-    lines.push("", "A escola ainda não configurou a chave Pix; peça o boleto na secretaria.");
-  }
-
-  lines.push("", `Qualquer dúvida, fale com a secretaria de ${data.schoolName}.`);
-
-  try {
-    await loggingMailer(defaultMailer(), "charge").send({
-      to: data.to,
-      subject,
-      text: lines.join("\n"),
-    });
-  } catch {
-    return fail("O provedor de e-mail recusou o envio. A cobrança continua em aberto para reenvio.");
-  }
-
-  return ok(`Cobrança enviada para o responsável de ${data.studentName}.`);
+  refresh();
+  return ok(
+    automatic
+      ? `Envio automático ligado para o dia ${sendDay} de cada mês.`
+      : "Envio automático desligado. A cobrança sai pelo botão de cada linha.",
+  );
 }

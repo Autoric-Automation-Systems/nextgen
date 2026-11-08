@@ -3,7 +3,7 @@
 // tabela de domínio, RLS obrigatória (ver migrations/*_rls).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // `native` para o desenvolvimento local; o binário rhel é o que a função
   // serverless da Vercel usa. Sem ele o deploy sobe e falha em runtime com
   // "Query engine library for current platform could not be found".
@@ -119,30 +119,34 @@ enum RoomKind {
 // ─────────────────────────────────────────────────────────────
 
 model School {
-  id           String       @id @default(uuid(7)) @db.Uuid
-  slug         String       @unique
-  legalName    String       @map("legal_name")
-  tradeName    String       @map("trade_name")
-  cnpjHash     String?      @map("cnpj_hash")
-  cnpjLast4    String?      @map("cnpj_last4")
-  status       SchoolStatus @default(trial)
-  planCode     String       @default("campo") @map("plan_code")
-  trialEndsAt  DateTime?    @map("trial_ends_at") @db.Timestamptz(6)
-  timezone     String       @default("America/Sao_Paulo")
-  logoPathname String?      @map("logo_pathname")
-  heroPathname String?      @map("hero_pathname")
-  tagline      String?
-  palette      Json         @default("{}")
-  settings     Json         @default("{}")
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  slug                 String       @unique
+  legalName            String       @map("legal_name")
+  tradeName            String       @map("trade_name")
+  cnpjHash             String?      @map("cnpj_hash")
+  cnpjLast4            String?      @map("cnpj_last4")
+  status               SchoolStatus @default(trial)
+  planCode             String       @default("campo") @map("plan_code")
+  trialEndsAt          DateTime?    @map("trial_ends_at") @db.Timestamptz(6)
+  timezone             String       @default("America/Sao_Paulo")
+  logoPathname         String?      @map("logo_pathname")
+  heroPathname         String?      @map("hero_pathname")
+  tagline              String?
+  palette              Json         @default("{}")
+  settings             Json         @default("{}")
   /// Chave Pix da escola. O BR Code é gerado aqui, sem gateway: o dinheiro cai direto
   /// na conta dela (ADR-004).
-  pixKey       String?      @map("pix_key")
-  pixHolder    String?      @map("pix_holder")
+  pixKey               String?      @map("pix_key")
+  pixHolder            String?      @map("pix_holder")
   /// Cidade do recebedor no BR Code: o padrão EMV limita a 15 caracteres.
-  pixCity      String?      @map("pix_city")
-  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt    DateTime?    @map("deleted_at") @db.Timestamptz(6)
+  pixCity              String?      @map("pix_city")
+  /// Envio automático da cobrança ao responsável. `false` = só pelo botão de cada cobrança.
+  invoiceSendAutomatic Boolean      @default(false) @map("invoice_send_automatic")
+  /// Dia do mês em que o envio automático sai (1 a 28: dia 31 não existe em fevereiro).
+  invoiceSendDay       Int          @default(5) @map("invoice_send_day")
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt            DateTime?    @map("deleted_at") @db.Timestamptz(6)
 
   units              Unit[]
   rooms              Room[]
@@ -163,6 +167,8 @@ model School {
   invoices           Invoice[]
   invoicePayments    InvoicePayment[]
   expenses           Expense[]
+  saasSubscription   SaasSubscription?
+  saasCharges        SaasCharge[]
 
   @@map("schools")
 }
@@ -746,6 +752,9 @@ model Invoice {
   discount    Int          @default(0)
   status      ChargeStatus @default(open)
   description String?
+  /// Último envio ao responsável. Junto da competência, é o que impede reenvio em dobro.
+  lastSentAt  DateTime?    @map("last_sent_at") @db.Timestamptz(6)
+  sendCount   Int          @default(0) @map("send_count")
   canceledAt  DateTime?    @map("canceled_at") @db.Timestamptz(6)
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -816,4 +825,80 @@ model Expense {
 
   @@index([schoolId, dueDate])
   @@map("expenses")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Assinatura da escola com a NextGen (doc 12 e 18)
+// ─────────────────────────────────────────────────────────────
+
+/// O outro dinheiro: a escola paga a NextGen pelo produto.
+///
+/// Nada aqui é mensalidade de aluno. A cobrança do responsável continua na conta da
+/// escola (doc 07); esta assinatura passa pelo Asaas porque quem recebe é a NextGen.
+/// Um registro por escola: trocar de plano é `update`, não uma nova linha.
+model SaasSubscription {
+  id                  String     @id @default(uuid(7)) @db.Uuid
+  schoolId            String     @unique @map("school_id") @db.Uuid
+  planCode            String     @map("plan_code")
+  status              SaasStatus @default(trialing)
+  /// Valor congelado na contratação; reajuste é decisão explícita, não efeito de tabela.
+  priceCents          Int        @map("price_cents")
+  /// Alunos ativos no momento da contratação — a base do plano por aluno.
+  seats               Int        @default(0)
+  trialEndsAt         DateTime?  @map("trial_ends_at") @db.Timestamptz(6)
+  currentPeriodEnd    DateTime?  @map("current_period_end") @db.Timestamptz(6)
+  nextDueDate         DateTime?  @map("next_due_date") @db.Date
+  /// Identificadores no Asaas. Índice único: o webhook chega só com eles.
+  asaasCustomerId     String?    @unique @map("asaas_customer_id")
+  asaasSubscriptionId String?    @unique @map("asaas_subscription_id")
+  canceledAt          DateTime?  @map("canceled_at") @db.Timestamptz(6)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@map("saas_subscriptions")
+}
+
+enum SaasStatus {
+  trialing
+  active
+  past_due
+  canceled
+
+  @@map("saas_status")
+}
+
+enum SaasChargeStatus {
+  pending
+  paid
+  overdue
+  refunded
+  canceled
+
+  @@map("saas_charge_status")
+}
+
+/// Espelho local das cobranças do Asaas. O Asaas é a fonte da verdade do pagamento;
+/// guardar aqui serve para a escola ver o histórico sem uma chamada de API por tela.
+model SaasCharge {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  schoolId       String           @map("school_id") @db.Uuid
+  /// Id do pagamento no Asaas. Único: webhook repetido não cria linha nova.
+  asaasPaymentId String           @unique @map("asaas_payment_id")
+  status         SaasChargeStatus @default(pending)
+  amountCents    Int              @map("amount_cents")
+  dueDate        DateTime         @map("due_date") @db.Date
+  paidAt         DateTime?        @map("paid_at") @db.Date
+  billingType    String?          @map("billing_type")
+  /// Link da fatura no Asaas: é por onde o dono da escola paga.
+  invoiceUrl     String?          @map("invoice_url")
+  competence     String?
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@index([schoolId, dueDate])
+  @@map("saas_charges")
 }

@@ -35,6 +35,8 @@ export type InvoiceRow = {
   paidCents: number;
   state: ChargeState;
   guardianName: string | null;
+  /** Último envio ao responsável; `null` = nunca enviada. */
+  lastSentAt: Date | null;
 };
 
 export type ExpenseRow = {
@@ -96,6 +98,7 @@ async function invoiceRows(ctx: TenantContext, where: Record<string, unknown>) {
       status: row.status,
       paidCents: row.payments.reduce((total, payment) => total + payment.amount, 0),
       guardianName: null,
+      lastSentAt: row.lastSentAt,
     }));
   });
 }
@@ -133,40 +136,29 @@ export async function getPixSettings(ctx: TenantContext): Promise<PixSettings> {
   });
 }
 
-export async function getFinanceOverview(
+function monthRange(competence: string): { start: Date; end: Date } {
+  const start = new Date(`${competence}-01T00:00:00.000Z`);
+  return { start, end: new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1)) };
+}
+
+/** Cobranças da competência, já com o estado calculado (aberta, vencida, paga, cancelada). */
+export async function listCompetenceInvoices(
   ctx: TenantContext,
   competence: string,
-): Promise<FinanceOverview> {
-  const monthStart = new Date(`${competence}-01T00:00:00.000Z`);
-  const monthEnd = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1));
+): Promise<InvoiceRow[]> {
+  return withState(await invoiceRows(ctx, { competence }));
+}
 
-  const [plans, pix, expenses, invoices, billableStudents] = await Promise.all([
-    listPlans(ctx),
-    getPixSettings(ctx),
-    withTenant(ctx, (tx) =>
-      tx.expense.findMany({
-        where: { deletedAt: null, dueDate: { gte: monthStart, lt: monthEnd } },
-        orderBy: { dueDate: "asc" },
-      }),
-    ),
-    invoiceRows(ctx, { competence }),
-    withTenant(ctx, (tx) =>
-      tx.student.count({
-        where: {
-          status: "active",
-          deletedAt: null,
-          tuitionPlanId: { not: null },
-          enrollments: { some: { status: "active" } },
-        },
-      }),
-    ),
-  ]);
+export async function listExpenses(ctx: TenantContext, competence: string): Promise<ExpenseRow[]> {
+  const { start, end } = monthRange(competence);
+  const expenses = await withTenant(ctx, (tx) =>
+    tx.expense.findMany({
+      where: { deletedAt: null, dueDate: { gte: start, lt: end } },
+      orderBy: { dueDate: "asc" },
+    }),
+  );
 
-  const rows = withState(invoices);
-  const summary = summarizeCharges(rows);
-  const delinquents = delinquentStudents(rows);
-
-  const expenseRows: ExpenseRow[] = expenses.map((expense) => ({
+  return expenses.map((expense) => ({
     id: expense.id,
     category: expense.category,
     description: expense.description,
@@ -175,17 +167,53 @@ export async function getFinanceOverview(
     paidAt: expense.paidAt,
     supplier: expense.supplier,
   }));
+}
+
+/** Alunos que gerariam cobrança: ativos, com plano e matrícula ativa. */
+export async function countBillableStudents(ctx: TenantContext): Promise<number> {
+  return withTenant(ctx, (tx) =>
+    tx.student.count({
+      where: {
+        status: "active",
+        deletedAt: null,
+        tuitionPlanId: { not: null },
+        enrollments: { some: { status: "active" } },
+      },
+    }),
+  );
+}
+
+export function expenseTotals(expenses: ExpenseRow[]): { total: number; paid: number } {
+  return {
+    total: expenses.reduce((sum, expense) => sum + expense.amount, 0),
+    paid: expenses
+      .filter((expense) => expense.paidAt !== null)
+      .reduce((sum, expense) => sum + expense.amount, 0),
+  };
+}
+
+export async function getFinanceOverview(
+  ctx: TenantContext,
+  competence: string,
+): Promise<FinanceOverview> {
+  const [plans, pix, expenseRows, rows, billableStudents] = await Promise.all([
+    listPlans(ctx),
+    getPixSettings(ctx),
+    listExpenses(ctx, competence),
+    listCompetenceInvoices(ctx, competence),
+    countBillableStudents(ctx),
+  ]);
+
+  const { total: expenseCents, paid: expensePaidCents } = expenseTotals(expenseRows);
 
   return {
     competence,
-    summary,
-    expenseCents: expenseRows.reduce((total, expense) => total + expense.amount, 0),
-    expensePaidCents: expenseRows
-      .filter((expense) => expense.paidAt !== null)
-      .reduce((total, expense) => total + expense.amount, 0),
+    summary: summarizeCharges(rows),
+    expenseCents,
+    expensePaidCents,
     expenses: expenseRows,
     invoices: rows,
-    delinquents,
+    delinquents: delinquentStudents(rows),
     plans,
     pix,
     billableStudents,

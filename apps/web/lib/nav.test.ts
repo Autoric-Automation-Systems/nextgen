@@ -14,6 +14,26 @@ describe("navSectionsFor", () => {
     expect(sections.map((section) => section.id)).toEqual(["escola", "ajuda"]);
     expect(sections[0]!.items).toContain("Financeiro");
     expect(sections[0]!.items).toContain("Site da escola");
+    expect(sections[0]!.items).toContain("Assinatura");
+  });
+
+  it("financeiro é um módulo com seções próprias dentro do menu", () => {
+    const finance = navSectionsFor({ isPlatformAdmin: false, role: "admin" })
+      .flatMap((section) => section.items)
+      .find((item) => item.href === "/financeiro");
+
+    expect(finance?.children?.map((child) => child.href)).toEqual([
+      "/financeiro",
+      "/financeiro/mensalidades",
+      "/financeiro/despesas",
+      "/financeiro/planos",
+      "/financeiro/envio",
+      "/financeiro/pix",
+    ]);
+    // A visão geral divide o href com o item pai: só ela é `exact`, senão fica sempre ativa.
+    expect(finance?.children?.filter((child) => child.exact).map((child) => child.href)).toEqual([
+      "/financeiro",
+    ]);
   });
 
   it("professor não vê financeiro nem site da escola", () => {

@@ -1,7 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
-import { createExpense, createPlan, generateMonth, savePixSettings, type FinanceState } from "./actions";
+import {
+  createExpense,
+  createPlan,
+  generateMonth,
+  saveDeliverySettings,
+  savePixSettings,
+  type FinanceState,
+} from "./actions";
 
 const initial: FinanceState = { status: "idle" };
 
@@ -140,6 +147,65 @@ export function PixForm({
       </p>
       <button className="btn" disabled={pending}>
         {pending ? "Salvando…" : "Salvar chave Pix"}
+      </button>
+    </form>
+  );
+}
+
+export function DeliveryForm({
+  automatic,
+  sendDay,
+  dueDay,
+}: {
+  automatic: boolean;
+  sendDay: number;
+  dueDay: number | null;
+}) {
+  const [state, action, pending] = useActionState(saveDeliverySettings, initial);
+
+  return (
+    <form action={action}>
+      <Feedback state={state} />
+
+      <label
+        htmlFor="send-automatic"
+        style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}
+      >
+        <input
+          id="send-automatic"
+          name="automatic"
+          type="checkbox"
+          defaultChecked={automatic}
+          style={{ marginTop: 3 }}
+        />
+        <span>
+          <strong>Enviar sozinho todo mês</strong>
+          <span className="muted" style={{ display: "block" }}>
+            O responsável recebe o Pix e o vencimento por e-mail, sem ninguém lembrar de clicar.
+          </span>
+        </span>
+      </label>
+
+      <div className="field" style={{ maxWidth: 200, marginTop: 12 }}>
+        <label htmlFor="send-day">Dia do envio</label>
+        <input
+          id="send-day"
+          name="sendDay"
+          type="number"
+          min={1}
+          max={28}
+          step={1}
+          required
+          defaultValue={sendDay}
+        />
+        <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>
+          De 1 a 28 — dia 29, 30 e 31 não existem em todo mês.
+          {dueDay !== null ? ` A maioria dos planos vence no dia ${dueDay}.` : ""}
+        </p>
+      </div>
+
+      <button className="btn" disabled={pending}>
+        {pending ? "Salvando…" : "Salvar envio"}
       </button>
     </form>
   );

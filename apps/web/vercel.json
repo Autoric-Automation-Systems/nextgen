@@ -5,5 +5,11 @@
   "buildCommand": "pnpm --filter @nextgen/db run build && pnpm run build",
   "regions": [
     "gru1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/cobrancas",
+      "schedule": "0 11 * * *"
+    }
   ]
 }

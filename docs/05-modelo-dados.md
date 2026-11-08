@@ -62,7 +62,7 @@ erDiagram
 
 | Tabela | Campos-chave | Notas |
 |---|---|---|
-| `schools` | `id`, `slug`, `legal_name`, `cnpj`, `status`, `plan_code`, `trial_ends_at`, `settings jsonb` | `slug` único → subdomínio |
+| `schools` | `id`, `slug`, `legal_name`, `cnpj_last4`/`cnpj_hash`, `status`, `plan_code`, `trial_ends_at`, `invoice_send_automatic`, `invoice_send_day` (1–28), `settings jsonb` | `slug` único → subdomínio; CNPJ completo nunca é gravado |
 | `units` | `id`, `school_id`, `name`, `address`, `city`, `state`, `zip`, `timezone` | endereço mora aqui |
 | `rooms` | `id`, `school_id`, `unit_id`, `name`, `kind`, `capacity` | `kind`: field/court/classroom |
 | `users` | `id`, `email`, `name`, `phone`, `password_hash`, `status`, `locale` | login global |
@@ -158,6 +158,22 @@ end $$ language plpgsql;
 | `billing_settings` | `school_id`, `gateway`, `credentials_enc`, `due_days int[]`, `late_fee_pct`, `interest_pct_month`, `dunning_steps jsonb` | config |
 | `webhook_events` | `id`, `gateway`, `external_id`, `payload`, `processed_at`, `status` | idempotência |
 
+**Implementado (v0), com nomes reais:** `tuition_plans`, `invoices` (com `last_sent_at` e
+`send_count` para o envio ao responsável) e `invoice_payments`. O envio automático usa
+`schools.invoice_send_automatic` + `schools.invoice_send_day`, sem tabela de configuração
+separada — é uma decisão da escola, não um conjunto de regras.
+
+### 3.6.1 Assinatura da NextGen — o outro dinheiro
+
+| Tabela | Campos-chave | Notas |
+|---|---|---|
+| `saas_subscriptions` | `id`, `school_id` (único), `plan_code`, `status` (`trialing`/`active`/`past_due`/`canceled`), `price_cents`, `seats`, `trial_ends_at`, `current_period_end`, `next_due_date`, `asaas_customer_id`, `asaas_subscription_id`, `canceled_at` | um registro por escola; preço congelado na contratação |
+| `saas_charges` | `id`, `school_id`, `asaas_payment_id` (único), `status`, `amount_cents`, `due_date`, `paid_at`, `billing_type`, `invoice_url`, `competence` | espelho das faturas do Asaas |
+
+Estas tabelas **não** são mensalidade de aluno: representam o que a escola paga à NextGen e
+são as únicas que passam por gateway (doc 18). Ambas têm RLS por `school_id` e leitura
+liberada para `app.is_platform_staff()`.
+
 **Regras**
 - `charges.payer_guardian_id` **nunca** aponta para `student`.
 - `charges.status`: `draft`, `open`, `paid`, `overdue`, `cancelled`, `refunded`, `partial`.
@@ -171,7 +187,7 @@ end $$ language plpgsql;
 | `consent_purposes` / `consent_terms` / `consents` | ver doc 02 §4 |
 | `audit_logs` | `id`, `school_id`, `actor_user_id`, `actor_role`, `action`, `entity`, `entity_id`, `before jsonb`, `after jsonb`, `ip`, `user_agent`, `created_at` |
 | `notification_log` | `id`, `school_id`, `channel`, `template`, `recipient_user_id`, `status`, `provider_id`, `cost_cents`, `sent_at` |
-| `subscriptions` | `id`, `school_id`, `plan_code`, `status`, `seats`, `current_period_end`, `gateway_customer_id` |
+| `subscriptions` | implementado como `saas_subscriptions` + `saas_charges` (ver §3.6.1) |
 | `feature_flags` | `id`, `school_id`, `flag`, `enabled`, `payload jsonb` |
 | `export_jobs` | `id`, `school_id`, `requested_by`, `kind`, `status`, `file_key`, `expires_at` |
 

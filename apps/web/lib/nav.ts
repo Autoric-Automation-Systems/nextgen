@@ -22,6 +22,11 @@ export type NavItem = {
   status?: "ready" | "soon";
   /** Destino fora do app: abre em outra aba e não passa pelo roteador do Next. */
   external?: boolean;
+  /**
+   * Seções internas de um módulo. O menu abre a lista quando o item está ativo, para o
+   * módulo grande (financeiro) não virar sete itens soltos no meio da navegação da escola.
+   */
+  children?: { href: string; label: string; exact?: boolean }[];
 };
 
 export type NavSection = {
@@ -40,7 +45,22 @@ export const NAV: NavSection[] = [
       { href: "/turmas", label: "Turmas", hint: "Categorias, horários e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/avaliacao", label: "Avaliação", hint: "Ciclos, notas e card", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/pedagogia", label: "Pedagogia", hint: "Matérias, capítulos e conteúdo", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
-      { href: "/financeiro", label: "Financeiro", hint: "Mensalidades, boletos e gastos", roles: ["admin"], platform: true },
+      {
+        href: "/financeiro",
+        label: "Financeiro",
+        hint: "Mensalidades, despesas, planos e Pix",
+        roles: ["admin"],
+        platform: true,
+        children: [
+          { href: "/financeiro", label: "Visão geral", exact: true },
+          { href: "/financeiro/mensalidades", label: "Mensalidades" },
+          { href: "/financeiro/despesas", label: "Despesas" },
+          { href: "/financeiro/planos", label: "Planos" },
+          { href: "/financeiro/envio", label: "Envio" },
+          { href: "/financeiro/pix", label: "Pix" },
+        ],
+      },
+      { href: "/assinatura", label: "Assinatura", hint: "Plano NextGen e faturas", roles: ["admin"] },
       { href: "/site", label: "Site da escola", hint: "Página pública, logo e cores", roles: ["admin"], platform: true, status: "soon" },
     ],
   },
