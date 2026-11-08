@@ -148,3 +148,9 @@
   usar `git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/...`,
   pushar e **restaurar a URL** depois. `pnpm build` mata o `.next` do `next dev` em execução:
   reiniciar o dev server depois do build.
+- **Financeiro v0 é sem gateway**: Pix copia-e-cola (`packages/core/src/pix.ts`) + baixa
+  manual. `charge:read` vale também para `guardian` (usado em `/meus-boletos`), então telas
+  de escola precisam excluir o responsável explicitamente — esquecer isso vaza totais,
+  inadimplência e despesas para a família.
+- **Seed antes de testar tela**: `pnpm db:seed` cria planos, matrícula e chave Pix; sem ele
+  `/financeiro` abre sem cobrança nenhuma e parece que a geração falhou.
