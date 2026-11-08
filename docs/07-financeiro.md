@@ -199,3 +199,36 @@ painel é caixa; o contador quer competência. Mostrar os dois com rótulo claro
 - Custo por cobrança emitida
 - Recuperação pela régua (% de pagamentos após D+1)
 - Receita por aluno (ARPU) e por turma
+
+## 14. O que já está implementado (v0)
+
+Sem gateway: o dinheiro cai direto na conta da escola via **Pix copia-e-cola** (BR Code EMV
+montado em `packages/core/src/pix.ts`), e a baixa é manual. É o mínimo que resolve a dor sem
+virar arranjo de pagamento.
+
+**Modelo.** `TuitionPlan` (valor mensal + dia de vencimento), `Student.tuitionPlanId` e
+`Enrollment.discountCents/dueDay`, `Invoice` (competência `YYYY-MM`, `amount`, `paidCents`,
+`status`, `dueDate`, `cancelReason`), `InvoicePayment` (valor, forma, data, quem registrou),
+`Expense` (categoria, valor, vencimento, pago em) e `AuditLog` com `before`/`after` em JSON.
+
+**Regras em `@nextgen/core`:**
+- `monthlyCharge` = plano − desconto, com rateio proporcional no primeiro mês (`prorateMonthly`);
+- vencimento no dia combinado, ajustado para o último dia do mês quando não existe (31 em fevereiro);
+- `isOverdue` compara **dia** em UTC: vencimento no próprio dia ainda não é atraso;
+- `chargeState` distingue `aberta`, `vencida`, `paga` (inclusive parcial) e `cancelada`;
+- `delinquentStudents` agrupa por aluno, com dias de atraso da cobrança mais antiga;
+- `normalizePixKey` (CPF/CNPJ sem pontuação, telefone com `+55`, e-mail e chave aleatória) e
+  `pixPayload` com valor, txid da cobrança e texto sem acento.
+
+**Na tela.** `/financeiro` mostra recebido, a receber, vencido, despesas, saldo, inadimplentes,
+a lista da competência, planos, chave Pix e despesas do mês. Ações: gerar a competência
+(idempotente por `(studentId, competence)`), registrar pagamento total ou parcial, cancelar
+cobrança, copiar Pix, enviar por e-mail e marcar despesa como paga. `/meus-boletos` é a visão
+do responsável, limitada aos alunos sob sua guarda.
+
+**Isolamento.** Toda query passa por `withTenant`; a escola vem de `app.current_school_id`,
+nunca do formulário. O responsável não entra em `/financeiro` — `charge:read` vale para ele
+apenas no âmbito dos próprios filhos.
+
+**O que falta para produção:** gateway (Asaas/Iugu) com webhook e conciliação, boleto
+registrado, e-mail automático da régua, recibo em PDF, NFS-e, aging 16–90 dias e exportação.

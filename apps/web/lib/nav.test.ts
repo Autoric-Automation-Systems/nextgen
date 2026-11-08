@@ -73,7 +73,21 @@ describe("navSectionsFor", () => {
       .filter((item) => item.status === "soon")
       .map((item) => item.label);
 
-    expect(soon).toContain("Financeiro");
+    expect(soon).toContain("Avaliação");
     expect(soon).not.toContain("Painel");
+  });
+
+  it("financeiro e mensalidades já estão liberados", () => {
+    const admin = navSectionsFor({ isPlatformAdmin: false, role: "admin" })
+      .flatMap((section) => section.items)
+      .find((item) => item.label === "Financeiro");
+    const guardian = navSectionsFor({ isPlatformAdmin: false, role: "guardian" })
+      .flatMap((section) => section.items)
+      .find((item) => item.label === "Mensalidades");
+
+    expect(admin?.status).toBeUndefined();
+    expect(admin?.href).toBe("/financeiro");
+    expect(guardian?.status).toBeUndefined();
+    expect(guardian?.href).toBe("/meus-boletos");
   });
 });

@@ -18,12 +18,21 @@ export type StudentRow = {
  * Toda leitura passa por `withTenant`. Se alguém esquecer, a RLS devolve zero linhas
  * em vez de vazar dado de outra escola.
  */
-export async function listStudents(ctx: { schoolId: string; userId: string }): Promise<StudentRow[]> {
+export async function listStudents(ctx: {
+  schoolId: string;
+  userId: string;
+  /**
+   * Recorte por família. A RLS isola escola, não papel: sem esta lista, o responsável
+   * leria o cadastro de todos os alunos da escola.
+   */
+  studentIds?: string[];
+}): Promise<StudentRow[]> {
   const today = new Date();
+  if (ctx.studentIds && ctx.studentIds.length === 0) return [];
 
   return withTenant(ctx, async (tx) => {
     const students = await tx.student.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, ...(ctx.studentIds ? { id: { in: ctx.studentIds } } : {}) },
       orderBy: { fullName: "asc" },
       include: {
         guardians: { include: { guardian: { include: { user: true } } } },

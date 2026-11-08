@@ -83,6 +83,8 @@ Quando duas categorias casam, a função devolve `ambiguous` em vez de escolher 
 | `/dashboard` | requer sessão; métricas da escola |
 | `/alunos` | requer sessão; lista com regime etário e consentimento |
 | `/alunos/[id]` | ficha do aluno com o card na versão interna |
+| `/financeiro` | administração: competência, cobranças, planos, Pix, despesas (`?mes=YYYY-MM`) |
+| `/meus-boletos` | responsável: cobranças dos próprios filhos e Pix de cada uma |
 | `/sistema` | só administração da plataforma; diretório de escolas |
 | `/sistema/card` | só plataforma; card interno e público lado a lado, com dado de demonstração |
 | `/api/auth/*` | Better Auth |
@@ -218,5 +220,7 @@ Ficam para as próximas fases, na ordem de `09-roadmap.md`:
 2. Conteúdo, matérias, capítulos e plano de aula.
 3. Avaliação de habilidades, histórico e card público.
 4. Anamnese e prontuário com visibilidade segregada.
-5. Financeiro (cobrança, boleto, inadimplência, despesas).
+5. Financeiro: emissão real de boleto/Pix por gateway e régua de cobrança automática
+   (a geração mensal, a baixa manual, o Pix copia-e-cola e as despesas já existem — ver
+   `07-financeiro.md`, seção 14).
 6. Site público da escola e editor de identidade visual.

@@ -343,6 +343,60 @@ async function main() {
         dueDay: 10,
       },
     });
+
+    await db.enrollment.upsert({
+      where: { id: "01930000-0000-7000-8000-000000000502" },
+      update: {},
+      create: {
+        id: "01930000-0000-7000-8000-000000000502",
+        schoolId: schoolDemo,
+        studentId: ids.studentB,
+        classGroupId: ids.groupSub8,
+        status: "active",
+        startsOn: new Date("2026-02-01"),
+        dueDay: 5,
+        // Irmã mais velha: desconto de irmão, escolhido na matrícula.
+        discountCents: 5000,
+      },
+    });
+
+    const plan3x = await db.tuitionPlan.upsert({
+      where: { schoolId_name: { schoolId: schoolDemo, name: "Mensalidade 3x semana" } },
+      update: {},
+      create: {
+        id: "01930000-0000-7000-8000-000000000601",
+        schoolId: schoolDemo,
+        name: "Mensalidade 3x semana",
+        monthlyAmount: 45000,
+        dueDay: 10,
+      },
+    });
+
+    const plan2x = await db.tuitionPlan.upsert({
+      where: { schoolId_name: { schoolId: schoolDemo, name: "Mensalidade 2x semana" } },
+      update: {},
+      create: {
+        id: "01930000-0000-7000-8000-000000000602",
+        schoolId: schoolDemo,
+        name: "Mensalidade 2x semana",
+        monthlyAmount: 32000,
+        dueDay: 5,
+      },
+    });
+
+    await db.student.update({
+      where: { id: ids.studentA },
+      data: { tuitionPlanId: plan3x.id },
+    });
+    await db.student.update({
+      where: { id: ids.studentB },
+      data: { tuitionPlanId: plan2x.id },
+    });
+
+    await db.school.update({
+      where: { id: schoolDemo },
+      data: { pixKey: "12345678000190", pixHolder: "Escola Teste Ltda", pixCity: "São Paulo" },
+    });
   });
 
   await inSchool(schoolRival, ids.rivalUser, async () => {

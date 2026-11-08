@@ -17,15 +17,21 @@ export default async function StudentsPage() {
   const workspace = await resolveWorkspace(session);
   if (!workspace) return <p className="muted">Sua conta não tem escola. Fale com a administração.</p>;
 
-  const students = await listStudents({ schoolId: workspace.schoolId, userId: session.userId });
+  const students = await listStudents({
+    schoolId: workspace.schoolId,
+    userId: session.userId,
+    studentIds: session.actor.kind === "guardian" ? session.actor.studentIds : undefined,
+  });
 
   return (
     <div className="stack">
       <div>
         <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>Alunos</h1>
         <p className="muted" style={{ margin: 0 }}>
-          {students.length} aluno(s) em {workspace.schoolName}. Clique no nome para abrir o card. O domínio é
-          filtrado pela RLS: pedir outra escola não retorna nada.
+          {students.length} aluno(s) em {workspace.schoolName}.{" "}
+          {session.actor.kind === "guardian"
+            ? "Como responsável, você vê só os alunos sob sua guarda."
+            : "Clique no nome para abrir o card. O domínio é filtrado pela RLS: pedir outra escola não retorna nada."}
         </p>
       </div>
 

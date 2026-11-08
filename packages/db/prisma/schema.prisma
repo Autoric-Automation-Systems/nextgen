@@ -134,6 +134,12 @@ model School {
   tagline      String?
   palette      Json         @default("{}")
   settings     Json         @default("{}")
+  /// Chave Pix da escola. O BR Code é gerado aqui, sem gateway: o dinheiro cai direto
+  /// na conta dela (ADR-004).
+  pixKey       String?      @map("pix_key")
+  pixHolder    String?      @map("pix_holder")
+  /// Cidade do recebedor no BR Code: o padrão EMV limita a 15 caracteres.
+  pixCity      String?      @map("pix_city")
   createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt    DateTime?    @map("deleted_at") @db.Timestamptz(6)
@@ -153,6 +159,10 @@ model School {
   enrollments        Enrollment[]
   consents           Consent[]
   auditLogs          AuditLog[]
+  tuitionPlans       TuitionPlan[]
+  invoices           Invoice[]
+  invoicePayments    InvoicePayment[]
+  expenses           Expense[]
 
   @@map("schools")
 }
@@ -174,6 +184,7 @@ model Unit {
   school      School       @relation(fields: [schoolId], references: [id])
   rooms       Room[]
   classGroups ClassGroup[]
+  expenses    Expense[]
 
   @@index([schoolId])
   @@map("units")
@@ -331,6 +342,9 @@ model Student {
   photoPathname     String?       @map("photo_pathname")
   status            StudentStatus @default(active)
   notesInternal     String?       @map("notes_internal")
+  /// Plano de cobrança do aluno. O vencimento e o desconto vêm da matrícula
+  /// (`Enrollment.dueDay` / `discountCents`), onde a escola escolhe no cadastro.
+  tuitionPlanId     String?       @map("tuition_plan_id") @db.Uuid
   publicCardSlug    String?       @unique @map("public_card_slug")
   publicCardEnabled Boolean       @default(false) @map("public_card_enabled")
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -338,6 +352,8 @@ model Student {
   deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(6)
 
   school       School                   @relation(fields: [schoolId], references: [id])
+  tuitionPlan  TuitionPlan?             @relation(fields: [tuitionPlanId], references: [id])
+  invoices     Invoice[]
   skillRatings StudentSkillRating[]
   guardians    StudentGuardian[]
   pickupPeople PickupAuthorizedPerson[]
@@ -660,4 +676,144 @@ model MailLog {
 
   @@index([at])
   @@map("mail_log")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Financeiro (doc 07)
+// ─────────────────────────────────────────────────────────────
+
+/// Plano de cobrança: quanto e em que dia a mensalidade vence.
+///
+/// O valor mora no plano para a escola reajustar todo mundo de uma vez, e não aluno a
+/// aluno. Quem precisa de exceção usa `Student.tuitionDiscount`.
+model TuitionPlan {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  schoolId      String    @map("school_id") @db.Uuid
+  name          String
+  monthlyAmount Int       @map("monthly_amount")
+  dueDay        Int       @map("due_day")
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school   School    @relation(fields: [schoolId], references: [id])
+  students Student[]
+  invoices Invoice[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId, active])
+  @@map("tuition_plans")
+}
+
+enum ChargeKind {
+  monthly
+  enrollment
+  material
+  uniform
+  other
+
+  @@map("charge_kind")
+}
+
+/// Só três estados gravados: "vencido" é derivado de `dueDate`, não uma coluna.
+///
+/// Guardar "vencido" exigiria um job diário e criaria divergência: uma linha continuaria
+/// "aberta" até a madrugada seguinte. Como o vencimento não muda, a resposta é calculada
+/// na leitura.
+enum ChargeStatus {
+  open
+  paid
+  canceled
+
+  @@map("charge_status")
+}
+
+model Invoice {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  schoolId    String       @map("school_id") @db.Uuid
+  studentId   String       @map("student_id") @db.Uuid
+  /// Responsável financeiro. Nulo quando a escola ainda não definiu quem paga.
+  guardianId  String?      @map("guardian_id") @db.Uuid
+  planId      String?      @map("plan_id") @db.Uuid
+  kind        ChargeKind   @default(monthly)
+  /// Competência no formato `AAAA-MM`. Texto porque ordena e compara como data.
+  competence  String
+  dueDate     DateTime     @map("due_date") @db.Date
+  /// Valor final, já com desconto aplicado.
+  amount      Int
+  baseAmount  Int          @map("base_amount")
+  discount    Int          @default(0)
+  status      ChargeStatus @default(open)
+  description String?
+  canceledAt  DateTime?    @map("canceled_at") @db.Timestamptz(6)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school   School           @relation(fields: [schoolId], references: [id])
+  student  Student          @relation(fields: [studentId], references: [id])
+  plan     TuitionPlan?     @relation(fields: [planId], references: [id])
+  payments InvoicePayment[]
+
+  /// Uma cobrança por aluno, competência e tipo: gerar o mês duas vezes não duplica.
+  @@unique([studentId, competence, kind])
+  @@index([schoolId, competence])
+  @@index([schoolId, status, dueDate])
+  @@map("invoices")
+}
+
+enum PaymentMethod {
+  pix
+  boleto
+  card
+  cash
+  transfer
+  other
+
+  @@map("payment_method")
+}
+
+/// Pagamento é sempre um lançamento novo, nunca um `update` na cobrança.
+///
+/// Assim pagamento parcial, estorno e baixa manual ficam registrados com autor e data.
+/// `Invoice.amount` não muda quando o dinheiro entra.
+model InvoicePayment {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  schoolId    String        @map("school_id") @db.Uuid
+  invoiceId   String        @map("invoice_id") @db.Uuid
+  amount      Int
+  method      PaymentMethod @default(pix)
+  paidAt      DateTime      @map("paid_at") @db.Date
+  note        String?
+  actorUserId String?       @map("actor_user_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school  School  @relation(fields: [schoolId], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([schoolId, paidAt])
+  @@index([invoiceId])
+  @@map("invoice_payments")
+}
+
+model Expense {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  schoolId    String    @map("school_id") @db.Uuid
+  unitId      String?   @map("unit_id") @db.Uuid
+  category    String
+  description String
+  amount      Int
+  dueDate     DateTime  @map("due_date") @db.Date
+  paidAt      DateTime? @map("paid_at") @db.Date
+  supplier    String?
+  note        String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id])
+  unit   Unit?  @relation(fields: [unitId], references: [id])
+
+  @@index([schoolId, dueDate])
+  @@map("expenses")
 }

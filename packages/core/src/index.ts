@@ -5,3 +5,5 @@ export * from "./consent";
 export * from "./cpf";
 export * from "./skills";
 export * from "./class-group";
+export * from "./billing";
+export * from "./pix";
