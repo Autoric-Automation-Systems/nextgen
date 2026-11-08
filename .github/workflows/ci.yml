@@ -11,8 +11,9 @@ concurrency:
 
 env:
   # O papel de aplicação precisa ser criado antes das migrações rodarem como dono.
-  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextgen
-  APP_DATABASE_URL: postgresql://nextgen_app:app@localhost:5432/nextgen
+  # `sslmode=disable` explícito: o serviço Postgres da CI não fala TLS.
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextgen?sslmode=disable
+  APP_DATABASE_URL: postgresql://nextgen_app:app@localhost:5432/nextgen?sslmode=disable
   BETTER_AUTH_SECRET: ci-secret-ci-secret-ci-secret-1234
   BETTER_AUTH_URL: http://localhost:3000
   BETTER_AUTH_SECURE_COOKIES: "false"

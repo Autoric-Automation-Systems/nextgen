@@ -48,6 +48,17 @@ describe("appDatabaseUrl", () => {
     expect(sslMode(resolved)).toBe("require");
   });
 
+  it("não força TLS em loopback: o Postgres local e o da CI recusam handshake", () => {
+    const resolved = appDatabaseUrl({
+      APP_DATABASE_URL: "postgresql://nextgen_app:senha@localhost:5432/nextgen",
+    });
+
+    expect(sslMode(resolved)).toBe("ausente");
+    expect(appDatabaseUrl({
+      APP_DATABASE_URL: "postgresql://nextgen_app:senha@127.0.0.1:55432/nextgen",
+    })).not.toContain("sslmode=require");
+  });
+
   it("não sobrescreve sslmode escolhido explicitamente", () => {
     const url = "postgresql://nextgen_app:senha@localhost:5432/nextgen?sslmode=disable";
     expect(sslMode(appDatabaseUrl({ APP_DATABASE_URL: url }))).toBe("disable");

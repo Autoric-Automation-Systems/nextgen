@@ -49,11 +49,20 @@ export function urlAnomaly(url: string | undefined): "espaco" | "aspas" | "proto
 function withTls(url: string): string {
   try {
     const parsed = new URL(url);
-    if (!parsed.searchParams.has("sslmode")) parsed.searchParams.set("sslmode", "require");
+    if (parsed.searchParams.has("sslmode")) return parsed.toString();
+    // Loopback não tem TLS: o Postgres da CI e o de quem roda os testes recusam o
+    // handshake, e o erro sai como P1011 "server does not support TLS".
+    if (isLoopbackHost(parsed.hostname)) return parsed.toString();
+    parsed.searchParams.set("sslmode", "require");
     return parsed.toString();
   } catch {
     return url;
   }
+}
+
+function isLoopbackHost(hostname: string): boolean {
+  const host = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  return host === "localhost" || host === "::1" || host === "0.0.0.0" || host.startsWith("127.");
 }
 
 /** Como o TLS foi resolvido. Vai para o health: `ausente` explica P1001 enganoso. */
