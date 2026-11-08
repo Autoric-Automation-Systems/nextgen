@@ -142,6 +142,8 @@
 - `pnpm lint` pende (prompt do `next lint`, sem config); a CI roda só typecheck e test.
   Neste shell, `pnpm` só existe via
   `export PATH="/usr/local/lib/node_modules/corepack/shims:$PATH"`.
+- **`withTls` e loopback**: `packages/db/src/env.ts` força `sslmode=require` em host
+  remoto; em loopback não pode, ou a suíte de RLS morre com P1011 no Postgres da CI.
 - **Push**: o remote guardado aponta para `https://github.com/...` e pede senha;
   usar `git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/...`,
   pushar e **restaurar a URL** depois. `pnpm build` mata o `.next` do `next dev` em execução:
