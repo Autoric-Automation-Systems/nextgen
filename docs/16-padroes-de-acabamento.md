@@ -87,9 +87,28 @@ Três armadilhas que este desenho evita:
   `.wrap` (1080px) fica dentro.
 
 No celular (≤ 820px) a regra é **suspensa de propósito**: altura de tela é o recurso
-escasso, e menu + rodapé parados deixariam menos da metade para o conteúdo. O cabeçalho
-continua parado (`position: sticky`), porque 64px compram a saída da tela; menu e rodapé
-rolam com o documento. Em impressão, tudo volta ao fluxo normal.
+escasso, e menu + rodapé parados deixariam menos da metade para o conteúdo. Em impressão,
+tudo volta ao fluxo normal.
+
+## Celular: três decisões que fazem a tela caber
+
+O layout de celular não é o de desktop encolhido. Em `globals.css`:
+
+| Até | O que muda | Por quê |
+|---|---|---|
+| 820px | menu lateral vira faixa horizontal com rolagem, colada no topo | oito itens em coluna empurravam o conteúdo para fora da primeira tela; a faixa mantém a troca de seção a um toque |
+| 820px | a barra de aviso some e sobra só conta + saída | 40px de aviso repetido custam mais que o aviso |
+| 700px | `.table-cards`: `thead` oculto, cada `tr` vira cartão com rótulo por `td::before` e `data-label` | tabela de 620px em tela de 390px escondia valor e ações atrás de rolagem lateral |
+| 700px | ações do cartão em duas colunas | cinco botões empilhados faziam um cartão de 400px |
+| 620px | títulos 30px, indicadores em duas colunas, `.row` quebra linha | cinco cartões de métrica empilhavam por mais de uma tela |
+| 820px | campos com `font-size: 16px` | abaixo disso o iOS dá zoom ao focar |
+
+Regra para tabela nova: marcar o contêiner com `table-cards`, pôr `data-label` em cada `td`
+que tem cabeçalho, e `className="cell-actions"` na última célula quando ela tem botões. Sem
+`data-label` a célula aparece sem rótulo no celular — e sem rótulo o número não significa nada.
+
+O cabeçalho do site público continua `sticky`; o do painel não, porque no painel a faixa de
+seções logo acima já está parada e duas barras fixas comem 120px de 844.
 
 Como validar (mede, não confia no olho): com a página longa aberta, `window.scrollY` tem de
 continuar `0`, `Math.round(document.scrollingElement.scrollHeight) === innerHeight`, e
@@ -126,5 +145,7 @@ pnpm dev                               # /, /login, /dashboard, /sistema/card, /
 ```
 
 - Abrir a tela com zoom 200% e navegar só pelo teclado.
+- Em 390px: `document.documentElement.scrollWidth === innerWidth` (sem rolagem lateral) e a
+  faixa de seções tem de continuar no topo depois de rolar (`getBoundingClientRect().top === 0`).
 - Conferir o estado vazio de cada lista nova.
 - Conferir o e-mail em `/sistema/email` e, quando possível, no cliente real.

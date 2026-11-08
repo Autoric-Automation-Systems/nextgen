@@ -28,7 +28,7 @@ export default async function PlatformPage() {
         </p>
       </div>
 
-      <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <section className="card card-flush">
         <table>
           <thead>
             <tr>

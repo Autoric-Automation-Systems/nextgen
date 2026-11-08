@@ -132,7 +132,7 @@ export default async function FinancePage({
               atraso
             </span>
           </div>
-          <div className="table-scroll">
+          <div className="table-scroll table-cards">
             <table>
               <thead>
                 <tr>
@@ -146,13 +146,13 @@ export default async function FinancePage({
               <tbody>
                 {overview.delinquents.map((entry) => (
                   <tr key={entry.studentId}>
-                    <td>
+                    <td data-label="Aluno">
                       <Link href={`/alunos/${entry.studentId}`}>{entry.studentName ?? "Aluno"}</Link>
                     </td>
-                    <td>{entry.charges}</td>
-                    <td>{formatDate(entry.oldestDueDate)}</td>
-                    <td>{entry.daysLate} dia(s)</td>
-                    <td>
+                    <td data-label="Cobranças">{entry.charges}</td>
+                    <td data-label="Mais antiga">{formatDate(entry.oldestDueDate)}</td>
+                    <td data-label="Atraso">{entry.daysLate} dia(s)</td>
+                    <td data-label="Total">
                       <strong>{formatBRL(entry.totalCents)}</strong>
                     </td>
                   </tr>
@@ -175,7 +175,7 @@ export default async function FinancePage({
             matrícula ativa.
           </p>
         ) : (
-          <div className="table-scroll">
+          <div className="table-scroll table-cards">
             <table>
               <thead>
                 <tr>
@@ -203,21 +203,23 @@ export default async function FinancePage({
 
                   return (
                     <tr key={invoice.id}>
-                      <td>
-                        <Link href={`/alunos/${invoice.studentId}`}>{invoice.studentName}</Link>
-                        {invoice.discount > 0 ? (
-                          <div className="muted">
-                            {formatBRL(invoice.baseAmount)} − {formatBRL(invoice.discount)} de desconto
-                          </div>
-                        ) : null}
+                      <td data-label="Aluno">
+                        <div className="cell-value">
+                          <Link href={`/alunos/${invoice.studentId}`}>{invoice.studentName}</Link>
+                          {invoice.discount > 0 ? (
+                            <span className="muted">
+                              {formatBRL(invoice.baseAmount)} − {formatBRL(invoice.discount)}
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
-                      <td>{formatDate(invoice.dueDate)}</td>
-                      <td>{formatBRL(invoice.amount)}</td>
-                      <td>{invoice.paidCents > 0 ? formatBRL(invoice.paidCents) : "—"}</td>
-                      <td>
+                      <td data-label="Vencimento">{formatDate(invoice.dueDate)}</td>
+                      <td data-label="Valor">{formatBRL(invoice.amount)}</td>
+                      <td data-label="Recebido">{invoice.paidCents > 0 ? formatBRL(invoice.paidCents) : "—"}</td>
+                      <td data-label="Situação">
                         <span className={STATE_BADGE[invoice.state]}>{STATE_LABEL[invoice.state]}</span>
                       </td>
-                      <td>
+                      <td className="cell-actions">
                         {canWrite ? (
                           <div className="stack" style={{ gap: 8 }}>
                             {outstanding > 0 ? (
@@ -313,7 +315,7 @@ export default async function FinancePage({
             Nenhuma despesa lançada neste mês.
           </p>
         ) : (
-          <div className="table-scroll">
+          <div className="table-scroll table-cards">
             <table>
               <thead>
                 <tr>
@@ -327,14 +329,16 @@ export default async function FinancePage({
               <tbody>
                 {overview.expenses.map((expense) => (
                   <tr key={expense.id}>
-                    <td>
-                      {expense.description}
-                      {expense.supplier ? <div className="muted">{expense.supplier}</div> : null}
+                    <td data-label="Descrição">
+                      <div className="cell-value">
+                        {expense.description}
+                        {expense.supplier ? <span className="muted">{expense.supplier}</span> : null}
+                      </div>
                     </td>
-                    <td>{expense.category}</td>
-                    <td>{formatDate(expense.dueDate)}</td>
-                    <td>{formatBRL(expense.amount)}</td>
-                    <td>
+                    <td data-label="Categoria">{expense.category}</td>
+                    <td data-label="Vencimento">{formatDate(expense.dueDate)}</td>
+                    <td data-label="Valor">{formatBRL(expense.amount)}</td>
+                    <td data-label="Situação" className="cell-actions">
                       {expense.paidAt ? (
                         <span className="badge">Paga</span>
                       ) : canWrite ? (

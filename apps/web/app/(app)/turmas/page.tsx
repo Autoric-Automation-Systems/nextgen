@@ -127,8 +127,8 @@ export default async function ClassGroupsPage() {
             <p className="muted">Seu perfil enxerga as turmas em modo leitura.</p>
           )}
 
-          <section className="card" style={{ padding: 0, overflow: "hidden" }}>
-            <div className="table-scroll">
+          <section className="card card-flush">
+            <div className="table-scroll table-cards">
             <table>
               <thead>
                 <tr>
@@ -142,22 +142,26 @@ export default async function ClassGroupsPage() {
               <tbody>
                 {groups.map((group) => (
                   <tr key={group.id}>
-                    <td>
-                      <Link href={`/turmas/${group.id}`}>
-                        <strong>{group.name}</strong>
-                      </Link>
-                      <div className="muted">{group.categoryName}</div>
+                    <td data-label="Turma">
+                      <div className="cell-value">
+                        <Link href={`/turmas/${group.id}`}>
+                          <strong>{group.name}</strong>
+                        </Link>
+                        <span className="muted">{group.categoryName}</span>
+                      </div>
                     </td>
-                    <td>
-                      {group.schedule}
-                      {!group.isActive ? <span className="badge neutral" style={{ marginLeft: 8 }}>inativa</span> : null}
+                    <td data-label="Horário">
+                      <div className="cell-value">
+                        {group.schedule}
+                        {!group.isActive ? <span className="badge neutral">inativa</span> : null}
+                      </div>
                     </td>
-                    <td className="muted">
+                    <td data-label="Local" className="muted">
                       {group.unitName}
                       {group.roomName ? ` · ${group.roomName}` : ""}
                     </td>
-                    <td className="muted">{group.teachers.join(", ") || "sem professor"}</td>
-                    <td>
+                    <td data-label="Professor(es)" className="muted">{group.teachers.join(", ") || "sem professor"}</td>
+                    <td data-label="Ocupação">
                       <div className="row" style={{ justifyContent: "flex-start", gap: 8 }}>
                         <div className="meter" style={{ width: 90 }}>
                           <div

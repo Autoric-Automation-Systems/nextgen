@@ -63,8 +63,8 @@ export default async function DashboardPage() {
             <tbody>
               {overview.categories.map((category) => (
                 <tr key={category.name}>
-                  <td>{category.name}</td>
-                  <td>{category.students}</td>
+                  <td data-label="Categoria">{category.name}</td>
+                  <td data-label="Alunos matriculados">{category.students}</td>
                 </tr>
               ))}
             </tbody>

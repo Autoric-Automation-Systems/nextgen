@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="shell">
       <aside className="shell-side">
-        <Link href="/dashboard" style={{ padding: "0 10px" }} aria-label="Painel">
+        <Link href="/dashboard" className="shell-brand" aria-label="Painel">
           <BrandLogo variant="mark" height={26} />
         </Link>
 
@@ -51,13 +51,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="shell-main">
         <div className="shell-top">
           <div className="shell-top-inner">
-            <span className="muted">
+            <span className="muted shell-note">
               {workspace?.isDemo
                 ? "Dados fictícios de demonstração — nada aqui é de uma escola real."
                 : "Dados da sua escola, filtrados por escola no banco."}
             </span>
-            <div className="row" style={{ gap: 14 }}>
-              <span className="muted">{session.email}</span>
+            <div className="shell-account">
+              <span className="muted shell-email">{session.email}</span>
               <form action={signOut}>
                 <button className="btn btn-ghost" style={{ height: 34 }} type="submit">
                   Sair
