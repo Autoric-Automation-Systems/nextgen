@@ -260,6 +260,11 @@ local seguir junto.
 | `BLOB_PUBLIC_READ_WRITE_TOKEN` | store `public` | quando o upload entrar |
 | `BLOB_PRIVATE_READ_WRITE_TOKEN` | store `private` | quando o upload entrar |
 
+As variáveis valem por ambiente: marcar só `Production` deixa o preview (e o `next start`
+sem `.env.local`) sem banco. Os clientes do `@nextgen/db` são preguiçosos — importar o
+pacote não conecta nem exige a variável —, então o erro aparece na primeira query, com o
+nome da variável que falta, em vez de derrubar a função inteira no carregamento.
+
 O `/api/health` confere isso por você: `missing` lista o que falta para o app servir, e
 com a lista não vazia ele responde `degraded` em vez de `ok`. Sem `BETTER_AUTH_SECRET`, o
 Better Auth lança em toda página autenticada e o sintoma é um `500` sem texto — foi o que
@@ -542,6 +547,8 @@ Previews servem para revisar PR, não para uso real. Para eles funcionarem:
 | Sintoma | Causa | Correção |
 |---|---|---|
 | `404 NOT_FOUND` em todas as rotas, `content-type: text/plain` | Root Directory na raiz + preset Other | Root `apps/web` + preset Next.js — ver seção 2 |
+| Runtime: `APP_DATABASE_URL (ou APP_DB_PASSWORD + DATABASE_URL) não configurada neste ambiente` | variável existente só em Production; preview não herda | cadastre a variável **também em Preview** (com banco de teste, nunca o de produção) ou promova a branch |
+| Runtime: `DATABASE_URL (ou DATABASE_URL_UNPOOLED/DIRECT_URL) não configurada neste ambiente` | mesma causa, do lado do papel dono — é o que o Better Auth usa para ler usuários | idem: a variável precisa existir no ambiente que está servindo a URL |
 | Build falha em `prisma generate` | `DATABASE_URL` ausente no build | a variável precisa existir também em Production *and* Preview |
 | Runtime: *Query engine … not found* | falta `rhel-openssl-3.0.x` | já declarado no schema; rode `prisma generate` no build |
 | Login responde ok, e-mail não chega | `mail: "missing"` no health | configure `EMAIL_USER` + `EMAIL_PASS` ou Resend |
