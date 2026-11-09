@@ -165,3 +165,7 @@
   do aluno continua Pix na conta da escola. Ver `docs/18-assinatura-e-envios.md`. Envio ao
   responsável: `invoices.last_sent_at` + cron `/api/cron/cobrancas` com `CRON_SECRET`; dia
   1–28 porque fevereiro não tem 31. `SchoolStatus` é `cancelled`, com dois L.
+- **Clientes do banco são preguiçosos** (`lazyClient` em `packages/db/src/client.ts`):
+  importar `@nextgen/db` nunca exige `APP_DATABASE_URL`; o erro sai na primeira query com
+  o nome da variável. Variável de Vercel marcada só em Production deixa o preview sem
+  banco — foi a causa do 500 em `/api/auth/[...all]`.
