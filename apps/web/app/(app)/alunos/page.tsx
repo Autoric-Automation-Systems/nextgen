@@ -35,7 +35,8 @@ export default async function StudentsPage() {
         </p>
       </div>
 
-      <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <section className="card card-flush">
+        <div className="table-scroll table-cards">
         <table>
           <thead>
             <tr>
@@ -50,22 +51,28 @@ export default async function StudentsPage() {
           <tbody>
             {students.map((student) => (
               <tr key={student.id}>
-                <td>
-                  <Link href={`/alunos/${student.id}`}>
-                    <strong>{student.name}</strong>
-                  </Link>
-                  {student.nickname ? <span className="muted"> · {student.nickname}</span> : null}
+                <td data-label="Aluno">
+                  <div className="cell-value">
+                    <Link href={`/alunos/${student.id}`}>
+                      <strong>{student.name}</strong>
+                    </Link>
+                    {student.nickname ? <span className="muted">{student.nickname}</span> : null}
+                  </div>
                 </td>
-                <td>
-                  {student.age}
-                  <span className="muted"> · {REGIME_LABEL[student.regime]}</span>
+                <td data-label="Idade">
+                  <div className="cell-value">
+                    {student.age}
+                    <span className="muted">{REGIME_LABEL[student.regime]}</span>
+                  </div>
                 </td>
-                <td>
-                  {student.category ?? "—"}
-                  <span className="muted">{student.classGroup ? ` · ${student.classGroup}` : ""}</span>
+                <td data-label="Categoria / turma">
+                  <div className="cell-value">
+                    {student.category ?? "—"}
+                    {student.classGroup ? <span className="muted">{student.classGroup}</span> : null}
+                  </div>
                 </td>
-                <td className="muted">{student.guardianNames.join(", ") || "—"}</td>
-                <td>
+                <td data-label="Responsável" className="muted">{student.guardianNames.join(", ") || "—"}</td>
+                <td data-label="Consentimento">
                   {student.consent === "granted" ? (
                     <span className="badge">ok</span>
                   ) : student.consent === "revoked" ? (
@@ -74,7 +81,7 @@ export default async function StudentsPage() {
                     <span className="badge warn">pendente</span>
                   )}
                 </td>
-                <td>
+                <td data-label="Card público">
                   {student.publicCard ? (
                     <span className="badge">publicado</span>
                   ) : (
@@ -90,6 +97,7 @@ export default async function StudentsPage() {
             ) : null}
           </tbody>
         </table>
+        </div>
       </section>
     </div>
   );

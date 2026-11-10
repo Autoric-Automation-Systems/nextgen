@@ -66,8 +66,8 @@ export default async function MyInvoicesPage() {
           </p>
         </section>
       ) : (
-        <section className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className="table-scroll">
+        <section className="card card-flush">
+          <div className="table-scroll table-cards">
             <table>
               <thead>
                 <tr>
@@ -81,16 +81,18 @@ export default async function MyInvoicesPage() {
               <tbody>
                 {invoices.map((invoice) => (
                   <tr key={invoice.id}>
-                    <td>{invoice.studentName}</td>
-                    <td>{competenceLabel(invoice.competence)}</td>
-                    <td>{formatDate(invoice.dueDate)}</td>
-                    <td>
-                      {formatBRL(invoice.amount)}
-                      {invoice.paidCents > 0 && invoice.paidCents < invoice.amount ? (
-                        <div className="muted">resta {formatBRL(invoice.amount - invoice.paidCents)}</div>
-                      ) : null}
+                    <td data-label="Aluno">{invoice.studentName}</td>
+                    <td data-label="Competência">{competenceLabel(invoice.competence)}</td>
+                    <td data-label="Vencimento">{formatDate(invoice.dueDate)}</td>
+                    <td data-label="Valor">
+                      <div className="cell-value">
+                        {formatBRL(invoice.amount)}
+                        {invoice.paidCents > 0 && invoice.paidCents < invoice.amount ? (
+                          <span className="muted">resta {formatBRL(invoice.amount - invoice.paidCents)}</span>
+                        ) : null}
+                      </div>
                     </td>
-                    <td>
+                    <td data-label="Situação">
                       <span className={STATE_BADGE[invoice.state]}>{STATE_LABEL[invoice.state]}</span>
                     </td>
                   </tr>

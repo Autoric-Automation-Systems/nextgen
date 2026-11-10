@@ -87,9 +87,62 @@ Três armadilhas que este desenho evita:
   `.wrap` (1080px) fica dentro.
 
 No celular (≤ 820px) a regra é **suspensa de propósito**: altura de tela é o recurso
-escasso, e menu + rodapé parados deixariam menos da metade para o conteúdo. O cabeçalho
-continua parado (`position: sticky`), porque 64px compram a saída da tela; menu e rodapé
-rolam com o documento. Em impressão, tudo volta ao fluxo normal.
+escasso, e menu + rodapé parados deixariam menos da metade para o conteúdo. Em impressão,
+tudo volta ao fluxo normal.
+
+## Celular: três decisões que fazem a tela caber
+
+O layout de celular não é o de desktop encolhido. Em `globals.css`:
+
+| Até | O que muda | Por quê |
+|---|---|---|
+| 820px | menu lateral vira **gaveta** fora da tela, aberta pelo botão do topo | oito itens em coluna empurravam o conteúdo para fora da primeira tela; a gaveta devolve a dobra ao conteúdo e mantém a hierarquia de seções |
+| 820px | a barra de aviso some e sobra só menu, nome da escola e saída | 40px de aviso repetido custam mais que o aviso |
+| 420px | o e-mail da conta sai da barra e passa para o pé da gaveta | em 320px ele truncava o nome da escola, que é o contexto |
+| 700px | `.table-cards`: `thead` oculto, cada `tr` vira cartão com rótulo por `td::before` e `data-label` | tabela de 620px em tela de 390px escondia valor e ações atrás de rolagem lateral |
+| 700px | ações do cartão em duas colunas | cinco botões empilhados faziam um cartão de 400px |
+| 620px | títulos 30px, indicadores em duas colunas, `.row` quebra linha | cinco cartões de métrica empilhavam por mais de uma tela |
+| 820px | campos com `font-size: 16px` | abaixo disso o iOS dá zoom ao focar |
+
+Regra para tabela nova: marcar o contêiner com `table-cards`, pôr `data-label` em cada `td`
+que tem cabeçalho, e `className="cell-actions"` na última célula quando ela tem botões. Sem
+`data-label` a célula aparece sem rótulo no celular — e sem rótulo o número não significa nada.
+
+O cabeçalho do site público continua `sticky`. No painel, a barra do topo também: é ela que
+carrega o botão da gaveta — sem ela parada, o menu fica inalcançável no meio de uma lista
+longa.
+
+### Gaveta do menu: o que ela precisa cumprir
+
+`apps/web/components/app-shell.tsx` guarda o estado porque o botão (barra do topo) e a
+gaveta (`aside`) são irmãos — sem ancestral comum, um não alcança o outro.
+
+| Regra | Por quê |
+|---|---|
+| `aria-expanded` no botão e `aria-controls` apontando para o `aside` | é um *disclosure*: o leitor de tela anuncia aberto/fechado e para onde o botão leva |
+| fecha ao navegar (`usePathname`), no Esc e no toque no véu | menu aberto sobre a tela nova é o defeito clássico de gaveta |
+| foco vai para o botão fechar ao abrir e volta ao botão menu ao fechar | quem usa teclado não pode começar o Tab no topo do documento |
+| `inert` no miolo enquanto aberta | o Tab não entra em conteúdo coberto pelo véu |
+| `visibility: hidden` na gaveta fechada | `transform` sozinho deixa os links focáveis fora da tela |
+| `body { overflow: hidden }` enquanto aberta | rolar atrás da gaveta embaralha a posição de retorno |
+| largura `min(84vw, 296px)` | sobra uma faixa do conteúdo à vista, que é o que indica que dá para fechar tocando fora |
+| fecha ao passar de 820px (`matchMedia`) | girar o celular devolveria a coluna do desktop com o miolo `inert` |
+
+Contra o teclado: `Esc` fecha, `Tab` não escapa para o conteúdo, e nenhum link fica focável
+com a gaveta fechada.
+
+### Menu recolhido no desktop
+
+Acima de 820px a coluna de 236px vira uma rail de 72px: só ícones, sem nome da escola e sem
+título de seção. O botão que alterna mora na barra do topo, ao lado do menu que ele recolhe.
+
+| Regra | Por quê |
+|---|---|
+| estado em `data-nav-collapsed`, preferência em `localStorage` | a escolha é do operador, não da sessão: quem trabalha em tela pequena recolhe uma vez e continua recolhido |
+| preferência lida em `useEffect`, nunca no render | o servidor não vê o `localStorage`; ler no render daria diferença de markup a cada navegação |
+| rótulo escondido por recorte (`clip`), não por `display: none` | no modo recolhido o ícone é o único sinal visual, então o nome acessível tem de continuar no HTML |
+| linha divisória entre grupos quando os títulos somem | sem `sidebar-title`, os ícones de "Escola" e "Ajuda" ficam numa pilha só |
+| `aria-expanded` no botão | o botão descreve o menu, não a si mesmo |
 
 Como validar (mede, não confia no olho): com a página longa aberta, `window.scrollY` tem de
 continuar `0`, `Math.round(document.scrollingElement.scrollHeight) === innerHeight`, e
@@ -126,5 +179,7 @@ pnpm dev                               # /, /login, /dashboard, /sistema/card, /
 ```
 
 - Abrir a tela com zoom 200% e navegar só pelo teclado.
+- Em 390px: `document.documentElement.scrollWidth === innerWidth` (sem rolagem lateral) e a
+  faixa de seções tem de continuar no topo depois de rolar (`getBoundingClientRect().top === 0`).
 - Conferir o estado vazio de cada lista nova.
 - Conferir o e-mail em `/sistema/email` e, quando possível, no cliente real.

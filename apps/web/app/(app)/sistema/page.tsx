@@ -28,40 +28,42 @@ export default async function PlatformPage() {
         </p>
       </div>
 
-      <section className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Escola</th>
-              <th>Endereço público</th>
-              <th>Seu acesso</th>
-            </tr>
-          </thead>
-          <tbody>
-            {schools.map((school) => (
-              <tr key={school.id}>
-                <td>
-                  <strong>{school.name}</strong>
-                </td>
-                <td className="muted">/{school.slug}</td>
-                <td>
-                  {school.role ? (
-                    <span className="badge">{school.role}</span>
-                  ) : (
-                    <span className="badge neutral">somente leitura</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {schools.length === 0 ? (
+      <section className="card card-flush">
+        <div className="table-scroll table-cards">
+          <table>
+            <thead>
               <tr>
-                <td colSpan={3} className="muted">
-                  Nenhuma escola cadastrada. Crie a primeira ou rode o seed de demonstração.
-                </td>
+                <th>Escola</th>
+                <th>Endereço público</th>
+                <th>Seu acesso</th>
               </tr>
-            ) : null}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {schools.map((school) => (
+                <tr key={school.id}>
+                  <td data-label="Escola">
+                    <strong>{school.name}</strong>
+                  </td>
+                  <td className="muted" data-label="Endereço público">/{school.slug}</td>
+                  <td data-label="Seu acesso">
+                    {school.role ? (
+                      <span className="badge">{school.role}</span>
+                    ) : (
+                      <span className="badge neutral">somente leitura</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {schools.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="muted">
+                    Nenhuma escola cadastrada. Crie a primeira ou rode o seed de demonstração.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="card">

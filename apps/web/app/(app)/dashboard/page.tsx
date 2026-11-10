@@ -53,22 +53,24 @@ export default async function DashboardPage() {
         {overview.categories.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>Nenhuma categoria criada para a temporada ativa.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Categoria</th>
-                <th>Alunos matriculados</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overview.categories.map((category) => (
-                <tr key={category.name}>
-                  <td>{category.name}</td>
-                  <td>{category.students}</td>
+          <div className="table-scroll table-cards">
+            <table>
+              <thead>
+                <tr>
+                  <th>Categoria</th>
+                  <th>Alunos matriculados</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {overview.categories.map((category) => (
+                  <tr key={category.name}>
+                    <td data-label="Categoria">{category.name}</td>
+                    <td data-label="Alunos matriculados">{category.students}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

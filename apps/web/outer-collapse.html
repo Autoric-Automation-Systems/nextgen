@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8">
+<iframe id="f" src="page.html" width="1200" height="800" style="border:0"></iframe>
+<pre id="out">pendente</pre>
+<script>
+const f = document.getElementById('f');
+f.addEventListener('load', () => {
+  const w = f.contentWindow, d = f.contentDocument, o = document.getElementById('out');
+  const R = (el) => { const b = el.getBoundingClientRect(); return `x=${Math.round(b.x)} w=${Math.round(b.width)}`; };
+  const st = (el) => getComputedStyle(el);
+  const side = d.getElementById('shell-nav'), text = d.querySelector('.sidebar-text'), icon = d.querySelector('.sidebar-icon');
+  const snap = (label) => [
+    label,
+    '  grid=' + st(d.getElementById('shell')).gridTemplateColumns,
+    '  aside: ' + R(side),
+    '  icon: ' + (icon ? 'visivel ' + R(icon) : 'ausente'),
+    '  label text: display=' + st(text).display + ' w=' + Math.round(text.getBoundingClientRect().width) + ' clip=' + st(text).clip,
+    '  accessor: ' + (text.textContent || '').trim(),
+    '  content: ' + R(d.querySelector('.shell-content')),
+    '  collapseBtn display=' + st(d.getElementById('collapse')).display,
+  ].join('\n');
+  const lines = [snap('expandido (1200px)')];
+  d.getElementById('collapse').click();
+  setTimeout(() => { lines.push(snap('recolhido (1200px)')); o.textContent = lines.join('\n'); }, 60);
+});
+</script>

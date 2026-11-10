@@ -154,3 +154,7 @@
   inadimplência e despesas para a família.
 - **Seed antes de testar tela**: `pnpm db:seed` cria planos, matrícula e chave Pix; sem ele
   `/financeiro` abre sem cobrança nenhuma e parece que a geração falhou.
+- **Menu do painel no celular = gaveta lateral** (`components/app-shell.tsx`), não faixa no topo.
+  Ruy rejeitou a faixa. Mesmo componente guarda o estado porque botão e `aside` são irmãos.
+- **Medir CSS sem banco**: harness HTML em iframe no Chromium headless; para transições, usar
+  `--force-prefers-reduced-motion` (virtual time não avança animação).

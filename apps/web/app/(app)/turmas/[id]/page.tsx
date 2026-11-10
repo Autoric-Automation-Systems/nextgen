@@ -150,12 +150,12 @@ export default async function ClassGroupPage({
         </details>
       ) : null}
 
-      <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <section className="card card-flush">
         <div className="row" style={{ padding: "16px 18px 0" }}>
           <h2 className="section-title">Turma</h2>
           <span className="muted">{group.roster.length} aluno(s) na lista</span>
         </div>
-        <div className="table-scroll">
+        <div className="table-scroll table-cards">
             <table>
           <thead>
             <tr>
@@ -172,25 +172,29 @@ export default async function ClassGroupPage({
               const consent = CONSENT_BADGE[row.consent as ConsentKey];
               return (
                 <tr key={row.id}>
-                  <td>
-                    <Link href={`/alunos/${row.studentId}`}>
-                      <strong>{row.studentName}</strong>
-                    </Link>
-                    {row.nickname ? <span className="muted"> · {row.nickname}</span> : null}
-                    {row.overrideReason ? <div className="muted">exceção: {row.overrideReason}</div> : null}
+                  <td data-label="Aluno">
+                    <div className="cell-value">
+                      <Link href={`/alunos/${row.studentId}`}>
+                        <strong>{row.studentName}</strong>
+                      </Link>
+                      {row.nickname ? <span className="muted">{row.nickname}</span> : null}
+                      {row.overrideReason ? <span className="muted">exceção: {row.overrideReason}</span> : null}
+                    </div>
                   </td>
-                  <td className="muted">{row.birthYear}</td>
-                  <td className="muted">{row.guardianNames.join(", ") || "—"}</td>
-                  <td>
+                  <td data-label="Nascimento" className="muted">{row.birthYear}</td>
+                  <td data-label="Responsável" className="muted">{row.guardianNames.join(", ") || "—"}</td>
+                  <td data-label="Consentimento">
                     <span className={consent.cls}>{consent.text}</span>
                   </td>
-                  <td>
-                    <span className={STATUS_CLASS[row.status] ?? "badge neutral"}>
-                      {ENROLLMENT_STATUS_LABEL[row.status] ?? row.status}
-                    </span>
-                    <div className="muted">desde {formatDate(row.startsOn)}</div>
+                  <td data-label="Situação">
+                    <div className="cell-value">
+                      <span className={STATUS_CLASS[row.status] ?? "badge neutral"}>
+                        {ENROLLMENT_STATUS_LABEL[row.status] ?? row.status}
+                      </span>
+                      <span className="muted">desde {formatDate(row.startsOn)}</span>
+                    </div>
                   </td>
-                  <td style={{ textAlign: "right" }}>
+                  <td className="cell-actions">
                     {canWrite ? (
                       <EnrollmentActions enrollmentId={row.id} classGroupId={group.id} kind="roster" />
                     ) : null}
@@ -212,12 +216,12 @@ export default async function ClassGroupPage({
       </section>
 
       {group.waitlist.length > 0 ? (
-        <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <section className="card card-flush">
           <div className="row" style={{ padding: "16px 18px 0" }}>
             <h2 className="section-title">Lista de espera</h2>
             <span className="muted">ordem de chegada</span>
           </div>
-          <div className="table-scroll">
+          <div className="table-scroll table-cards">
             <table>
             <thead>
               <tr>
@@ -239,17 +243,17 @@ export default async function ClassGroupPage({
                       : undefined;
                 return (
                   <tr key={row.id}>
-                    <td className="muted">{index + 1}</td>
-                    <td>
+                    <td data-label="Posição" className="muted">{index + 1}</td>
+                    <td data-label="Aluno">
                       <Link href={`/alunos/${row.studentId}`}>
                         <strong>{row.studentName}</strong>
                       </Link>
                     </td>
-                    <td className="muted">{row.guardianNames.join(", ") || "—"}</td>
-                    <td>
+                    <td data-label="Responsável" className="muted">{row.guardianNames.join(", ") || "—"}</td>
+                    <td data-label="Consentimento">
                       <span className={consent.cls}>{consent.text}</span>
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    <td className="cell-actions">
                       {canWrite ? (
                         <EnrollmentActions
                           enrollmentId={row.id}
