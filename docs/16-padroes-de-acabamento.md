@@ -131,6 +131,19 @@ gaveta (`aside`) são irmãos — sem ancestral comum, um não alcança o outro.
 Contra o teclado: `Esc` fecha, `Tab` não escapa para o conteúdo, e nenhum link fica focável
 com a gaveta fechada.
 
+### Menu recolhido no desktop
+
+Acima de 820px a coluna de 236px vira uma rail de 72px: só ícones, sem nome da escola e sem
+título de seção. O botão que alterna mora na barra do topo, ao lado do menu que ele recolhe.
+
+| Regra | Por quê |
+|---|---|
+| estado em `data-nav-collapsed`, preferência em `localStorage` | a escolha é do operador, não da sessão: quem trabalha em tela pequena recolhe uma vez e continua recolhido |
+| preferência lida em `useEffect`, nunca no render | o servidor não vê o `localStorage`; ler no render daria diferença de markup a cada navegação |
+| rótulo escondido por recorte (`clip`), não por `display: none` | no modo recolhido o ícone é o único sinal visual, então o nome acessível tem de continuar no HTML |
+| linha divisória entre grupos quando os títulos somem | sem `sidebar-title`, os ícones de "Escola" e "Ajuda" ficam numa pilha só |
+| `aria-expanded` no botão | o botão descreve o menu, não a si mesmo |
+
 Como validar (mede, não confia no olho): com a página longa aberta, `window.scrollY` tem de
 continuar `0`, `Math.round(document.scrollingElement.scrollHeight) === innerHeight`, e
 `footer.getBoundingClientRect().bottom` tem de bater com a altura da janela depois de rolar

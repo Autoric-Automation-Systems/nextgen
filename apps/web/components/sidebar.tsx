@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { NavIcon } from "@/components/nav-icon";
 import type { NavSection } from "@/lib/nav";
 
 /**
@@ -28,8 +29,9 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
                 <li key={`${section.id}-${item.href}-${item.label}`}>
                   {soon ? (
                     <span className="sidebar-link is-soon" aria-disabled>
-                      <span>{item.label}</span>
-                      <em>em breve</em>
+                      <NavIcon href={item.href} />
+                      <span className="sidebar-text">{item.label}</span>
+                      <em className="sidebar-extra">em breve</em>
                     </span>
                   ) : item.external ? (
                     <a
@@ -39,8 +41,9 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
                       rel="noopener noreferrer"
                       title={item.hint}
                     >
-                      <span>{item.label}</span>
-                      <span aria-hidden>↗</span>
+                      <NavIcon href={item.href} />
+                      <span className="sidebar-text">{item.label}</span>
+                      <span className="sidebar-extra" aria-hidden>↗</span>
                     </a>
                   ) : (
                     <Link
@@ -51,7 +54,8 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
                       // o texto completo fica para quem precisa, no tooltip.
                       title={item.hint}
                     >
-                      <span>{item.label}</span>
+                      <NavIcon href={item.href} />
+                      <span className="sidebar-text">{item.label}</span>
                     </Link>
                   )}
                 </li>

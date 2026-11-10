@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
 
 const NAV_ID = "shell-nav";
+const COLLAPSE_KEY = "nextgen:nav-collapsed";
 
 /**
  * Casca do painel com menu lateral retrátil no celular.
@@ -30,6 +31,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -39,6 +41,19 @@ export function AppShell({
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  // Preferência lida depois da hidratação: o servidor não conhece o `localStorage`, e
+  // renderizar recolhido no HTML daria diferença de markup em toda navegação.
+  useEffect(() => {
+    if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((value) => {
+      localStorage.setItem(COLLAPSE_KEY, value ? "0" : "1");
+      return !value;
+    });
+  };
 
   useEffect(() => {
     if (!open) {
@@ -74,7 +89,11 @@ export function AppShell({
   }, [open]);
 
   return (
-    <div className="shell" data-nav-open={open ? "true" : "false"}>
+    <div
+      className="shell"
+      data-nav-open={open ? "true" : "false"}
+      data-nav-collapsed={collapsed ? "true" : "false"}
+    >
       <div className="nav-scrim" onClick={() => setOpen(false)} aria-hidden />
 
       <aside id={NAV_ID} className="shell-side" aria-label="Menu do painel">
@@ -112,6 +131,31 @@ export function AppShell({
             </button>
 
             <span className="shell-mobile-title">{title}</span>
+
+            <button
+              type="button"
+              className="nav-collapse"
+              onClick={toggleCollapsed}
+              aria-expanded={!collapsed}
+              aria-controls={NAV_ID}
+              title={collapsed ? "Expandir menu" : "Recolher menu"}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                focusable="false"
+              >
+                <path d={collapsed ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"} />
+              </svg>
+              <span className="sr-only">{collapsed ? "Expandir menu" : "Recolher menu"}</span>
+            </button>
 
             {topbar}
           </div>

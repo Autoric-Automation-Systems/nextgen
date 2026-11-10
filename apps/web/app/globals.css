@@ -247,7 +247,7 @@ details.panel > .panel-body { padding: 0 20px 20px; }
  * Peças da gaveta existem em todas as larguras, mas nascem inertes: no desktop o menu é
  * coluna fixa e não há o que abrir. É o bloco de 820px que as liga.
  */
-.nav-toggle, .nav-close, .shell-mobile-title, .nav-scrim, .shell-side-head, .shell-side-email { display: none; }
+.nav-toggle, .nav-close, .nav-collapse, .shell-mobile-title, .nav-scrim, .shell-side-head, .shell-side-email { display: none; }
 .nav-toggle-bars { display: flex; flex-direction: column; gap: 4px; width: 16px; }
 .nav-toggle-bars span { display: block; height: 2px; border-radius: 2px; background: currentColor; }
 .nav-toggle:focus-visible, .nav-close:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
@@ -259,6 +259,8 @@ details.panel > .panel-body { padding: 0 20px 20px; }
 .shell-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .shell-top { border-bottom: 1px solid var(--line); background: var(--surface); flex: none; }
 .shell-top-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; }
+/* O aviso ocupa o meio; o botão de recolher fica colado ao menu que ele recolhe. */
+.shell-top-inner .shell-note { margin-right: auto; }
 .shell-content {
   flex: 1; min-height: 0; overflow-y: auto;
   overscroll-behavior: contain; scrollbar-gutter: stable;
@@ -274,10 +276,14 @@ details.panel > .panel-body { padding: 0 20px 20px; }
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
 }
 .sidebar-link {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
   padding: 8px 10px; border-radius: 9px; font-size: 14px; color: var(--ink);
   text-decoration: none;
 }
+.sidebar-icon { flex: none; color: var(--ink-soft); }
+.sidebar-link.is-active .sidebar-icon { color: var(--brand); }
+.sidebar-link:hover .sidebar-icon { color: var(--ink); }
+.sidebar-extra { margin-left: auto; }
 .sidebar-link:hover { background: var(--canvas); }
 .sidebar-link.is-active { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
 .sidebar-link.is-soon { color: #98a2b3; cursor: default; }
@@ -380,6 +386,44 @@ details.panel > .panel-body { padding: 0 20px 20px; }
   .hero-cards .player-card { width: 100%; max-width: 340px; }
   .hero-cards .player-card:first-of-type,
   .hero-cards .player-card:nth-of-type(2) { transform: none; }
+}
+
+/*
+ * Menu recolhido (≥ 821px): a coluna vira uma rail de 72px só com ícones.
+ *
+ * O estado é do `AppShell` e vem em `data-nav-collapsed`; a preferência fica no
+ * `localStorage`. O rótulo continua no HTML — sai da tela por recorte, não por
+ * `display: none`, senão o link fica sem nome acessível no modo recolhido.
+ */
+@media (min-width: 821px) {
+  .nav-collapse {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; padding: 0;
+    border: 1px solid var(--line); border-radius: 9px;
+    background: var(--surface); color: var(--ink-soft); cursor: pointer;
+  }
+  .nav-collapse:hover { color: var(--ink); background: var(--canvas); }
+  .nav-collapse:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+  .shell[data-nav-collapsed="true"] { grid-template-columns: 72px 1fr; }
+  .shell[data-nav-collapsed="true"] .shell-side { padding: 20px 10px; gap: 14px; }
+  .shell[data-nav-collapsed="true"] .shell-school,
+  .shell[data-nav-collapsed="true"] .sidebar-title,
+  .shell[data-nav-collapsed="true"] .sidebar-extra,
+  .shell[data-nav-collapsed="true"] .shell-side > p { display: none; }
+  .shell[data-nav-collapsed="true"] .shell-brand { padding: 0; align-self: center; }
+  .shell[data-nav-collapsed="true"] .sidebar-link { justify-content: center; padding: 10px 0; }
+  .shell[data-nav-collapsed="true"] .sidebar-text {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  /* Sem título de seção a rail perde o agrupamento: a linha entre grupos faz esse papel. */
+  .shell[data-nav-collapsed="true"] .sidebar-section + .sidebar-section {
+    padding-top: 12px; border-top: 1px solid var(--line);
+  }
+  .shell[data-nav-collapsed="true"] .sidebar-section.is-help {
+    margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line);
+  }
 }
 
 /*
