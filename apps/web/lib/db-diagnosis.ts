@@ -62,6 +62,12 @@ export function describeDbFailure(error: unknown): string {
   }
   if (/Environment variable not found/.test(error.message)) return "variável de ambiente do banco ausente";
 
+  // Sem código P1001: o Prisma só embrulha. TCP pode até aceitar e o handshake morrer
+  // (endpoint suspenso, host de outro projeto). Culpar senha aqui manda para o lugar errado.
+  if (/Can't reach database server|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(error.message)) {
+    return "host do banco não alcançado (endpoint divergente, suspenso ou handshake recusado)";
+  }
+
   if (code) return `${String(code)}: falha ao conectar`;
   return error.name;
 }
@@ -469,8 +475,10 @@ export function connectionHint(
     return "o papel nextgen_app existe e aceita login, mas a senha da URL não confere — resete em Neon > Roles e atualize APP_DATABASE_URL";
   }
 
+  // Último ramo: a aplicação falhou sem código, o dono conecta. Isso é host diferente,
+  // não senha — o Prisma não teria como autenticar num servidor que não responde.
   if (role.can_login && owner?.ok) {
-    return "o papel aceita login e o dono conecta: a senha de APP_DB_PASSWORD não é a mesma gravada no Neon (ou chegou com aspas/espaço) — alinhe as duas e redeploye";
+    return "a URL da aplicação aponta para um host que não responde, enquanto o dono conecta em outro endpoint — compare o host de APP_DATABASE_URL com o de DATABASE_URL (ou remova APP_DATABASE_URL e deixe só APP_DB_PASSWORD para o app herdar o host do dono)";
   }
 
   return undefined;

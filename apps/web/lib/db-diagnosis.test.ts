@@ -256,9 +256,33 @@ describe("connectionHint", () => {
     expect(hint).toContain("sem login");
   });
 
+  it("host que não responde não é senha: o dono conecta em outro endpoint", () => {
+    const hint = connectionHint(
+      [
+        { name: "pooler + nextgen_app", ok: false, code: "desconhecido" },
+        { name: "pooler + dono", ok: true, code: "ok" },
+      ],
+      { checked: true, can_login: true },
+    );
+
+    expect(hint).toContain("host que não responde");
+    expect(hint).not.toContain("a senha de APP_DB_PASSWORD não é a mesma");
+  });
+
   it("conexão de aplicação funcionando não gera aviso", () => {
     expect(
       connectionHint([{ name: "pooler + nextgen_app", ok: true, code: "ok" }], { checked: true }),
     ).toBeUndefined();
+  });
+});
+
+describe("describeDbFailure", () => {
+  it("erro de inicialização sem P1001 fala de host, não de autenticação", () => {
+    const error = new Error(
+      "Invalid `prisma.$queryRaw()` invocation: Can't reach database server at db.example:5432",
+    );
+    error.name = "PrismaClientInitializationError";
+
+    expect(describeDbFailure(error)).toContain("host do banco não alcançado");
   });
 });
