@@ -269,6 +269,18 @@ describe("connectionHint", () => {
     expect(hint).not.toContain("a senha de APP_DB_PASSWORD não é a mesma");
   });
 
+  it("host de exemplo é nomeado antes de culpar credencial", () => {
+    const hint = connectionHint(
+      [
+        { name: "pooler + nextgen_app", ok: false, code: "placeholder" },
+        { name: "pooler + dono", ok: true, code: "ok" },
+      ],
+      { checked: true, can_login: true },
+    );
+
+    expect(hint).toContain("exemplo da documentação");
+  });
+
   it("conexão de aplicação funcionando não gera aviso", () => {
     expect(
       connectionHint([{ name: "pooler + nextgen_app", ok: true, code: "ok" }], { checked: true }),

@@ -65,6 +65,23 @@ function isLoopbackHost(hostname: string): boolean {
   return host === "localhost" || host === "::1" || host === "0.0.0.0" || host.startsWith("127.");
 }
 
+/**
+ * Host copiado de exemplo em vez do console.
+ *
+ * Os placeholders da documentação (`ep-xxx-pooler.sa-east-1.aws.neon.tech`) resolvem por
+ * DNS curinga da região e aceitam TCP na 5432 — a sondagem de porta diz "no ar" e o
+ * Prisma falha o handshake, que aparece como "Can't reach database server". Sem esta
+ * detecção, o sintoma aponta para senha e o defeito real é a URL de exemplo.
+ */
+export function placeholderHost(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    return /(^|[.-])(x{3,}|seu-|your-|example|placeholder)/i.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** Como o TLS foi resolvido. Vai para o health: `ausente` explica P1001 enganoso. */
 export function sslMode(url: string | undefined): string {
   if (!url) return "ausente";

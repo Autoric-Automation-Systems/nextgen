@@ -7,6 +7,7 @@ import {
   normalizeUrl,
   resolveDatabaseConfig,
   sslMode,
+  placeholderHost,
   urlAnomaly,
   userFromUrl,
 } from "../src/env";
@@ -236,5 +237,21 @@ describe("directDatabaseUrl", () => {
     expect(directUrlSource({ DATABASE_URL_UNPOOLED: "postgresql://u:p@h/db" })).toBe(
       "DATABASE_URL_UNPOOLED",
     );
+  });
+});
+
+describe("placeholderHost", () => {
+  it("reconhece o host de exemplo dos docs", () => {
+    expect(placeholderHost("postgresql://u:p@ep-xxx-pooler.sa-east-1.aws.neon.tech/db")).toBe(true);
+  });
+
+  it("não confunde endpoint real do projeto", () => {
+    expect(
+      placeholderHost("postgresql://u:p@ep-old-recipe-bitter-123-pooler.sa-east-1.aws.neon.tech/db"),
+    ).toBe(false);
+  });
+
+  it("local não é placeholder", () => {
+    expect(placeholderHost("postgresql://u:p@127.0.0.1:5432/nextgen")).toBe(false);
   });
 });

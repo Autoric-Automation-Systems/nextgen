@@ -43,11 +43,17 @@ prepared statements por padrão, então sem os parâmetros a aplicação sobe e 
 query com `prepared statement "s0" already exists` ou `bind message supplies 0 parameters`:
 
 ```
-postgresql://nextgen_app:SENHA@ep-xxx-pooler.sa-east-1.aws.neon.tech/nextgen  ?sslmode=require&pgbouncer=true&connection_limit=1
+postgresql://nextgen_app:SENHA@<endpoint>-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true&connection_limit=1
 ```
 
 `connection_limit=1` porque cada instância de função é um processo curto: uma conexão por
 função evita esgotar o pool com lambdas ociosas.
+
+> **`<endpoint>` é o identificador do seu projeto** (`ep-old-recipe-…`), visível em
+> Neon → Connect. Nunca cole um host de exemplo: o DNS da Neon é curinga por região, então
+> um host inventado resolve, aceita TCP na 5432 e só falha no handshake — o erro aparece
+> como "Can't reach database server" e manda procurar senha. O `/api/health` marca esse
+> caso com `code: "placeholder"`.
 
 O contexto de tenant é aplicado com `set_config(..., true)`, que é escopo de transação — por
 isso convive com o modo *transaction*. Se algum caminho de código esquecer a transação, o
@@ -69,7 +75,7 @@ O papel então nasce fora do SQL, pelo console:
 1. **Neon Console → projeto → Roles → Create role**: nome `nextgen_app`, marque para gerar
    uma senha e copie.
 2. Monte `APP_DATABASE_URL` com esse usuário, no host *pooled*:
-   `postgresql://nextgen_app:SENHA@ep-xxx-pooler.regiao.aws.neon.tech/neondb?sslmode=require&pgbouncer=true`
+   `postgresql://nextgen_app:SENHA@<endpoint>-pooler.<região>.aws.neon.tech/neondb?sslmode=require&pgbouncer=true`
 3. Deixe o build aplicar as migrações (seção 3, "Migração no build"). A cada deploy o
    script confere os `GRANT`s do papel — necessário porque a migração de RLS pode ter
    rodado antes de o papel existir, e migração aplicada não roda de novo.

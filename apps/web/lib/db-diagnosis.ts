@@ -2,6 +2,7 @@ import { connect } from "node:net";
 import {
   appDatabaseCandidates,
   appDatabaseUrl,
+  placeholderHost,
   directDatabaseUrl,
   directUrlSource,
   ignoredDirectSources,
@@ -230,7 +231,8 @@ export async function probeConnections(timeoutMs = 6000) {
   const direct = directDatabaseUrl();
 
   const attempts = [
-    { name: "pooler + nextgen_app", url: appUrl },
+    // Antes de tentar: host de exemplo não falha por credencial, falha por não existir.
+    { name: "pooler + nextgen_app", url: appUrl, placeholder: placeholderHost(appUrl) },
     { name: "pooler + dono", url: ownerPooled },
     { name: "direto + dono", url: direct },
   ];
@@ -242,8 +244,12 @@ export async function probeConnections(timeoutMs = 6000) {
     ]);
 
   return Promise.all(
-    attempts.map(async ({ name, url }) => {
+    attempts.map(async (attempt) => {
+      const { name, url } = attempt;
       if (!url) return { name, ok: false, code: "sem URL" };
+      if ("placeholder" in attempt && attempt.placeholder) {
+        return { name, ok: false, code: "placeholder" };
+      }
 
       const client = createAppClient(url);
       try {
@@ -462,6 +468,10 @@ export function connectionHint(
   // `sem URL` é ausência de configuração, não credencial errada. Sem esta checagem o
   // health culpava a senha de APP_DB_PASSWORD num ambiente onde ela nem existia —
   // e o papel certo (que só pode ser lido com a variável presente) ficava de fora.
+  if (app.code === "placeholder") {
+    return "o host de APP_DATABASE_URL é um exemplo da documentação (ep-xxx-pooler), não o endpoint do seu projeto — copie a URL em Neon > Connect; o DNS curinga da região responde TCP, então a sondagem de porta mente";
+  }
+
   if (app.code === "sem URL") {
     return "APP_DATABASE_URL (ou APP_DB_PASSWORD) não existe neste ambiente — sem ela o app conecta como dono e a RLS depende só de FORCE ROW LEVEL SECURITY; cadastre a variável no ambiente que serve esta URL e redeploye";
   }
