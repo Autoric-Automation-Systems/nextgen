@@ -445,7 +445,7 @@ export function credentialShape() {
 
 /** Traduz o conjunto de sondagens em uma causa provável, não em sintoma. */
 export function connectionHint(
-  connections: { name: string; ok: boolean }[],
+  connections: { name: string; ok: boolean; code?: string }[],
   role: { checked?: boolean; can_login?: boolean },
 ): string | undefined {
   const app = connections.find((item) => item.name.includes("nextgen_app"));
@@ -453,8 +453,20 @@ export function connectionHint(
 
   if (!app || app.ok) return undefined;
 
+  // `sem URL` é ausência de configuração, não credencial errada. Sem esta checagem o
+  // health culpava a senha de APP_DB_PASSWORD num ambiente onde ela nem existia —
+  // e o papel certo (que só pode ser lido com a variável presente) ficava de fora.
+  if (app.code === "sem URL") {
+    return "APP_DATABASE_URL (ou APP_DB_PASSWORD) não existe neste ambiente — sem ela o app conecta como dono e a RLS depende só de FORCE ROW LEVEL SECURITY; cadastre a variável no ambiente que serve esta URL e redeploye";
+  }
+
+  // NOLOGIN explica P1000 melhor que senha: o papel recusa qualquer credencial.
   if (role.checked && role.can_login === false) {
     return "o papel nextgen_app existe mas está sem login — no SQL Editor do Neon: alter role nextgen_app login password '<a mesma senha de APP_DB_PASSWORD>';";
+  }
+
+  if (app.code === "P1000") {
+    return "o papel nextgen_app existe e aceita login, mas a senha da URL não confere — resete em Neon > Roles e atualize APP_DATABASE_URL";
   }
 
   if (role.can_login && owner?.ok) {

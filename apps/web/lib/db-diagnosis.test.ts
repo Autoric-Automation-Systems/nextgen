@@ -1,6 +1,7 @@
 import { createServer } from "node:net";
 import { describe, expect, it } from "vitest";
 import {
+  connectionHint,
   missingAppConfig,
   usageWarnings,
   appConfigPresence,
@@ -217,5 +218,47 @@ describe("usageWarnings", () => {
 
   it("não avisa fora de deploy, onde não há URL efêmera", () => {
     expect(usageWarnings({})).toEqual([]);
+  });
+});
+
+describe("connectionHint", () => {
+  const ownerOk = [
+    { name: "pooler + nextgen_app", ok: false, code: "sem URL" },
+    { name: "pooler + dono", ok: true, code: "ok" },
+    { name: "direto + dono", ok: true, code: "ok" },
+  ];
+
+  it("variável ausente não pode ser confundida com senha trocada", () => {
+    const hint = connectionHint(ownerOk, { checked: true, can_login: true });
+
+    expect(hint).toContain("não existe neste ambiente");
+    expect(hint).not.toContain("a senha de APP_DB_PASSWORD não é a mesma");
+  });
+
+  it("P1000 com papel que aceita login aponta a senha da URL", () => {
+    const hint = connectionHint(
+      [
+        { name: "pooler + nextgen_app", ok: false, code: "P1000" },
+        { name: "pooler + dono", ok: true, code: "ok" },
+      ],
+      { checked: true, can_login: true },
+    );
+
+    expect(hint).toContain("senha da URL não confere");
+  });
+
+  it("papel sem login vence a senha, porque nenhuma credencial entraria", () => {
+    const hint = connectionHint(
+      [{ name: "pooler + nextgen_app", ok: false, code: "P1000" }],
+      { checked: true, can_login: false },
+    );
+
+    expect(hint).toContain("sem login");
+  });
+
+  it("conexão de aplicação funcionando não gera aviso", () => {
+    expect(
+      connectionHint([{ name: "pooler + nextgen_app", ok: true, code: "ok" }], { checked: true }),
+    ).toBeUndefined();
   });
 });
