@@ -169,3 +169,8 @@
   importar `@nextgen/db` nunca exige `APP_DATABASE_URL`; o erro sai na primeira query com
   o nome da variável. Variável de Vercel marcada só em Production deixa o preview sem
   banco — foi a causa do 500 em `/api/auth/[...all]`.
+- **DNS da Neon é curinga por região**: host inventado (`ep-xxx-pooler...`) resolve e aceita
+  TCP na 5432, só o handshake falha. Sintoma = "Can't reach database server" apontando para
+  senha. `placeholderHost()` detecta e o health responde `code: "placeholder"`.
+- **Preferir `APP_DB_PASSWORD` a `APP_DATABASE_URL`**: a URL é montada sobre o host do
+  `DATABASE_URL` (appSource `montada`), eliminando drift de host entre as duas variáveis.
