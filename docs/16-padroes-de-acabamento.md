@@ -96,8 +96,9 @@ O layout de celular não é o de desktop encolhido. Em `globals.css`:
 
 | Até | O que muda | Por quê |
 |---|---|---|
-| 820px | menu lateral vira faixa horizontal com rolagem, colada no topo | oito itens em coluna empurravam o conteúdo para fora da primeira tela; a faixa mantém a troca de seção a um toque |
-| 820px | a barra de aviso some e sobra só conta + saída | 40px de aviso repetido custam mais que o aviso |
+| 820px | menu lateral vira **gaveta** fora da tela, aberta pelo botão do topo | oito itens em coluna empurravam o conteúdo para fora da primeira tela; a gaveta devolve a dobra ao conteúdo e mantém a hierarquia de seções |
+| 820px | a barra de aviso some e sobra só menu, nome da escola e saída | 40px de aviso repetido custam mais que o aviso |
+| 420px | o e-mail da conta sai da barra e passa para o pé da gaveta | em 320px ele truncava o nome da escola, que é o contexto |
 | 700px | `.table-cards`: `thead` oculto, cada `tr` vira cartão com rótulo por `td::before` e `data-label` | tabela de 620px em tela de 390px escondia valor e ações atrás de rolagem lateral |
 | 700px | ações do cartão em duas colunas | cinco botões empilhados faziam um cartão de 400px |
 | 620px | títulos 30px, indicadores em duas colunas, `.row` quebra linha | cinco cartões de métrica empilhavam por mais de uma tela |
@@ -107,8 +108,28 @@ Regra para tabela nova: marcar o contêiner com `table-cards`, pôr `data-label`
 que tem cabeçalho, e `className="cell-actions"` na última célula quando ela tem botões. Sem
 `data-label` a célula aparece sem rótulo no celular — e sem rótulo o número não significa nada.
 
-O cabeçalho do site público continua `sticky`; o do painel não, porque no painel a faixa de
-seções logo acima já está parada e duas barras fixas comem 120px de 844.
+O cabeçalho do site público continua `sticky`. No painel, a barra do topo também: é ela que
+carrega o botão da gaveta — sem ela parada, o menu fica inalcançável no meio de uma lista
+longa.
+
+### Gaveta do menu: o que ela precisa cumprir
+
+`apps/web/components/app-shell.tsx` guarda o estado porque o botão (barra do topo) e a
+gaveta (`aside`) são irmãos — sem ancestral comum, um não alcança o outro.
+
+| Regra | Por quê |
+|---|---|
+| `aria-expanded` no botão e `aria-controls` apontando para o `aside` | é um *disclosure*: o leitor de tela anuncia aberto/fechado e para onde o botão leva |
+| fecha ao navegar (`usePathname`), no Esc e no toque no véu | menu aberto sobre a tela nova é o defeito clássico de gaveta |
+| foco vai para o botão fechar ao abrir e volta ao botão menu ao fechar | quem usa teclado não pode começar o Tab no topo do documento |
+| `inert` no miolo enquanto aberta | o Tab não entra em conteúdo coberto pelo véu |
+| `visibility: hidden` na gaveta fechada | `transform` sozinho deixa os links focáveis fora da tela |
+| `body { overflow: hidden }` enquanto aberta | rolar atrás da gaveta embaralha a posição de retorno |
+| largura `min(84vw, 296px)` | sobra uma faixa do conteúdo à vista, que é o que indica que dá para fechar tocando fora |
+| fecha ao passar de 820px (`matchMedia`) | girar o celular devolveria a coluna do desktop com o miolo `inert` |
+
+Contra o teclado: `Esc` fecha, `Tab` não escapa para o conteúdo, e nenhum link fica focável
+com a gaveta fechada.
 
 Como validar (mede, não confia no olho): com a página longa aberta, `window.scrollY` tem de
 continuar `0`, `Math.round(document.scrollingElement.scrollHeight) === innerHeight`, e
