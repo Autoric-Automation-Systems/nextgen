@@ -158,3 +158,6 @@
   Ruy rejeitou a faixa. Mesmo componente guarda o estado porque botão e `aside` são irmãos.
 - **Medir CSS sem banco**: harness HTML em iframe no Chromium headless; para transições, usar
   `--force-prefers-reduced-motion` (virtual time não avança animação).
+- **Provar deploy**: `/api/health` devolve `version` = sha do commit servido; e o CSS em
+  `/_next/static/css/*.css` da home mostra as regras publicadas.
+- Produção **não** tem os usuários de seed (`admin@demo.test` dá 401); painel é `/dashboard`.
