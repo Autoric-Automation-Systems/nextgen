@@ -155,7 +155,8 @@ Inspiração em card de jogo, mas com identidade própria da escola.
 - Foto: proporção 1:1, fundo neutro, sem dados pessoais na imagem.
 - `nickname` é o padrão; nome completo só com consentimento explícito.
 - Sem data de nascimento. Categoria substitui idade.
-- Sem escola/unidade no card público de menor de 12.
+- Card público **só existe a partir dos 12 anos**, com consentimento do responsável; abaixo
+  disso o card é privado (portal e painel), nunca publicado.
 - Sem telefone, endereço, horário de treino.
 - Rodapé com selo "perfil autorizado pelo responsável" e data da autorização.
 - Versão privada (portal) mostra histórico e detalhamento por skill.

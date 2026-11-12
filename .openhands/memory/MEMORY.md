@@ -52,8 +52,8 @@
   só deixa mudar `status`/`revoked_at`. `lib/consent.ts` fala chaves camel (`publicCard`)
   e converte para código do banco (`public_card`) com `PURPOSE_CODES`/`resolvePurpose`.
   Aceitar `enrollment` ativa a matrícula `draft`; revogar **não** cancela matrícula.
-  Card público exige 12+ **e** `image_public` — abaixo de 12 fica guardado e não publica
-  (decisão aberta nº 16 em `docs/11`).
+  Card público exige 12+ **e** `image_public` — abaixo de 12 não existe card público
+  (decisão fechada em `docs/11` nº 16: o card privado segue mostrando só barras).
 - `/equipe`: convite por link mágico (`hasPassword` decide `/dashboard` vs `/definir-senha`),
   cargo por pessoa, turmas do professor, revogação sem apagar histórico. Não muda o próprio
   cargo/acesso; sempre ≥1 admin ativo. E-mail de responsável não pode virar equipe (1
@@ -62,6 +62,11 @@
   (único `INSERT` do `nextgen_app`, via `$executeRaw`).
 - Ativos de marca em `apps/web/public/{brand,icons}`; `lib/brand.ts` é o único com caminhos e
   `brand.test.ts` falha de propósito se um arquivo sumir.
+- Vitrine da raiz (`lib/site-cards.ts`): retratos são **ilustrações** em `public/players`.
+  Nada de foto de criança baixada da internet — `site-cards.test.ts` exige `release`
+  (responsável + termo + data) e crédito em todo retrato `kind: "photo"`. Ruy insiste em
+  foto real: pedir arquivo com liberação assinada (de preferência aluno de escola cliente,
+  coberto pelo próprio termo) e cadastrar os campos.
 - Menu do painel no celular é **gaveta lateral** (`components/app-shell.tsx`), não faixa no
   topo. Ruy rejeitou a faixa.
 

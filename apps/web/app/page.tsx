@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { PlayerCard } from "@/components/player-card";
+import { SHOWCASE_CARDS } from "@/lib/site-cards";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
@@ -15,95 +16,6 @@ export const metadata: Metadata = {
  * quem já sabe o que quer escolhe a porta. Três parágrafos aqui empurram as duas portas
  * para baixo da dobra e não convencem ninguém.
  */
-/**
- * Cards de exemplo da chamada. Dado fictício, escrito aqui — não vem do banco, para a
- * página inicial continuar estática e não depender de escola nenhuma existir.
- *
- * São dois de propósito: o de 13 anos mostra OVR e números; o de 11 mostra idade e só
- * barras. A regra de faixa etária aparece na vitrine, não só no texto.
- *
- * Os retratos são ilustrações (`public/players`), não fotos de crianças: usar a imagem de
- * um menor real numa página de vendas é exatamente o consentimento que o produto cobra.
- */
-const SAMPLE_CARD = {
-  nickname: "Tiaguinho",
-  team: "Sub-13",
-  position: "Atacante",
-  jerseyNumber: 11,
-  age: 13,
-  schoolName: "Escola Teste",
-  cycleLabel: "2º ciclo",
-  photo: { src: "/players/boy.svg", alt: "Retrato ilustrado de um aluno de uniforme" },
-  scores: [
-    { code: "CTL", score: 4 },
-    { code: "PAS", score: 4 },
-    { code: "FIN", score: 5 },
-    { code: "DRI", score: 5 },
-    { code: "VEL", score: 5 },
-    { code: "AGI", score: 4 },
-    { code: "RES", score: 4 },
-    { code: "FOR", score: 3 },
-    { code: "POS", score: 4 },
-    { code: "DEF", score: 2 },
-    { code: "VIS", score: 4 },
-    { code: "MOV", score: 5 },
-    { code: "DIS", score: 4 },
-    { code: "EQU", score: 4 },
-    { code: "RESI", score: 3 },
-    { code: "FOC", score: 4 },
-  ],
-  previousScores: [
-    { code: "CTL", score: 4 },
-    { code: "PAS", score: 4 },
-    { code: "FIN", score: 4 },
-    { code: "DRI", score: 4 },
-    { code: "VEL", score: 4 },
-    { code: "AGI", score: 4 },
-    { code: "RES", score: 4 },
-    { code: "FOR", score: 3 },
-    { code: "POS", score: 4 },
-    { code: "DEF", score: 2 },
-    { code: "VIS", score: 4 },
-    { code: "MOV", score: 4 },
-    { code: "DIS", score: 4 },
-    { code: "EQU", score: 4 },
-    { code: "RESI", score: 3 },
-    { code: "FOC", score: 4 },
-  ],
-  badges: 7,
-  consentNote: "perfil autorizado pelo responsável",
-};
-
-const SAMPLE_CARD_GIRL = {
-  nickname: "Bia",
-  team: "Sub-11",
-  position: "Meia",
-  jerseyNumber: 10,
-  age: 11,
-  schoolName: "Escola Teste",
-  cycleLabel: "2º ciclo",
-  photo: { src: "/players/girl.svg", alt: "Retrato ilustrado de uma aluna de uniforme" },
-  scores: [
-    { code: "CTL", score: 4 },
-    { code: "PAS", score: 5 },
-    { code: "FIN", score: 3 },
-    { code: "DRI", score: 4 },
-    { code: "VEL", score: 4 },
-    { code: "AGI", score: 5 },
-    { code: "RES", score: 4 },
-    { code: "FOR", score: 3 },
-    { code: "POS", score: 4 },
-    { code: "DEF", score: 3 },
-    { code: "VIS", score: 5 },
-    { code: "MOV", score: 4 },
-    { code: "DIS", score: 5 },
-    { code: "EQU", score: 5 },
-    { code: "RESI", score: 4 },
-    { code: "FOC", score: 4 },
-  ],
-  consentNote: "perfil autorizado pelo responsável",
-};
-
 export default function Home() {
   return (
     <>
@@ -131,11 +43,13 @@ export default function Home() {
           </div>
 
           <figure className="hero-cards">
-            <PlayerCard data={SAMPLE_CARD} variant="public" />
-            <PlayerCard data={SAMPLE_CARD_GIRL} variant="public" />
+            {SHOWCASE_CARDS.map((item) => (
+              <PlayerCard key={item.data.nickname} data={item.data} variant="public" />
+            ))}
             <figcaption>
               Exemplos de card: aos 13 anos a nota aparece; aos 11, só as barras — sem número
-              para comparar criança com criança.
+              para comparar criança com criança. Card público, só a partir dos 12 e com o
+              responsável autorizando.
             </figcaption>
           </figure>
         </section>

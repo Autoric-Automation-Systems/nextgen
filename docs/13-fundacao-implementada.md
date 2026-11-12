@@ -155,7 +155,8 @@ sem tocar em escola real.
 - 16 atributos em 4 pilares; barras por pilar e grade por código;
 - menor de 12 anos não tem nota: o card mostra idade e barras (`canShowCardRating`);
 - comportamento nunca aparece na variante pública;
-- card público exige opt-in da escola **e** consentimento de imagem vigente.
+- card público exige 12 anos ou mais **e** consentimento do responsável (card + imagem
+  pública vigentes). Abaixo de 12 não há card público: o card privado mostra idade e barras.
 
 ## Consentimento e equipe
 

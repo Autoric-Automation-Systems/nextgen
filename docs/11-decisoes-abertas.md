@@ -65,7 +65,7 @@ Estas decisões mudam escopo, preço ou arquitetura. Sem resposta, sigo com o de
 | 13 | Qual o volume inicial: quantas escolas e alunos no primeiro ano? | 10 escolas / 1.000 alunos |
 | 14 | Existe exigência de dados só no Brasil? | sim, `sa-east-1` |
 | 15 | Quem faz o jurídico (DPA, termos, RIPD)? | modelo pronto + revisão externa |
-| 16 | **Card público de menor de 12 anos**: o `08` descreve card sem escola/unidade para criança, mas `canPublishPublicCard` bloqueia abaixo de 12. Liberar (sem foto, sem escola, sem nome completo) ou manter bloqueado? | manter bloqueado até revisão jurídica |
+| 16 | ~~Card público de menor de 12 anos~~ | **decidido**: card público só a partir dos 12, com consentimento do responsável; abaixo disso não existe card público (o card privado continua mostrando só barras) |
 | 17 | Card público exige consentimento de **imagem em divulgação** junto com o do card? | sim: o card pode exibir foto |
 
 ## 3. Pendências jurídicas antes do primeiro cliente
