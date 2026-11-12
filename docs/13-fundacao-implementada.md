@@ -222,7 +222,8 @@ sobre a Escola Teste) e Plataforma.
 ## Verificação
 
 ```bash
-pnpm test        # regras por pacote (core, auth, web) + 12 de RLS (precisa do banco)
+pnpm lint        # ESLint com eslint-config-next, zero warning
+pnpm test        # regras por pacote (core, auth, web) + RLS (precisa do banco)
 pnpm typecheck
 pnpm build
 ```

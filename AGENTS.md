@@ -28,6 +28,7 @@ pnpm db:seed
 pnpm dev
 pnpm test         # regras + RLS (RLS exige Postgres com o papel nextgen_app)
 pnpm typecheck
+pnpm lint         # ESLint (eslint-config-next, .eslintrc.json)
 pnpm build
 
 node scripts/check-deploy.mjs <url>   # sonda um deploy publicado
