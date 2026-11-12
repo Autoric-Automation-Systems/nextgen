@@ -73,7 +73,8 @@
   topo. Ruy rejeitou a faixa.
 
 ## Ambiente
-- `pnpm lint` pende (prompt do `next lint`, sem config); a CI roda typecheck e test.
+- `pnpm lint` roda ESLint de verdade (eslint@8 + `.eslintrc.json` com
+  `eslint-config-next`); a CI roda lint, typecheck, test e build.
   `pnpm` some quando o sandbox reinicia: `corepack prepare pnpm@9.15.4 --activate` e, como
   o **turbo** não acha o binário do corepack, criar shim `~/bin/pnpm` com
   `exec node ~/.cache/node/corepack/v1/pnpm/9.15.4/bin/pnpm.cjs "$@"` e pôr no PATH.
