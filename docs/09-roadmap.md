@@ -38,7 +38,7 @@ Objetivo: base técnica e jurídica para não retrabalhar.
 - [ ] Escola, unidades, salas, identidade visual
 - [ ] Alunos, responsáveis, vínculo, pessoas autorizadas
 - [ ] Convite ao responsável + consentimentos + portal do responsável (mínimo)
-- [x] Categorias por temporada + turmas + matrícula — ver [17](17-turmas-e-matricula.md)
+- [x] Turmas + matrícula — ver [17](17-turmas-e-matricula.md)
 - [ ] Atestado médico com validade
 - [ ] Kit de emergência
 - [ ] Chamada (app do professor PWA, offline)
@@ -109,7 +109,7 @@ Escala: **P** ≤ 3 dias · **M** ≤ 1 semana · **G** ≤ 2 semanas · **GG** 
 | STU-01 | CRUD aluno + responsável + vínculo | G |
 | STU-02 | Convite e confirmação do responsável | M |
 | CON-01 | Consentimentos versionados + evidência | G |
-| CLS-01 | Temporada, categoria, turma, matrícula | G |
+| CLS-01 | Turma e matrícula | G |
 | ATT-01 | Chamada PWA offline + sync | GG |
 | PLN-01 | Plano de aula + templates | M |
 | FIN-01 | Planos, cobrança, pro-rata, competência | G |

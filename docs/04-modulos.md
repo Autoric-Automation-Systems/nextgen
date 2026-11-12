@@ -72,14 +72,12 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 - Documentos com validade (atestado médico, autorização)
 - Histórico: turmas, avaliações, ocorrências, financeiro
 
-### Categorias
-- Turmas com nome livre por escola ("Sub-8 — Ter/Qui 17h", "Iniciação", "Feminino Sub-13")
-- Sem categoria nem temporada: idade é derivada da data de nascimento
-- Regra configurável para ano civil vs ano esportivo
-- Troca de turma no fim do ciclo é ação da secretaria, com histórico
-
 ### Turmas
-- Nome livre, unidade, sala, dias/horários, capacidade, professor(es)
+- Nome livre por escola ("Sub-8 — Ter/Qui 17h", "Iniciação", "Feminino Sub-13")
+- Sem categoria nem temporada: idade é derivada da data de nascimento e a turma é o único
+  agrupamento pedagógico
+- Unidade, sala, dias/horários, capacidade, professor(es)
+- Troca de turma no fim do ciclo é ação da secretaria, com histórico
 - Lista de espera quando lotada
 - Aula experimental com aluno `trial` que não gera cobrança
 - Reposição de aula (falta justificada → crédito de reposição)
@@ -92,7 +90,6 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 
 **Regras**
 - Um aluno não pode ter duas matrículas ativas na mesma turma no mesmo período.
-- Categoria incompatível com a idade exige override com justificativa e auditoria.
 - Capacidade da turma é validada no servidor, com lock para evitar overbooking.
 - Cancelamento **não apaga** histórico financeiro nem pedagógico.
 

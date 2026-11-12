@@ -20,7 +20,7 @@ const pillars = [
   },
   {
     title: "Avaliação que vira card",
-    body: "Notas por pilar, evolução por temporada e um perfil público bonito — desligado por padrão e nunca para menor de 12.",
+    body: "Notas por pilar, evolução por ciclo e um perfil público bonito — só a partir dos 12 anos, com o responsável autorizando.",
   },
   {
     title: "Financeiro que fecha",
@@ -32,7 +32,7 @@ const modules = [
   ["Matrícula e turma", "Escola, unidade, sala, turma e horário. Vaga, lista de espera e conflito de sala no mesmo horário."],
   ["Pessoas", "Responsável legal, aluno, professores e quem pode buscar a criança na saída."],
   ["Pedagogia", "Matérias, capítulos, vídeos, áudios, imagens e PDF. Plano de aula por professor e turma."],
-  ["Avaliação", "16 atributos em quatro pilares — técnico, físico, tático e comportamental — com histórico por temporada."],
+  ["Avaliação", "16 atributos em quatro pilares — técnico, físico, tático e comportamental — com histórico por ciclo."],
   ["Saúde", "Anamnese inicial, atualizações periódicas, restrições e contato de emergência. Acesso restrito."],
   ["Financeiro", "Mensalidade, vencimento por aluno, PIX automático, baixa de pagamento, despesas e balanço do mês."],
   ["Site da escola", "Página pública com logo, paleta, frase e endereço. Perfil de aluno é opt-in do responsável."],

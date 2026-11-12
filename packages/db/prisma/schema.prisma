@@ -433,7 +433,7 @@ model PickupAuthorizedPerson {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Temporada, categoria, turma, matrícula
+// Turma, matrícula e vínculo de professor
 // ─────────────────────────────────────────────────────────────
 
 model ClassGroup {

@@ -57,13 +57,13 @@ Esta matriz é a fonte da verdade. Cada linha vira um `consent_type` no banco.
 
 | Finalidade | Dados | Base legal | Consentimento? | Obrigatório p/ matricular? | Revogável? |
 |---|---|---|---|---|---|
-| Matrícula e execução do serviço educacional | nome, nascimento, categoria, turma, responsável, contato | Execução de contrato (art. 7º, V) | Não | Sim (é o contrato) | Não, sem encerrar |
+| Matrícula e execução do serviço educacional | nome, nascimento, turma, responsável, contato | Execução de contrato (art. 7º, V) | Não | Sim (é o contrato) | Não, sem encerrar |
 | Segurança e frequência | foto de identificação, presença, autorizados a retirar | Execução de contrato + legítimo interesse | Não | Sim | Não |
 | Kit de emergência | alergias, medicação, condição que exige cuidado, contato de emergência | Tutela da saúde (art. 11, II, f) | Não (informativo destacado) | **Sim** — segurança da criança | Não |
 | Anamnese completa / histórico de saúde | histórico médico, lesões, exames, laudo | Consentimento específico (art. 11, I) | **Sim, granular** | Não | **Sim** |
 | Imagem e voz — uso interno/pedagógico | foto, vídeo, áudio | Consentimento específico | **Sim** | Não | **Sim** |
 | Imagem e voz — site, redes e publicidade | foto, vídeo, nome | Consentimento específico | **Sim, separado do interno** | Não | **Sim** |
-| Perfil público do aluno (card) | apelido, categoria, skills, conquistas | Consentimento específico | **Sim, opt-in** | Não | **Sim** |
+| Perfil público do aluno (card) | apelido, turma, skills, conquistas | Consentimento específico | **Sim, opt-in** | Não | **Sim** |
 | Cobrança e financeiro | dados do **responsável financeiro**, CPF, endereço, histórico | Execução de contrato + obrigação legal (art. 7º, II) | Não | Sim | Não |
 | Comunicação e marketing para o responsável | e-mail, telefone | Consentimento (adulto) | **Sim, opt-in** | Não | Sim |
 | Analytics/cookies não essenciais | navegação | Consentimento (adulto) | Sim | Não | Sim |
@@ -193,8 +193,8 @@ Implementação:
 - Consentimento **específico e em destaque** de ao menos um pai/mãe/responsável (LGPD art. 14, §1º).
 - **Sem login próprio.** Nenhum e-mail, nenhuma senha, nenhuma notificação direta.
 - Comunicação **somente** com o responsável. Proibido chat/mensagem direta adulto↔criança.
-- Card público: **desligado por padrão**; se autorizado, exibir apelido + categoria + badges,
-  **sem nome completo, sem foto, sem data de nascimento**.
+- Card público: **não existe**. O card privado do portal mostra apelido, turma e badges,
+  **sem nota, sem nome completo, sem foto pública, sem data de nascimento**.
 - Nenhum dado de geolocalização em tempo real.
 
 ### 6.2 Adolescente (12–15 anos)
@@ -241,7 +241,7 @@ de saúde — toque para ver o kit de emergência"*.
 ### 7.2 Ciclo de anamnese
 
 - **Inicial** obrigatória para liberar atividade física;
-- **Periódica** a cada 12 meses (ou 6 meses para categorias de competição);
+- **Periódica** a cada 12 meses (ou 6 meses para aluno em competição);
 - **Atualização por evento**: lesão, cirurgia, diagnóstico novo;
 - **Atestado médico** com validade e alerta de vencimento no painel;
 - bloqueio de participação em jogo/treino se atestado vencido (regra configurável pela escola).
@@ -260,8 +260,9 @@ de saúde — toque para ver o kit de emergência"*.
 
 1. **Opt-in explícito**, separado do consentimento de imagem interna.
 2. **Default:** desligado, `noindex`, URL com slug aleatório (não sequencial, não adivinhável).
-3. **Idade < 12:** somente apelido, categoria, badges e evolução — sem nome completo, sem
-   foto, sem escola/unidade/endereço, sem horário de treino.
+3. **Idade < 12:** não há card público. O portal do responsável mostra apelido, turma,
+   badges e evolução — sem nota, sem nome completo, sem foto pública, sem escola, sem endereço,
+   sem horário de treino.
 4. **12–17:** nome + foto apenas com consentimento específico de imagem pública **e**
    co-assentimento do responsável.
 5. **Nunca publicar:** data de nascimento, CPF, endereço, telefone, escola, turma/horário,

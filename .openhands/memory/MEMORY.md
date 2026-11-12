@@ -5,8 +5,10 @@
   diz o que já existe em código — leia antes de tratar algo como só especificação.
 - **Aluno é perfil tutelado, não usuário.** Sem login antes dos 16; quem autentica é o
   responsável. Termos: `school`, `unit`, `room`, `class_group`, `enrollment`, `guardian`,
-  `student`, `consent`, `assessment`. **Não existem `season` nem `category`**: a turma tem
-  nome livre e a idade vem de `birth_date`; `students.due_day` é o vencimento.
+  `student`, `consent`, `assessment`. **Não existem `season` nem `category`** (migration
+  `turma_sem_temporada`): a turma tem nome livre, é o único agrupamento pedagógico, e a idade
+  vem de `birth_date`; `students.due_day` é o vencimento. Textos/dados falam "ciclo", não
+  "temporada".
 - Monorepo pnpm + turbo: `apps/web` (Next 15), `packages/{db,core,auth,integrations}`.
   Storage = Vercel Blob em dois stores (público/privado).
 

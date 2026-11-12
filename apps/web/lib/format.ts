@@ -8,7 +8,3 @@ export function formatDate(value: Date): string {
 export function isoDate(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
-
-export function seasonYear(value: Date): number {
-  return value.getUTCFullYear();
-}

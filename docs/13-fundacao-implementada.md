@@ -11,7 +11,7 @@ apenas desenhado em `04-modulos.md`. Tudo aqui roda e é verificado pela CI.
 | Schema de dados + migrações | `packages/db/prisma` | 25 tabelas, 4 migrações |
 | Isolamento por escola (RLS) | `packages/db/prisma/migrations/*_rls` | testado |
 | Seed de duas escolas | `packages/db/prisma/seed.ts` | idempotente |
-| Regras puras (dinheiro, categoria, RBAC, consentimento) | `packages/core` | 44 testes |
+| Regras puras (dinheiro, RBAC, consentimento, avaliação) | `packages/core` | 44 testes |
 | Sessão e resolução de ator | `packages/auth` | e-mail + senha |
 | Storage (Vercel Blob, 2 stores) | `packages/integrations` | upload + URL assinada |
 | App Next.js (login, painel, alunos) | `apps/web` | build verde |
@@ -59,16 +59,10 @@ como dono, a política é inútil — por isso `APP_DATABASE_URL` é obrigatóri
   imagem pública vigente.
 - Menor de 16 não tem login próprio: `canHoldOwnLogin(age)`.
 
-## Regras de categoria
+## Turma, sem categoria nem temporada
 
-Categoria é derivada do **ano de nascimento**, não da idade exata:
-
-```ts
-deriveCategory(new Date("2017-09-30"), [sub8, sub9]);
-// → { ok: true, categoryId: "sub9" }
-```
-
-Quando duas categorias casam, a função devolve `ambiguous` em vez de escolher sozinha.
+Não existe `season` nem `category` no schema (migration `turma_sem_temporada`): a turma é o
+único agrupamento pedagógico e a idade sai de `birth_date`. Ver [17](17-turmas-e-matricula.md).
 
 ## Rotas disponíveis
 
@@ -204,7 +198,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-O seed cria duas escolas (`demo` e `rival`) com alunos, turma, categorias e consentimento.
+O seed cria duas escolas (`demo` e `rival`) com alunos, turmas e consentimento.
 Entre em `http://localhost:3000/login` com `admin@demo.test` e a senha `demo12345678`.
 O link por e-mail aparece no terminal (em produção, vai pela caixa de entrada) e só é
 pedido em `/cadastro`, para primeiro acesso ou convite.

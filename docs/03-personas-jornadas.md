@@ -87,7 +87,7 @@ flowchart LR
 
 ### J4. Ciclo de avaliação (trimestral)
 
-1. Coordenação abre o ciclo (`evaluation_cycle`) para a temporada.
+1. Coordenação abre o ciclo (`evaluation_cycle`) do período.
 2. Professor avalia skills do período com nota + evidência.
 3. Coordenação revisa e aprova (workflow de 2 etapas).
 4. Sistema calcula evolução (delta vs ciclo anterior).

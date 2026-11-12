@@ -35,7 +35,7 @@ sem transformar criança em produto de mídia.
 
 - Cadastro da escola, unidades, salas/quadras, identidade visual
 - Alunos, responsáveis, vínculo e consentimentos
-- Categorias (Sub-8, Sub-9…), turmas, horários, professores
+- Turmas com nome livre ("Sub-8 — Ter/Qui 17h"), horários e professores
 - Matrícula e rematrícula com plano e vencimento
 - Conteúdo pedagógico (matéria → capítulo → aula/material)
 - Plano de aula, chamada e diário de classe
@@ -86,7 +86,7 @@ Números em [`12-metricas-precificacao.md`](12-metricas-precificacao.md).
 | **Escola** (`school`) | Tenant. Unidade de isolamento de dados e de cobrança da NextGen |
 | **Unidade** (`unit`) | Endereço físico: sede, núcleo, polo. Tem quadras/campos |
 | **Sala/Recurso** (`room`) | Espaço dentro da unidade (quadra coberta, campo 1, sala de vídeo) |
-| **Ciclo** (`evaluation_cycle`) | Período de avaliação — o card do aluno é comparado dentro do ciclo, não de uma temporada anual |
+| **Ciclo** (`evaluation_cycle`) | Período de avaliação — o card do aluno é comparado dentro do ciclo, não de um ano fechado |
 | **Turma** (`class_group`) | Grupo de alunos com nome livre, horário, unidade, sala e professor. "Sub-8" é um nome possível, não uma entidade do sistema |
 | **Matrícula** (`enrollment`) | Vínculo aluno ↔ turma ↔ plano, com vigência e status |
 | **Responsável** (`guardian`) | Adulto com vínculo legal e/ou financeiro com o aluno |

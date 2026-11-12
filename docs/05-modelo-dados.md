@@ -17,17 +17,12 @@
 erDiagram
     SCHOOL ||--o{ UNIT : tem
     SCHOOL ||--o{ USER : possui
-    SCHOOL ||--o{ SEASON : organiza
-    SCHOOL ||--o{ CATEGORY : define
     SCHOOL ||--o{ SUBJECT : cria
     SCHOOL ||--o{ PLAN : vende
     SCHOOL ||--o{ EXPENSE : registra
 
     UNIT ||--o{ ROOM : contem
     UNIT ||--o{ CLASS_GROUP : sedia
-
-    SEASON ||--o{ CATEGORY : vigora
-    CATEGORY ||--o{ CLASS_GROUP : agrupa
 
     CLASS_GROUP ||--o{ CLASS_SESSION : agenda
     CLASS_GROUP ||--o{ ENROLLMENT : recebe

@@ -121,7 +121,7 @@ que ele leia a turma inteira, e turma inteira é nome de outras crianças.
 
 ## 7. Auditoria
 
-Toda escrita grava `audit_log`: `season.create`, `category.create`, `class_group.create`,
+Toda escrita grava `audit_log`: `class_group.create`,
 `enrollment.create`, `enrollment.end`, `enrollment.activate`, `class_group.teacher.assign`,
 `class_group.teacher.remove` — com `before`/`after` e o motivo da exceção quando houver.
 

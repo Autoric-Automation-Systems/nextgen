@@ -75,7 +75,7 @@ nextgen/
 │  └─ worker/              # opcional: consumidor de fila dedicado (se sair do Inngest)
 ├─ packages/
 │  ├─ db/                  # schema Prisma, migrations, seeds, políticas RLS
-│  ├─ core/                # regras de negócio puras (dinheiro, categoria, avaliação)
+│  ├─ core/                # regras de negócio puras (dinheiro, avaliação, consentimento)
 │  ├─ ui/                  # design system (shadcn + tokens)
 │  ├─ auth/                # configuração de auth, RBAC, guards
 │  └─ integrations/        # asaas, resend, whatsapp, storage
@@ -274,7 +274,7 @@ retornadas ao front, nunca em log.
 
 | Tipo | Cobertura mínima |
 |---|---|
-| Unitário (`core`) | dinheiro, pro-rata, categoria, cálculo de score, régua |
+| Unitário (`core`) | dinheiro, pro-rata, cálculo de score, régua, consentimento |
 | Integração | repositórios com Postgres real, RLS por tenant |
 | Contrato | webhooks de pagamento (fixtures reais) |
 | E2E | matrícula → consentimento → cobrança → pagamento → recibo |

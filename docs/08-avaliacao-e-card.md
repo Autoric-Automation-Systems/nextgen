@@ -154,7 +154,7 @@ Inspiração em card de jogo, mas com identidade própria da escola.
 - Cor de destaque = paleta da escola.
 - Foto: proporção 1:1, fundo neutro, sem dados pessoais na imagem.
 - `nickname` é o padrão; nome completo só com consentimento explícito.
-- Sem data de nascimento. Categoria substitui idade.
+- Sem data de nascimento. A turma e a idade substituem a categoria.
 - Card público **só existe a partir dos 12 anos**, com consentimento do responsável; abaixo
   disso o card é privado (portal e painel), nunca publicado.
 - Sem telefone, endereço, horário de treino.
@@ -232,7 +232,7 @@ já nasce restrita, não é filtro de resposta.
 - Evolução por turma (média e dispersão — visão interna).
 - Alunos sem avaliação no ciclo.
 - Skills com pior evolução na turma (insumo para o plano de aula).
-- Comparativo temporada × temporada (mesmo aluno).
+- Comparativo ciclo × ciclo (mesmo aluno).
 - PDF "boletim do atleta" para entregar ao responsável, com marca da escola.
 
 ## 11. Erros a evitar
