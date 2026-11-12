@@ -157,6 +157,30 @@ sem tocar em escola real.
 - comportamento nunca aparece na variante pública;
 - card público exige opt-in da escola **e** consentimento de imagem vigente.
 
+## Consentimento e equipe
+
+Telas que fecham o ciclo de vida do aluno depois do cadastro:
+
+- **`/consentimentos`** — uma linha por finalidade, com o texto do termo atrás de
+  "ler o termo". Responsável vê e decide; administração e coordenação veem pendências em
+  modo leitura. O aceite exige marcar a caixa (sem pré-marcação) antes do botão.
+- **Termos versionados** — `consent_terms` guarda o texto e o `body_hash` (sha256 do corpo,
+  calculado no banco). O aceite grava `term_id`, `evidence_hash` (termo + aluno +
+  finalidade + autor + instante), IP e user-agent. Mudar o texto é publicar versão nova:
+  o aceite antigo continua apontando para o texto que a família leu.
+- **Revogação** — `consents` é append-only para o conteúdo: o trigger só deixa mudar
+  `status`/`revoked_at`. Reaceitar cria linha nova. Índice parcial garante **uma** linha
+  autorizada por aluno e finalidade, mesmo se duas abas enviarem o aceite junto.
+- **Efeito imediato** — revogar `public_card`/`image_public` desliga `public_card_enabled`
+  na hora; revogar `enrollment` **não** cancela a matrícula em silêncio (decisão humana).
+  Aceitar `enrollment` tira a matrícula de `draft` e a coloca em `active` ou `waitlist`
+  conforme lotação.
+- **`/equipe`** — convite por e-mail (link mágico da Better Auth), cargo por pessoa,
+  vínculo com turmas do professor, revogação de acesso sem apagar histórico. A escola
+  nunca vê senha; quem já tem senha cai no painel, quem nunca entrou vai definir a senha.
+- **Regras de proteção** — ninguém muda o próprio cargo nem o próprio acesso, e a escola
+  não pode ficar sem administração ativa.
+
 ## Como rodar
 
 ```bash

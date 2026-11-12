@@ -166,6 +166,48 @@ tr:last-child td { border-bottom: none; }
 .badge.warn { background: #fef0c7; color: var(--warning); }
 .badge.danger { background: #fee4e2; color: var(--danger); }
 
+/* Consentimentos: uma linha por finalidade, com o texto do termo escondido atrás do
+   "ler o termo". Sem destaque, sete finalidades viram uma parede de texto que ninguém lê. */
+.consent-list { display: flex; flex-direction: column; gap: 12px; }
+.consent-row {
+  border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px; background: var(--surface);
+}
+.consent-row.is-highlight { border-color: #f7c86b; background: #fffdf6; }
+.consent-title { margin: 0; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.consent-desc { margin: 4px 0 0; font-size: 13px; }
+.consent-note { margin: 6px 0 0; font-size: 12.5px; color: var(--warning); }
+.consent-term summary { cursor: pointer; font-size: 13px; color: var(--brand); font-weight: 600; }
+.consent-term-body {
+  margin-top: 8px; padding: 12px 14px; border-radius: 8px; background: #f8fafc;
+  font-size: 13px; line-height: 1.6; white-space: pre-wrap;
+}
+.consent-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.consent-ack { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.consent-ack input { width: auto; }
+
+/* Equipe: identidade à esquerda, ações à direita. No celular a linha vira bloco, porque
+   três botões lado a lado em 320px viram um botão só por engano. */
+.member-list { display: flex; flex-direction: column; }
+.member-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px;
+  align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line);
+}
+.member-row:last-child { border-bottom: none; padding-bottom: 0; }
+.member-row:first-child { padding-top: 0; }
+.member-ident { min-width: 0; }
+.member-ident .consent-title { font-size: 14px; }
+.member-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.member-inline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.member-inline select { width: auto; min-width: 130px; }
+.member-inline .btn { height: 34px; padding: 0 12px; font-size: 13px; }
+@media (max-width: 720px) {
+  .member-row { grid-template-columns: 1fr; }
+  .member-actions { align-items: stretch; }
+  .member-inline { justify-content: space-between; }
+  .member-inline select { flex: 1; }
+}
+
 .stack { display: flex; flex-direction: column; gap: 20px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

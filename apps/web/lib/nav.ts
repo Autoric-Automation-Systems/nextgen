@@ -38,6 +38,8 @@ export const NAV: NavSection[] = [
       { href: "/dashboard", label: "Painel", hint: "Visão do mês", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/alunos", label: "Alunos", hint: "Cadastro e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/turmas", label: "Turmas", hint: "Horários, salas e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
+      { href: "/equipe", label: "Equipe", hint: "Professores, coordenação e convites", roles: ["admin"], platform: true },
+      { href: "/consentimentos", label: "Pendências de consentimento", hint: "Quem ainda não autorizou", roles: ["admin", "coordinator"], platform: true },
       { href: "/avaliacao", label: "Avaliação", hint: "Ciclos, notas e card", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/pedagogia", label: "Pedagogia", hint: "Matérias, capítulos e conteúdo", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/financeiro", label: "Financeiro", hint: "Mensalidades, PIX e gastos", roles: ["admin"], platform: true },
@@ -50,7 +52,7 @@ export const NAV: NavSection[] = [
     items: [
       { href: "/alunos", label: "Meus filhos", hint: "Matrícula, card e evolução", roles: ["guardian"] },
       { href: "/meus-boletos", label: "Mensalidades", hint: "Mensalidades e vencimentos", roles: ["guardian"] },
-      { href: "/consentimentos", label: "Consentimentos", hint: "Imagem, saúde e o que você autorizou", roles: ["guardian"], status: "soon" },
+      { href: "/consentimentos", label: "Consentimentos", hint: "Imagem, saúde e o que você autorizou", roles: ["guardian"] },
     ],
   },
   {

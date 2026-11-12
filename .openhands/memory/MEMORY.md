@@ -46,8 +46,18 @@
 - Financeiro v0 é sem gateway: Pix copia-e-cola (`packages/core/src/pix.ts`) + baixa manual.
   `charge:read` vale para `guardian` também (`/meus-boletos`) — telas de escola precisam
   excluir o responsável, ou vazam totais, inadimplência e despesas para a família.
-- Consentimento ainda não tem tela: matrícula fica `draft` até o termo existir. É o próximo
-  buraco de LGPD a fechar.
+- Consentimento: `/consentimentos` (responsável aceita, admin/coordenação só leem),
+  termos versionados em `consent_terms` (texto + `body_hash` sha256), aceite com
+  `evidence_hash`/IP/UA, índice parcial = 1 linha autorizada por aluno+finalidade, trigger
+  só deixa mudar `status`/`revoked_at`. `lib/consent.ts` fala chaves camel (`publicCard`)
+  e converte para código do banco (`public_card`) com `PURPOSE_CODES`/`resolvePurpose`.
+  Aceitar `enrollment` ativa a matrícula `draft`; revogar **não** cancela matrícula.
+  Card público exige 12+ **e** `image_public` — abaixo de 12 fica guardado e não publica
+  (decisão aberta nº 16 em `docs/11`).
+- `/equipe`: convite por link mágico (`hasPassword` decide `/dashboard` vs `/definir-senha`),
+  cargo por pessoa, turmas do professor, revogação sem apagar histórico. Não muda o próprio
+  cargo/acesso; sempre ≥1 admin ativo. E-mail de responsável não pode virar equipe (1
+  membership por pessoa+escola).
 - **Site público**: `/` → `/como-funciona`; `/escola/solicitar` grava em `school_leads`
   (único `INSERT` do `nextgen_app`, via `$executeRaw`).
 - Ativos de marca em `apps/web/public/{brand,icons}`; `lib/brand.ts` é o único com caminhos e
@@ -57,8 +67,9 @@
 
 ## Ambiente
 - `pnpm lint` pende (prompt do `next lint`, sem config); a CI roda typecheck e test.
-  `pnpm` costuma existir só via `export PATH="/usr/local/lib/node_modules/corepack/shims:$PATH"`
-  e some quando o sandbox reinicia (`npm i -g pnpm@9.15.4 --prefix /tmp/npmbin`).
+  `pnpm` some quando o sandbox reinicia: `corepack prepare pnpm@9.15.4 --activate` e, como
+  o **turbo** não acha o binário do corepack, criar shim `~/bin/pnpm` com
+  `exec node ~/.cache/node/corepack/v1/pnpm/9.15.4/bin/pnpm.cjs "$@"` e pôr no PATH.
 - `withTls` força `sslmode=require` em host remoto, mas não em loopback (senão P1011 na CI).
 - `pnpm build` mata o `.next` do `next dev` em execução: reiniciar o dev depois.
 - **Testes**: `apps/web` exige `APP_DATABASE_URL` só porque `@nextgen/db` instancia o cliente

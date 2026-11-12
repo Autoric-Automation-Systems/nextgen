@@ -91,3 +91,25 @@ describe("navSectionsFor", () => {
     expect(guardian?.href).toBe("/meus-boletos");
   });
 });
+
+describe("menu depois do consentimento e da equipe", () => {
+  const items = (viewer: Parameters<typeof navSectionsFor>[0]) =>
+    navSectionsFor(viewer).flatMap((section) => section.items);
+
+  it("responsável alcança os consentimentos, e a tela não está mais marcada como futura", () => {
+    const item = items({ isPlatformAdmin: false, role: "guardian" }).find((entry) => entry.href === "/consentimentos");
+
+    expect(item?.label).toBe("Consentimentos");
+    expect(item?.status).toBeUndefined();
+  });
+
+  it("administração vê a equipe e as pendências de consentimento; professor não", () => {
+    const admin = items({ isPlatformAdmin: false, role: "admin" }).map((entry) => entry.href);
+    const teacher = items({ isPlatformAdmin: false, role: "teacher" }).map((entry) => entry.href);
+
+    expect(admin).toContain("/equipe");
+    expect(admin).toContain("/consentimentos");
+    expect(teacher).not.toContain("/equipe");
+    expect(teacher).not.toContain("/consentimentos");
+  });
+});
