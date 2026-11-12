@@ -45,26 +45,31 @@ stateDiagram-v2
 ## 3. Geração mensal
 
 ```
-para cada enrollment ativa:
-  se mês da competência está dentro da vigência:
-    valor = plan.amount_cents
-    valor -= desconto (bolsa, irmão, promoção)
-    se primeiro mês e início no meio do ciclo:
-      valor = pro_rata(dias_utilizados, dias_do_mes)
-    cria charge com vencimento = dia configurado (ajustado para dia útil)
-    enfileira emissão no gateway
-    enfileira e-mail + WhatsApp para o responsável financeiro
+para cada aluno ativo, com plano e matrícula ativa:
+  vencimento = dia do aluno (due_day) na competência, limitado ao último dia do mês
+  se a janela do vencimento está aberta (D-5):
+    valor = plano − desconto da matrícula
+    valor = pro_rata se a matrícula começou no meio do ciclo
+    cria invoice (competência, vencimento, valor, Pix da escola)
+    envia e-mail com o Pix ao responsável financeiro
 ```
 
 **Regras**
 - Competência é sempre o mês do serviço, não o mês do pagamento.
-- Vencimento em fim de semana/feriado → próximo dia útil (configurável).
-- Geração idempotente: chave `(enrollment_id, competencia)` única. Rodar o job duas vezes
-  não duplica cobrança.
+- **O vencimento é do aluno, não do plano** (`students.due_day`). Dois irmãos no mesmo plano
+  podem vencer em dias diferentes, e remanejar o aluno de turma não muda o combinado com a
+  família.
+- Dia 29, 30 e 31 em mês curto vencem no último dia do mês.
+- **A cobrança roda sozinha**, de hora em hora, em `/api/cron/mensalidades`: a cada execução
+  ela pergunta quem entrou na janela de 5 dias antes do vencimento e cobra só esses. Quem
+  vence dia 5 recebe no dia 1; quem vence dia 30 recebe no dia 25.
+- O e-mail também espera a janela: gerar a competência adiantado (botão "Gerar agora") não
+  dispara aviso três semanas antes da hora.
+- Idempotência em duas camadas: índice único `(student_id, competence, kind)` e
+  `invoices.notified_at`. Rodar o job de novo no mesmo dia não cobra nem avisa duas vezes.
 - Matrícula criada no dia 20 com vencimento dia 5 → primeira cobrança pro-rata + próxima cheia.
-- Bolsa 100% gera `charge` de valor zero apenas para registro? **Não** — gera `invoice`
-  sem cobrança, para não poluir inadimplência.
-- Aluno `trial`, `pending_guardian` ou `cancelled` não gera cobrança.
+- Bolsa 100% gera `invoice` de valor zero apenas para registro — não entra em inadimplência.
+- Aluno inativo ou sem matrícula ativa não gera cobrança.
 
 ## 4. Pro-rata, descontos e reajuste
 
@@ -206,29 +211,44 @@ Sem gateway: o dinheiro cai direto na conta da escola via **Pix copia-e-cola** (
 montado em `packages/core/src/pix.ts`), e a baixa é manual. É o mínimo que resolve a dor sem
 virar arranjo de pagamento.
 
-**Modelo.** `TuitionPlan` (valor mensal + dia de vencimento), `Student.tuitionPlanId` e
-`Enrollment.discountCents/dueDay`, `Invoice` (competência `YYYY-MM`, `amount`, `paidCents`,
-`status`, `dueDate`, `cancelReason`), `InvoicePayment` (valor, forma, data, quem registrou),
-`Expense` (categoria, valor, vencimento, pago em) e `AuditLog` com `before`/`after` em JSON.
+**Modelo.** `TuitionPlan` (só valor mensal: o dia de vencimento não mora mais aqui),
+`Student.tuitionPlanId` e `Student.dueDay`, `Enrollment.discountCents`, `Invoice` (competência
+`YYYY-MM`, `amount`, `paidCents`, `status`, `dueDate`, `notifiedAt`, `cancelReason`),
+`InvoicePayment` (valor, forma, data, quem registrou), `Expense` (categoria, valor, vencimento,
+pago em) e `AuditLog` com `before`/`after` em JSON.
 
 **Regras em `@nextgen/core`:**
 - `monthlyCharge` = plano − desconto, com rateio proporcional no primeiro mês (`prorateMonthly`);
-- vencimento no dia combinado, ajustado para o último dia do mês quando não existe (31 em fevereiro);
+- `dueDateFor(competência, dia)` devolve o vencimento do aluno, limitado ao último dia do mês
+  (31 em fevereiro vence dia 28/29);
+- `isBillingWindowOpen(vencimento, hoje)` abre em D-5 e **continua aberta depois** do
+  vencimento: cobrança atrasada ainda precisa de aviso;
 - `isOverdue` compara **dia** em UTC: vencimento no próprio dia ainda não é atraso;
 - `chargeState` distingue `aberta`, `vencida`, `paga` (inclusive parcial) e `cancelada`;
 - `delinquentStudents` agrupa por aluno, com dias de atraso da cobrança mais antiga;
 - `normalizePixKey` (CPF/CNPJ sem pontuação, telefone com `+55`, e-mail e chave aleatória) e
   `pixPayload` com valor, txid da cobrança e texto sem acento.
 
+**Cobrança automática.** `runMonthlyBilling` (em `apps/web/lib/billing-run.ts`) é o único
+caminho de geração: o cron e o botão da escola chamam a mesma função, mudando apenas
+`onlyDueSoon` (cron: sim) e `notify` (e-mail). O cron é `GET /api/cron/mensalidades`, protegido
+por `Authorization: Bearer $CRON_SECRET`, e devolve um resumo por escola — uma escola quebrada
+não impede a cobrança das outras. Ele entra em cada escola com `withTenant`; para enumerar as
+escolas usa `withSystemJob`, cujo único poder é ler o diretório (`system_school_directory`).
+
 **Na tela.** `/financeiro` mostra recebido, a receber, vencido, despesas, saldo, inadimplentes,
 a lista da competência, planos, chave Pix e despesas do mês. Ações: gerar a competência
-(idempotente por `(studentId, competence)`), registrar pagamento total ou parcial, cancelar
-cobrança, copiar Pix, enviar por e-mail e marcar despesa como paga. `/meus-boletos` é a visão
-do responsável, limitada aos alunos sob sua guarda.
+(idempotente), registrar pagamento total ou parcial, cancelar cobrança, copiar Pix, reenviar por
+e-mail e marcar despesa como paga. `/meus-boletos` é a visão do responsável, limitada aos
+alunos sob sua guarda.
+
+**Cadastro.** `/alunos/novo` cria aluno + responsável financeiro + matrícula em um ato: o dia de
+vencimento é escolhido ali, o responsável recebe convite por e-mail e a matrícula nasce em
+`draft` até o termo de consentimento ser assinado.
 
 **Isolamento.** Toda query passa por `withTenant`; a escola vem de `app.current_school_id`,
 nunca do formulário. O responsável não entra em `/financeiro` — `charge:read` vale para ele
 apenas no âmbito dos próprios filhos.
 
 **O que falta para produção:** gateway (Asaas/Iugu) com webhook e conciliação, boleto
-registrado, e-mail automático da régua, recibo em PDF, NFS-e, aging 16–90 dias e exportação.
+registrado, WhatsApp na régua, recibo em PDF, NFS-e, aging 16–90 dias e exportação.

@@ -74,15 +74,16 @@ erDiagram
 
 **Índices:** `students (school_id, lower(full_name))` com `pg_trgm`; `students (school_id, birth_date)`.
 
-### 3.2 Temporada, categoria e turma
+### 3.2 Turma e matrícula
 
 | Tabela | Campos-chave | Notas |
 |---|---|---|
-| `seasons` | `id`, `school_id`, `name`, `starts_on`, `ends_on`, `status` | ex.: "2027" |
-| `categories` | `id`, `school_id`, `season_id`, `name`, `birth_year_from`, `birth_year_to`, `age_min`, `age_max`, `sort_order` | Sub-8… |
-| `class_groups` | `id`, `school_id`, `unit_id`, `room_id`, `season_id`, `category_id`, `name`, `weekdays int[]`, `start_time`, `end_time`, `capacity`, `status` | horário simples no MVP |
+| `class_groups` | `id`, `school_id`, `unit_id`, `room_id`, `name`, `weekdays int[]`, `start_time`, `end_time`, `capacity`, `is_active` | nome livre, escrito pela escola ("Sub-8 — Ter/Qui 17h") |
 | `class_group_teachers` | `class_group_id`, `user_id`, `role`, `from_date`, `to_date` | histórico de professor |
-| `enrollments` | `id`, `school_id`, `student_id`, `class_group_id`, `plan_id`, `status`, `starts_on`, `ends_on`, `due_day`, `discount_cents`, `waitlist_position` | matrícula |
+| `enrollments` | `id`, `school_id`, `student_id`, `class_group_id`, `status`, `starts_on`, `ends_on`, `discount_cents`, `waitlist_position`, `override_reason` | matrícula |
+
+Não há mais `seasons` nem `categories`: a idade é derivada de `students.birth_date` e o
+agrupamento pedagógico é o nome da turma. Ver [17](17-turmas-e-matricula.md) para o porquê.
 
 **Constraint crítica:**
 
@@ -93,8 +94,8 @@ create unique index enrollments_active_unique
   where status = 'active' and deleted_at is null;
 ```
 
-**Regra de categoria:** no cadastro, o sistema deriva `category_id` da temporada ativa e
-bloqueia se a idade não couber, exigindo `override_reason` + `approved_by`.
+**Segunda turma** é exceção explícita: exige `override_reason` e fica registrada em `audit_log`.
+A regra não olha idade — quem decide se a criança cabe na turma é a escola.
 
 ### 3.3 Pedagogia
 
@@ -105,7 +106,7 @@ bloqueia se a idade não couber, exigindo `override_reason` + `approved_by`.
 | `contents` | `id`, `chapter_id`, `kind` (`video`/`audio`/`image`/`pdf`/`text`/`quiz`), `title`, `blob_pathname`, `content_type`, `bytes`, `duration_s`, `body`, `published_at`, `visibility` |
 | `content_assignments` | `content_id`, `class_group_id`, `available_from`, `available_until` |
 | `content_progress` | `student_id`, `content_id`, `seconds_watched`, `completed_at` |
-| `lesson_plans` | `id`, `school_id`, `author_user_id`, `title`, `category_id`, `duration_min`, `blocks jsonb`, `is_template` |
+| `lesson_plans` | `id`, `school_id`, `author_user_id`, `title`, `class_group_id`, `duration_min`, `blocks jsonb`, `is_template` |
 | `class_sessions` | `id`, `class_group_id`, `lesson_plan_id`, `starts_at`, `ends_at`, `room_id`, `status`, `notes` |
 | `attendance` | `id`, `class_session_id`, `student_id`, `status` (`present`/`absent`/`late`/`excused`), `recorded_by`, `recorded_at`, `offline_created_at` |
 
@@ -115,7 +116,7 @@ bloqueia se a idade não couber, exigindo `override_reason` + `approved_by`.
 |---|---|
 | `skill_frameworks` | `id`, `school_id`, `name`, `is_default` |
 | `skills` | `id`, `framework_id`, `pillar` (`technical`/`physical`/`tactical`/`behavioral`), `code`, `name`, `weight`, `order`, `is_public` |
-| `evaluation_cycles` | `id`, `school_id`, `season_id`, `name`, `starts_on`, `ends_on`, `status` |
+| `evaluation_cycles` | `id`, `school_id`, `name`, `starts_on`, `ends_on`, `status` |
 | `assessments` | `id`, `school_id`, `student_id`, `cycle_id`, `evaluator_user_id`, `status` (`draft`/`submitted`/`approved`), `overall_score`, `approved_by`, `approved_at`, `version` |
 | `assessment_scores` | `id`, `assessment_id`, `skill_id`, `score` (1–5), `note`, `evidence_key` |
 | `badges` | `id`, `school_id`, `code`, `name`, `description`, `icon`, `criteria jsonb` |

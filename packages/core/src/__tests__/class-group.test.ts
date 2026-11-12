@@ -102,13 +102,12 @@ const baseContext = {
   capacity: 20,
   activeCount: 5,
   waitlistCount: 0,
-  categoryMatches: true,
   alreadyEnrolled: false,
   activeInAnotherGroup: false,
 };
 
 describe("decideEnrollment", () => {
-  it("matricula quando há vaga, categoria e consentimento", () => {
+  it("matricula quando há vaga e consentimento", () => {
     expect(decideEnrollment(baseContext)).toEqual({ status: "active" });
   });
 
@@ -126,14 +125,7 @@ describe("decideEnrollment", () => {
     });
   });
 
-  it("bloqueia categoria incompatível", () => {
-    expect(decideEnrollment({ ...baseContext, categoryMatches: false })).toEqual({
-      status: "blocked",
-      reason: "category_mismatch",
-    });
-  });
-
-  it("bloqueia segunda turma ativa na temporada", () => {
+  it("bloqueia segunda turma ativa", () => {
     expect(decideEnrollment({ ...baseContext, activeInAnotherGroup: true })).toEqual({
       status: "blocked",
       reason: "other_group_active",

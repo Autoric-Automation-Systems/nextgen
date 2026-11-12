@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const pillars = [
   {
     title: "Aluno no centro, não no banco",
-    body: "Matrícula, turma, categoria e responsável em um cadastro só. Categoria derivada do ano de nascimento, sem conflito no meio da temporada.",
+    body: "Matrícula, turma e responsável em um cadastro só. A turma é a unidade do dia a dia — a escola nomeia como quiser, sem temporada para virar.",
   },
   {
     title: "Consentimento com prova",
@@ -24,17 +24,17 @@ const pillars = [
   },
   {
     title: "Financeiro que fecha",
-    body: "Mensalidade com vencimento escolhido no cadastro, boleto no e-mail do responsável, inadimplência visível no painel.",
+    body: "Mensalidade com vencimento escolhido no cadastro, PIX enviado sozinho no e-mail do responsável cinco dias antes, inadimplência visível no painel.",
   },
 ];
 
 const modules = [
-  ["Matrícula e turma", "Escola, unidade, sala, categoria (Sub-8, Sub-9…), turma e horário. Vaga e lista de espera por turma."],
+  ["Matrícula e turma", "Escola, unidade, sala, turma e horário. Vaga, lista de espera e conflito de sala no mesmo horário."],
   ["Pessoas", "Responsável legal, aluno, professores e quem pode buscar a criança na saída."],
   ["Pedagogia", "Matérias, capítulos, vídeos, áudios, imagens e PDF. Plano de aula por professor e turma."],
   ["Avaliação", "16 atributos em quatro pilares — técnico, físico, tático e comportamental — com histórico por temporada."],
   ["Saúde", "Anamnese inicial, atualizações periódicas, restrições e contato de emergência. Acesso restrito."],
-  ["Financeiro", "Mensalidade, vencimento, boleto, baixa de pagamento, despesas e balanço do mês."],
+  ["Financeiro", "Mensalidade, vencimento por aluno, PIX automático, baixa de pagamento, despesas e balanço do mês."],
   ["Site da escola", "Página pública com logo, paleta, frase e endereço. Perfil de aluno é opt-in do responsável."],
 ];
 

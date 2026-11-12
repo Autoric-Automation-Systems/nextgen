@@ -3,7 +3,7 @@
 // tabela de domínio, RLS obrigatória (ver migrations/*_rls).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // `native` para o desenvolvimento local; o binário rhel é o que a função
   // serverless da Vercel usa. Sem ele o deploy sobe e falha em runtime com
   // "Query engine library for current platform could not be found".
@@ -152,8 +152,6 @@ model School {
   studentGuardians   StudentGuardian[]
   skillRatings       StudentSkillRating[]
   pickupPeople       PickupAuthorizedPerson[]
-  seasons            Season[]
-  categories         Category[]
   classGroups        ClassGroup[]
   classGroupTeachers ClassGroupTeacher[]
   enrollments        Enrollment[]
@@ -342,9 +340,11 @@ model Student {
   photoPathname     String?       @map("photo_pathname")
   status            StudentStatus @default(active)
   notesInternal     String?       @map("notes_internal")
-  /// Plano de cobrança do aluno. O vencimento e o desconto vêm da matrícula
-  /// (`Enrollment.dueDay` / `discountCents`), onde a escola escolhe no cadastro.
+  /// Plano de cobrança do aluno. O desconto continua na matrícula
+  /// (`Enrollment.discountCents`); o vencimento é do aluno, escolhido no cadastro.
   tuitionPlanId     String?       @map("tuition_plan_id") @db.Uuid
+  /// Dia do mês em que a mensalidade vence. É o que a cobrança automática usa.
+  dueDay            Int           @default(10) @map("due_day")
   publicCardSlug    String?       @unique @map("public_card_slug")
   publicCardEnabled Boolean       @default(false) @map("public_card_enabled")
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -373,7 +373,6 @@ model StudentSkillRating {
   id            String   @id @default(uuid(7)) @db.Uuid
   schoolId      String   @map("school_id") @db.Uuid
   studentId     String   @map("student_id") @db.Uuid
-  seasonId      String?  @map("season_id") @db.Uuid
   cycleLabel    String   @map("cycle_label")
   /// Código do atributo (CTL, PAS…), conforme `packages/core/src/skills.ts`.
   code          String
@@ -437,72 +436,28 @@ model PickupAuthorizedPerson {
 // Temporada, categoria, turma, matrícula
 // ─────────────────────────────────────────────────────────────
 
-model Season {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  schoolId  String   @map("school_id") @db.Uuid
-  name      String
-  startsOn  DateTime @map("starts_on") @db.Date
-  endsOn    DateTime @map("ends_on") @db.Date
-  isActive  Boolean  @default(false) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  school      School       @relation(fields: [schoolId], references: [id])
-  categories  Category[]
-  classGroups ClassGroup[]
-
-  @@index([schoolId])
-  @@map("seasons")
-}
-
-model Category {
-  id            String   @id @default(uuid(7)) @db.Uuid
-  schoolId      String   @map("school_id") @db.Uuid
-  seasonId      String   @map("season_id") @db.Uuid
-  name          String
-  birthYearFrom Int?     @map("birth_year_from")
-  birthYearTo   Int?     @map("birth_year_to")
-  ageMin        Int?     @map("age_min")
-  ageMax        Int?     @map("age_max")
-  sortOrder     Int      @default(0) @map("sort_order")
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  school      School       @relation(fields: [schoolId], references: [id])
-  season      Season       @relation(fields: [seasonId], references: [id])
-  classGroups ClassGroup[]
-
-  @@unique([seasonId, name])
-  @@index([schoolId])
-  @@map("categories")
-}
-
 model ClassGroup {
-  id         String    @id @default(uuid(7)) @db.Uuid
-  schoolId   String    @map("school_id") @db.Uuid
-  unitId     String    @map("unit_id") @db.Uuid
-  roomId     String?   @map("room_id") @db.Uuid
-  seasonId   String    @map("season_id") @db.Uuid
-  categoryId String    @map("category_id") @db.Uuid
-  name       String
-  weekdays   Int[]     @default([])
-  startTime  String    @map("start_time") @db.Char(5)
-  endTime    String    @map("end_time") @db.Char(5)
-  capacity   Int       @default(20)
-  isActive   Boolean   @default(true) @map("is_active")
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+  id        String    @id @default(uuid(7)) @db.Uuid
+  schoolId  String    @map("school_id") @db.Uuid
+  unitId    String    @map("unit_id") @db.Uuid
+  roomId    String?   @map("room_id") @db.Uuid
+  name      String
+  weekdays  Int[]     @default([])
+  startTime String    @map("start_time") @db.Char(5)
+  endTime   String    @map("end_time") @db.Char(5)
+  capacity  Int       @default(20)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   school      School              @relation(fields: [schoolId], references: [id])
   unit        Unit                @relation(fields: [unitId], references: [id])
   room        Room?               @relation(fields: [roomId], references: [id])
-  season      Season              @relation(fields: [seasonId], references: [id])
-  category    Category            @relation(fields: [categoryId], references: [id])
   teachers    ClassGroupTeacher[]
   enrollments Enrollment[]
 
-  @@index([schoolId, seasonId])
+  @@index([schoolId])
   @@map("class_groups")
 }
 
@@ -531,7 +486,6 @@ model Enrollment {
   status           EnrollmentStatus @default(draft)
   startsOn         DateTime         @map("starts_on") @db.Date
   endsOn           DateTime?        @map("ends_on") @db.Date
-  dueDay           Int              @default(10) @map("due_day")
   discountCents    Int              @default(0) @map("discount_cents")
   waitlistPosition Int?             @map("waitlist_position")
   overrideReason   String?          @map("override_reason")
@@ -691,7 +645,6 @@ model TuitionPlan {
   schoolId      String    @map("school_id") @db.Uuid
   name          String
   monthlyAmount Int       @map("monthly_amount")
-  dueDay        Int       @map("due_day")
   active        Boolean   @default(true)
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -746,6 +699,8 @@ model Invoice {
   discount    Int          @default(0)
   status      ChargeStatus @default(open)
   description String?
+  /// Quando o responsável recebeu o PIX por e-mail. Nulo = nunca enviado.
+  notifiedAt  DateTime?    @map("notified_at") @db.Timestamptz(6)
   canceledAt  DateTime?    @map("canceled_at") @db.Timestamptz(6)
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { occupancyPercent } from "@nextgen/core";
 import { requireSession } from "@/lib/session";
 import { getOverview } from "@/lib/queries";
 import { resolveWorkspace } from "@/lib/workspace";
@@ -47,25 +48,40 @@ export default async function DashboardPage() {
 
       <section className="card">
         <div className="row" style={{ marginBottom: 12 }}>
-          <h2 className="section-title">Categorias</h2>
-          <Link className="muted" href="/alunos">ver alunos →</Link>
+          <h2 className="section-title">Ocupação das turmas</h2>
+          <Link className="muted" href="/turmas">ver turmas →</Link>
         </div>
-        {overview.categories.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Nenhuma categoria criada para a temporada ativa.</p>
+        {overview.groups.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>
+            Nenhuma turma aberta. Abra a primeira em Turmas — sem turma o aluno não tem horário.
+          </p>
         ) : (
           <div className="table-scroll table-cards">
             <table>
               <thead>
                 <tr>
-                  <th>Categoria</th>
-                  <th>Alunos matriculados</th>
+                  <th>Turma</th>
+                  <th>Alunos</th>
+                  <th>Ocupação</th>
                 </tr>
               </thead>
               <tbody>
-                {overview.categories.map((category) => (
-                  <tr key={category.name}>
-                    <td data-label="Categoria">{category.name}</td>
-                    <td data-label="Alunos matriculados">{category.students}</td>
+                {overview.groups.map((group) => (
+                  <tr key={group.id}>
+                    <td data-label="Turma">
+                      <Link href={`/turmas/${group.id}`}>{group.name}</Link>
+                    </td>
+                    <td data-label="Alunos" className="muted">
+                      {group.students} de {group.capacity}
+                    </td>
+                    <td data-label="Ocupação">
+                      <div className="meter" style={{ width: 120 }}>
+                        <div
+                          className={group.students >= group.capacity ? "meter-fill is-full" : "meter-fill"}
+                          style={{ width: `${occupancyPercent(group.capacity, group.students)}%` }}
+                        />
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -79,7 +95,7 @@ export default async function DashboardPage() {
         <p className="muted" style={{ margin: 0 }}>
           Esta entrega cobre multitenancy com RLS, sessão, escopo de papel e as primitivas de
           consentimento. Ficam para as próximas fases: conteúdo e planos de aula, avaliação de
-          habilidades, anamnese e o módulo financeiro com boleto.
+          habilidades, anamnese e a cobrança automática por PIX.
         </p>
       </section>
     </div>

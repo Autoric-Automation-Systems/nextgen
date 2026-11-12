@@ -10,6 +10,7 @@ import {
   delinquentStudents,
   monthlyCharge,
   dueDateFor,
+  isBillingWindowOpen,
   isCompetence,
   isOverdue,
   outstandingCents,
@@ -67,6 +68,24 @@ describe("vencimento", () => {
     expect(daysInMonth(2028, 2)).toBe(29);
     expect(daysInMonth(2026, 1)).toBe(31);
     expect(daysInMonth(2026, 6)).toBe(30);
+  });
+});
+
+describe("janela de cobrança", () => {
+  const due = dueDateFor("2026-11", 10);
+
+  it("abre cinco dias antes do vencimento", () => {
+    expect(isBillingWindowOpen(due, new Date("2026-11-04T12:00:00Z"))).toBe(false);
+    expect(isBillingWindowOpen(due, new Date("2026-11-05T00:00:00Z"))).toBe(true);
+  });
+
+  it("continua aberta depois do vencimento: execução perdida é recuperada", () => {
+    expect(isBillingWindowOpen(due, new Date("2026-12-01T00:00:00Z"))).toBe(true);
+  });
+
+  it("aceita outra antecedência", () => {
+    expect(isBillingWindowOpen(due, new Date("2026-11-09T00:00:00Z"), 1)).toBe(true);
+    expect(isBillingWindowOpen(due, new Date("2026-11-08T00:00:00Z"), 1)).toBe(false);
   });
 });
 

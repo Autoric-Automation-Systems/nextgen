@@ -40,7 +40,7 @@ export default async function StudentCardPage({ params }: { params: Promise<{ id
           </p>
           <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>{student.fullName}</h1>
           <p className="muted" style={{ margin: 0 }}>
-            {student.category ?? "sem categoria"} · ciclo {student.cycleLabel} ·{" "}
+            {student.classGroup ?? "sem turma"} · ciclo {student.cycleLabel} ·{" "}
             {student.guardianNames.join(", ") || "sem responsável vinculado"}
           </p>
         </div>
@@ -51,7 +51,7 @@ export default async function StudentCardPage({ params }: { params: Promise<{ id
         <PlayerCard
           data={{
             nickname: student.nickname,
-            category: student.category,
+            team: student.classGroup,
             position: student.position,
             jerseyNumber: student.jerseyNumber,
             age: student.age,
@@ -69,7 +69,7 @@ export default async function StudentCardPage({ params }: { params: Promise<{ id
           </h2>
           <p className="muted" style={{ marginTop: 0 }}>
             {student.age < 12
-              ? "Aluno com menos de 12 anos: o card mostra barras por pilar e a categoria. Não existe nota geral nem atributo numérico — comparar crianças por número vira competição entre pais."
+              ? "Aluno com menos de 12 anos: o card mostra barras por pilar e a turma. Não existe nota geral nem atributo numérico — comparar crianças por número vira competição entre pais."
               : "Aluno com 12 anos ou mais: o card mostra a nota geral e as notas por atributo, com a variação desde o ciclo anterior."}
           </p>
           <p className="muted">

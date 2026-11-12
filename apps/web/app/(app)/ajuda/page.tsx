@@ -172,7 +172,7 @@ const FAQ: { title: string; items: { q: string; a: React.ReactNode }[] }[] = [
         q: "O que exatamente aparece no card público?",
         a: (
           <>
-            Só o que o responsável autorizou: apelido, categoria, posição e os pilares técnico,
+            Só o que o responsável autorizou: apelido, turma, posição e os pilares técnico,
             físico e tático. Comportamento (disciplina, foco, resiliência) nunca aparece em
             superfície pública — é conversa entre escola e família. O card público é desligado
             por padrão e exige consentimento de imagem e de card público.
@@ -185,10 +185,10 @@ const FAQ: { title: string; items: { q: string; a: React.ReactNode }[] }[] = [
     title: "Financeiro",
     items: [
       {
-        q: "Onde vejo os boletos?",
+        q: "Onde vejo as mensalidades?",
         a: (
           <>
-            O módulo financeiro — mensalidade por boleto no e-mail do responsável, vencimento
+            O módulo financeiro — mensalidade por PIX no e-mail do responsável, vencimento
             escolhido no cadastro, gastos da escola e balanço do mês — ainda está em
             desenvolvimento e aparece apagado como &ldquo;em breve&rdquo; no menu. Enquanto
             isso, a cobrança continua pelo canal que a escola já usa.

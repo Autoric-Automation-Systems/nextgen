@@ -22,10 +22,6 @@ const schoolRival = "01930000-0000-7000-8000-000000000002";
 const ids = {
   unitDemo: "01930000-0000-7000-8000-000000000101",
   roomDemo: "01930000-0000-7000-8000-000000000102",
-  seasonDemo: "01930000-0000-7000-8000-000000000103",
-  catSub8: "01930000-0000-7000-8000-000000000104",
-  catSub9: "01930000-0000-7000-8000-000000000105",
-  catSub11: "01930000-0000-7000-8000-000000000106",
   groupSub8: "01930000-0000-7000-8000-000000000107",
   adminUser: "01930000-0000-7000-8000-000000000201",
   teacherUser: "01930000-0000-7000-8000-000000000202",
@@ -127,39 +123,6 @@ async function main() {
       },
     });
 
-    await db.season.upsert({
-      where: { id: ids.seasonDemo },
-      update: {},
-      create: {
-        id: ids.seasonDemo,
-        schoolId: schoolDemo,
-        name: "2026",
-        startsOn: new Date("2026-01-15"),
-        endsOn: new Date("2026-12-15"),
-        isActive: true,
-      },
-    });
-
-    for (const [id, name, from, to] of [
-      [ids.catSub8, "Sub-8", 2018, 2018],
-      [ids.catSub9, "Sub-9", 2017, 2017],
-      [ids.catSub11, "Sub-11", 2015, 2015],
-    ] as const) {
-      await db.category.upsert({
-        where: { id },
-        update: {},
-        create: {
-          id,
-          schoolId: schoolDemo,
-          seasonId: ids.seasonDemo,
-          name,
-          birthYearFrom: from,
-          birthYearTo: to,
-          sortOrder: from,
-        },
-      });
-    }
-
     await db.classGroup.upsert({
       where: { id: ids.groupSub8 },
       update: {},
@@ -168,8 +131,6 @@ async function main() {
         schoolId: schoolDemo,
         unitId: ids.unitDemo,
         roomId: ids.roomDemo,
-        seasonId: ids.seasonDemo,
-        categoryId: ids.catSub8,
         name: "Sub-8 — Ter/Qui 17h",
         weekdays: [2, 4],
         startTime: "17:00",
@@ -340,7 +301,6 @@ async function main() {
         classGroupId: ids.groupSub8,
         status: "active",
         startsOn: new Date("2026-02-01"),
-        dueDay: 10,
       },
     });
 
@@ -354,7 +314,6 @@ async function main() {
         classGroupId: ids.groupSub8,
         status: "active",
         startsOn: new Date("2026-02-01"),
-        dueDay: 5,
         // Irmã mais velha: desconto de irmão, escolhido na matrícula.
         discountCents: 5000,
       },
@@ -368,7 +327,6 @@ async function main() {
         schoolId: schoolDemo,
         name: "Mensalidade 3x semana",
         monthlyAmount: 45000,
-        dueDay: 10,
       },
     });
 
@@ -380,17 +338,16 @@ async function main() {
         schoolId: schoolDemo,
         name: "Mensalidade 2x semana",
         monthlyAmount: 32000,
-        dueDay: 5,
       },
     });
 
     await db.student.update({
       where: { id: ids.studentA },
-      data: { tuitionPlanId: plan3x.id },
+      data: { tuitionPlanId: plan3x.id, dueDay: 10 },
     });
     await db.student.update({
       where: { id: ids.studentB },
-      data: { tuitionPlanId: plan2x.id },
+      data: { tuitionPlanId: plan2x.id, dueDay: 5 },
     });
 
     await db.school.update({

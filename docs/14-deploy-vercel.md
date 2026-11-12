@@ -257,6 +257,7 @@ local seguir junto.
 | `EMAIL_PASS` | **senha de app** do Google, não a senha da conta | sim, sem Resend |
 | `MAIL_FROM` | remetente exibido; vazio = `NextGen <EMAIL_USER>` | não |
 | `RESEND_API_KEY` | chave do Resend (alternativa ao SMTP) | sim, sem SMTP |
+| `CRON_SECRET` | `openssl rand -hex 32` — segredo do agendador de mensalidades | sim |
 | `BLOB_PUBLIC_READ_WRITE_TOKEN` | store `public` | quando o upload entrar |
 | `BLOB_PRIVATE_READ_WRITE_TOKEN` | store `private` | quando o upload entrar |
 
@@ -264,6 +265,27 @@ O `/api/health` confere isso por você: `missing` lista o que falta para o app s
 com a lista não vazia ele responde `degraded` em vez de `ok`. Sem `BETTER_AUTH_SECRET`, o
 Better Auth lança em toda página autenticada e o sintoma é um `500` sem texto — foi o que
 manteve `/dashboard` fora do ar depois de o banco já estar bom.
+
+### Cobrança automática: quem chama o cron
+
+`GET /api/cron/mensalidades` gera e envia as mensalidades que entraram na janela de 5 dias
+antes do vencimento. Ele recusa tudo sem `Authorization: Bearer $CRON_SECRET`, então a
+variável é obrigatória em produção — sem ela a rota responde `503`.
+
+Cadastre o agendador fora da Vercel (GitHub Actions, cron-job.org, cron da própria VPS),
+de hora em hora:
+
+```
+*/30 * * * * curl -s -H "Authorization: Bearer $CRON_SECRET" https://seudominio.com.br/api/cron/mensalidades
+```
+
+A rota é idempotente: chamar de meia em meia hora não cobra nem avisa duas vezes. A resposta
+é um resumo (`created`, `emailed`, `failures`); `207` significa que alguma escola falhou e as
+outras seguiram. O cron da Vercel (plano Pro, `vercel.json`) serve igual, com `crons` apontando
+para o mesmo caminho.
+
+Se o agendador não rodar, nada se perde: o botão **Gerar agora** em `/financeiro` usa a mesma
+função e envia o que já está na janela.
 
 ### O domínio público não pode estar atrás da proteção da Vercel
 

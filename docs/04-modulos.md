@@ -62,7 +62,7 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 
 ---
 
-## M3. Alunos, categorias, turmas e matrícula — MVP
+## M3. Alunos, turmas e matrícula — MVP
 
 **Objetivo:** o coração operacional. Matricular sem planilha.
 
@@ -70,16 +70,16 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 - Nome, apelido, nascimento, gênero (opcional), foto (opcional), escola anterior
 - Contatos de emergência, pessoas autorizadas a retirar (com foto e parentesco)
 - Documentos com validade (atestado médico, autorização)
-- Histórico: turmas, categorias, avaliações, ocorrências, financeiro
+- Histórico: turmas, avaliações, ocorrências, financeiro
 
 ### Categorias
-- Sub-8, Sub-9… configuráveis por escola e temporada
-- Cálculo automático por **ano de nascimento** (regra padrão: `temporada - ano_nascimento`)
+- Turmas com nome livre por escola ("Sub-8 — Ter/Qui 17h", "Iniciação", "Feminino Sub-13")
+- Sem categoria nem temporada: idade é derivada da data de nascimento
 - Regra configurável para ano civil vs ano esportivo
-- Virada de temporada gera **promoção automática** de categoria
+- Troca de turma no fim do ciclo é ação da secretaria, com histórico
 
 ### Turmas
-- Nome, unidade, sala, categoria, nível, dias/horários, capacidade, professor(es)
+- Nome livre, unidade, sala, dias/horários, capacidade, professor(es)
 - Lista de espera quando lotada
 - Aula experimental com aluno `trial` que não gera cobrança
 - Reposição de aula (falta justificada → crédito de reposição)
@@ -105,7 +105,7 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 - Matéria (ex.: Fundamentos Técnicos, Tática, Físico, Mental)
 - Capítulo dentro da matéria, com ordem e pré-requisitos opcionais
 - Conteúdo: vídeo, áudio, imagem, PDF, texto rico, quiz
-- Publicação por turma/categoria; agendamento
+- Publicação por turma; agendamento
 - Progresso do aluno por conteúdo (para 12+; para criança, progresso visível ao responsável)
 - Versionamento de conteúdo e biblioteca compartilhada entre unidades
 
@@ -128,7 +128,7 @@ Legenda de prioridade: **MVP** (v1), **v1.1**, **v2**, **futuro**.
 **Objetivo:** o professor resolve tudo em campo, offline.
 
 - Plano de aula com objetivo, aquecimento, fundamentos, jogo, volta à calma
-- Templates por categoria e duração (45/60/90 min)
+- Templates por duração (45/60/90 min)
 - Clonar plano de outra turma/semana
 - Chamada com 1 toque: presente, falta, atraso, justificada
 - Diário: observações da aula, fotos, vídeos

@@ -15,7 +15,8 @@ import { PILLARS, SKILLS, canShowCardRating, cardRating, type Pillar, type Score
 
 export type PlayerCardData = {
   nickname: string;
-  category: string | null;
+  /** Nome da turma do aluno; a escola escolhe o rótulo. */
+  team: string | null;
   position: string | null;
   jerseyNumber: number | null;
   age: number;
@@ -62,7 +63,7 @@ export function PlayerCard({
   return (
     <figure className="player-card" style={{ ["--card-accent" as string]: data.accent ?? "var(--accent)" }}>
       <header className="player-card-top">
-        <span className="player-card-cat">{data.category ?? "Sem categoria"}</span>
+        <span className="player-card-cat">{data.team ?? "Sem turma"}</span>
         <span className="player-card-cycle">{data.cycleLabel}</span>
       </header>
 

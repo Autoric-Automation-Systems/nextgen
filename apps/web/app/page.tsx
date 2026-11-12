@@ -27,7 +27,7 @@ export const metadata: Metadata = {
  */
 const SAMPLE_CARD = {
   nickname: "Tiaguinho",
-  category: "Sub-13 · 2026",
+  team: "Sub-13",
   position: "Atacante",
   jerseyNumber: 11,
   age: 13,
@@ -76,7 +76,7 @@ const SAMPLE_CARD = {
 
 const SAMPLE_CARD_GIRL = {
   nickname: "Bia",
-  category: "Sub-11 · 2026",
+  team: "Sub-11",
   position: "Meia",
   jerseyNumber: 10,
   age: 11,
@@ -115,7 +115,7 @@ export default function Home() {
             <span className="eyebrow">Escolas de futebol</span>
             <h1>A escola inteira em um lugar.</h1>
             <p className="lead">
-              Matrícula, turma, categoria, avaliação, saúde e mensalidade. E o consentimento do
+              Matrícula, turma, avaliação, saúde e mensalidade. E o consentimento do
               responsável tratado como parte do sistema, não como anexo.
             </p>
             <div className="hero-actions">

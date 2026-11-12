@@ -16,7 +16,6 @@ export type PlanRow = {
   id: string;
   name: string;
   monthlyAmount: number;
-  dueDay: number;
   active: boolean;
   students: number;
 };
@@ -109,7 +108,7 @@ export async function listPlans(ctx: TenantContext): Promise<PlanRow[]> {
   return withTenant(ctx, async (tx) => {
     const plans = await tx.tuitionPlan.findMany({
       where: { deletedAt: null },
-      orderBy: [{ active: "desc" }, { dueDay: "asc" }, { name: "asc" }],
+      orderBy: [{ active: "desc" }, { name: "asc" }],
       include: { _count: { select: { students: true } } },
     });
 
@@ -117,7 +116,6 @@ export async function listPlans(ctx: TenantContext): Promise<PlanRow[]> {
       id: plan.id,
       name: plan.name,
       monthlyAmount: plan.monthlyAmount,
-      dueDay: plan.dueDay,
       active: plan.active,
       students: plan._count.students,
     }));

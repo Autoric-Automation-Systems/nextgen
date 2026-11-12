@@ -1,28 +1,9 @@
 import { withTenant } from "@nextgen/db";
 import { birthYear, formatSchedule, occupancyPercent, seatsLeft } from "@nextgen/core";
 
-export type CategorySummary = {
-  id: string;
-  name: string;
-  birthYearFrom: number | null;
-  birthYearTo: number | null;
-  classGroups: number;
-  students: number;
-};
-
-export type ActiveSeason = {
-  id: string;
-  name: string;
-  startsOn: Date;
-  endsOn: Date;
-  categories: CategorySummary[];
-};
-
 export type ClassGroupRow = {
   id: string;
   name: string;
-  categoryId: string;
-  categoryName: string;
   schedule: string;
   weekdays: number[];
   startTime: string;
@@ -37,48 +18,6 @@ export type ClassGroupRow = {
   teachers: string[];
   isActive: boolean;
 };
-
-export async function getActiveSeason(ctx: {
-  schoolId: string;
-  userId: string;
-}): Promise<ActiveSeason | null> {
-  return withTenant(ctx, async (tx) => {
-    const season = await tx.season.findFirst({
-      where: { isActive: true },
-      orderBy: { startsOn: "desc" },
-      include: {
-        categories: {
-          // Mais novo primeiro: é assim que a escola lê o quadro de categorias (Sub-8 antes de Sub-13).
-          orderBy: [{ birthYearFrom: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
-          include: { classGroups: { where: { deletedAt: null }, select: { id: true } } },
-        },
-      },
-    });
-    if (!season) return null;
-
-    const enrollment = await tx.enrollment.groupBy({
-      by: ["classGroupId"],
-      where: { deletedAt: null, status: "active" },
-      _count: { _all: true },
-    });
-    const perGroup = new Map(enrollment.map((row) => [row.classGroupId, row._count._all]));
-
-    return {
-      id: season.id,
-      name: season.name,
-      startsOn: season.startsOn,
-      endsOn: season.endsOn,
-      categories: season.categories.map((category) => ({
-        id: category.id,
-        name: category.name,
-        birthYearFrom: category.birthYearFrom,
-        birthYearTo: category.birthYearTo,
-        classGroups: category.classGroups.length,
-        students: category.classGroups.reduce((total, group) => total + (perGroup.get(group.id) ?? 0), 0),
-      })),
-    };
-  });
-}
 
 export async function listUnits(ctx: { schoolId: string; userId: string }) {
   return withTenant(ctx, (tx) =>
@@ -101,7 +40,7 @@ export async function listClassGroups(
         // Professor vê só as turmas dele; coordenação e administração veem a escola inteira.
         ...(options.teacherId ? { teachers: { some: { userId: options.teacherId } } } : {}),
       },
-      include: { category: true, unit: true, room: true },
+      include: { unit: true, room: true },
     });
 
     const counts = await tx.enrollment.groupBy({
@@ -137,17 +76,13 @@ export async function listClassGroups(
     return groups
       .sort(
         (a, b) =>
-          (b.category.birthYearFrom ?? 0) - (a.category.birthYearFrom ?? 0) ||
-          a.startTime.localeCompare(b.startTime) ||
-          a.name.localeCompare(b.name, "pt-BR"),
+          a.startTime.localeCompare(b.startTime) || a.name.localeCompare(b.name, "pt-BR"),
       )
       .map((group) => {
         const activeCount = activeByGroup.get(group.id) ?? 0;
         return {
           id: group.id,
           name: group.name,
-          categoryId: group.categoryId,
-          categoryName: group.category.name,
           schedule: formatSchedule(group),
           weekdays: group.weekdays,
           startTime: group.startTime,
@@ -182,13 +117,6 @@ export type EnrollmentRow = {
 export type ClassGroupDetail = {
   id: string;
   name: string;
-  categoryId: string;
-  categoryName: string;
-  categoryMatches: (date: Date) => boolean;
-  birthYearFrom: number | null;
-  birthYearTo: number | null;
-  seasonId: string;
-  seasonName: string;
   schedule: string;
   weekdays: number[];
   startTime: string;
@@ -219,8 +147,6 @@ export async function getClassGroup(
         ...(options.teacherId ? { teachers: { some: { userId: options.teacherId } } } : {}),
       },
       include: {
-        category: true,
-        season: true,
         unit: true,
         room: true,
         enrollments: {
@@ -272,17 +198,6 @@ export async function getClassGroup(
     return {
       id: group.id,
       name: group.name,
-      categoryId: group.categoryId,
-      categoryName: group.category.name,
-      categoryMatches: (date: Date) => {
-        const year = birthYear(date);
-        if (group.category.birthYearFrom === null || group.category.birthYearTo === null) return true;
-        return year >= group.category.birthYearFrom && year <= group.category.birthYearTo;
-      },
-      birthYearFrom: group.category.birthYearFrom,
-      birthYearTo: group.category.birthYearTo,
-      seasonId: group.seasonId,
-      seasonName: group.season.name,
       schedule: formatSchedule(group),
       weekdays: group.weekdays,
       startTime: group.startTime,
@@ -321,7 +236,6 @@ export type CandidateStudent = {
   birthYear: number;
   currentGroup: string | null;
   consent: "granted" | "missing" | "revoked";
-  matchesCategory: boolean;
 };
 
 /** Alunos ativos que ainda não estão nesta turma. */
@@ -332,7 +246,7 @@ export async function listCandidateStudents(
   return withTenant(ctx, async (tx) => {
     const group = await tx.classGroup.findFirst({
       where: { id: classGroupId, deletedAt: null },
-      include: { category: true },
+      select: { id: true },
     });
     if (!group) return [];
 
@@ -342,7 +256,7 @@ export async function listCandidateStudents(
       include: {
         enrollments: {
           where: { deletedAt: null, status: { in: ["active", "draft", "waitlist"] } },
-          include: { classGroup: { select: { id: true, name: true, seasonId: true } } },
+          include: { classGroup: { select: { id: true, name: true } } },
         },
         consents: { where: { purposeCode: "enrollment" }, orderBy: { grantedAt: "desc" } },
       },
@@ -354,11 +268,6 @@ export async function listCandidateStudents(
         const current = student.enrollments.find((entry) => entry.status === "active");
         const consentStatus = student.consents[0]?.status;
         const year = birthYear(student.birthDate);
-        const category = group.category;
-        const matchesCategory =
-          category.birthYearFrom === null ||
-          category.birthYearTo === null ||
-          (year >= category.birthYearFrom && year <= category.birthYearTo);
 
         return {
           id: student.id,
@@ -371,7 +280,6 @@ export async function listCandidateStudents(
               : consentStatus === "revoked"
                 ? ("revoked" as const)
                 : ("missing" as const),
-          matchesCategory,
         };
       });
   });

@@ -171,7 +171,8 @@ export default async function FinancePage({
 
         {overview.invoices.length === 0 ? (
           <p className="muted" style={{ marginTop: 0 }}>
-            Nenhuma cobrança nesta competência. Gere o mês abaixo — só entram alunos com plano e
+            Nenhuma cobrança nesta competência. A cobrança automática gera sozinha quando o
+            vencimento chega; para antecipar, gere o mês abaixo — só entram alunos com plano e
             matrícula ativa.
           </p>
         ) : (
@@ -262,7 +263,7 @@ export default async function FinancePage({
                   <span key={plan.id} className="chip">
                     <strong>{plan.name}</strong>
                     <span className="muted">
-                      {formatBRL(plan.monthlyAmount)} · dia {plan.dueDay} · {plan.students} aluno(s)
+                      {formatBRL(plan.monthlyAmount)} · {plan.students} aluno(s)
                       {plan.active ? "" : " · inativo"}
                     </span>
                   </span>

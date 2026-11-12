@@ -7,7 +7,7 @@
  *    relatório do professor dependem de `weekdays` + `startTime`/`endTime` comparáveis.
  *    Guardar "Ter e Qui às 17h" inviabiliza a agenda.
  * 2. **Matrícula não é igual a vaga.** O aluno pode estar matriculado sem consentimento
- *    (rascunho), sem vaga (lista de espera) ou fora da categoria (exceção registrada).
+ *    (rascunho), sem vaga (lista de espera) ou numa segunda turma (exceção registrada).
  *    Cada um desses estados tem consequência jurídica e pedagógica diferente.
  */
 
@@ -128,11 +128,9 @@ export type EnrollmentContext = {
   capacity: number;
   activeCount: number;
   waitlistCount: number;
-  /** Ano de nascimento do aluno dentro da faixa da categoria da turma. */
-  categoryMatches: boolean;
   /** Já existe matrícula ativa nesta turma. */
   alreadyEnrolled: boolean;
-  /** Já existe matrícula ativa em outra turma da mesma temporada. */
+  /** Já existe matrícula ativa em outra turma. */
   activeInAnotherGroup: boolean;
 };
 
@@ -142,7 +140,7 @@ export type EnrollmentDecision =
   | { status: "waitlist"; reason: "full"; position: number }
   | {
       status: "blocked";
-      reason: "consent_revoked" | "category_mismatch" | "already_enrolled" | "other_group_active";
+      reason: "consent_revoked" | "already_enrolled" | "other_group_active";
     };
 
 /**
@@ -150,7 +148,7 @@ export type EnrollmentDecision =
  *
  * 0. matrícula repetida na mesma turma bloqueia.
  * 1. consentimento revogado bloqueia — reativar sem novo termo seria tratar dado sem base.
- * 2. categoria e turma duplicada bloqueiam, mas aceitam exceção registrada.
+ * 2. turma duplicada bloqueia, mas aceita exceção registrada.
  * 3. turma cheia vira lista de espera, com posição.
  * 4. sem consentimento de matrícula vira rascunho: o aluno aparece, nada é liberado.
  */
@@ -160,9 +158,6 @@ export function decideEnrollment(context: EnrollmentContext): EnrollmentDecision
   }
   if (context.consent === "revoked") {
     return { status: "blocked", reason: "consent_revoked" };
-  }
-  if (!context.categoryMatches) {
-    return { status: "blocked", reason: "category_mismatch" };
   }
   if (context.activeInAnotherGroup) {
     return { status: "blocked", reason: "other_group_active" };
@@ -177,7 +172,7 @@ export function decideEnrollment(context: EnrollmentContext): EnrollmentDecision
 }
 
 /**
- * Situação depois que a coordenação autoriza uma exceção de categoria/turma.
+ * Situação depois que a coordenação autoriza a exceção (segunda turma).
  * A exceção muda quem pode entrar, não quantos cabem: sem vaga, o aluno entra na fila.
  */
 export function resolveOverriddenEnrollment(context: {
@@ -197,10 +192,8 @@ export const BLOCKED_TEXT: Record<
 > = {
   consent_revoked:
     "O responsável revogou o consentimento de matrícula. Registre um novo termo antes de matricular.",
-  category_mismatch:
-    "O ano de nascimento do aluno não está na faixa desta categoria. Matricule na turma certa ou registre a exceção.",
   other_group_active:
-    "O aluno já tem matrícula ativa em outra turma desta temporada. Encerre a atual antes de transferir.",
+    "O aluno já tem matrícula ativa em outra turma. Encerre a atual antes de transferir.",
   already_enrolled: "O aluno já está matriculado nesta turma.",
 };
 
@@ -223,7 +216,7 @@ export const ENROLLMENT_STATUS_LABEL: Record<string, string> = {
   completed: "concluída",
 };
 
-/** Exceção de categoria/turma exige motivo escrito — auditoria sem motivo não audita nada. */
+/** Exceção de turma exige motivo escrito — auditoria sem motivo não audita nada. */
 export const MIN_OVERRIDE_REASON = 10;
 
 export function validOverrideReason(reason: string | undefined | null): boolean {

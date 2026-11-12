@@ -11,7 +11,6 @@ export type Candidate = {
   birthYear: number;
   currentGroup: string | null;
   consent: "granted" | "missing" | "revoked";
-  matchesCategory: boolean;
 };
 
 const CONSENT_NOTE: Record<Candidate["consent"], string> = {
@@ -53,7 +52,7 @@ export function EnrollForm({ classGroupId, candidates }: { classGroupId: string;
               {candidate.name} · {candidate.birthYear}
               {candidate.currentGroup ? ` · hoje em ${candidate.currentGroup}` : ""}
               {CONSENT_NOTE[candidate.consent]}
-              {candidate.matchesCategory ? "" : " · fora da categoria"}
+
             </option>
           ))}
         </select>
@@ -61,7 +60,7 @@ export function EnrollForm({ classGroupId, candidates }: { classGroupId: string;
 
       <details style={{ marginBottom: 14 }}>
         <summary className="muted" style={{ cursor: "pointer", marginBottom: 8 }}>
-          Exceção: categoria ou segunda turma na temporada
+          Exceção: matricular em segunda turma
         </summary>
         <div className="field" style={{ marginTop: 8 }}>
           <label htmlFor="override-reason">Motivo (fica na auditoria)</label>

@@ -7,24 +7,34 @@ ficou de fora. Complementa o modelo de dados ([05](05-modelo-dados.md)) e a fase
 ## 1. A hierarquia
 
 ```
-season (temporada)
-└── category (Sub-8, Sub-9…)   faixa de ano de nascimento
-    └── class_group (turma)    dias, horário, unidade, sala, capacidade
-        └── enrollment         aluno × turma × situação
+class_group (turma)   nome livre + unidade, sala, dias, horário, capacidade
+└── enrollment        aluno × turma × situação
 ```
 
 Cada nível tem um motivo:
 
 | Nível | Por que separado |
 |---|---|
-| **temporada** | a escola reabre categorias todo ano; trocar de temporada arquiva a anterior sem apagar matrícula nem histórico |
-| **categoria** | é a regra de idade, escrita uma vez. A faixa (`birth_year_from`/`birth_year_to`) decide quem pode entrar na turma |
-| **turma** | mesmo Sub-8 tem terça/quinta 17h e sábado 9h. A vaga, o professor e a sala são da turma, não da categoria |
+| **turma** | é o que a escola vende e o que o responsável contrata: "Sub-8 — Ter/Qui 17h". O nome é livre, escrito pela escola, porque a grade real varia (turma por idade, por nível, por bairro, por horário) |
 | **matrícula** | o vínculo do aluno com a turma **naquele período**. Encerrar não apaga: preenche `ends_on` |
 
-Sub-8 na temporada 2026 = nascidos em 2018 (`suggestBirthYearRange` em `packages/core`). Categoria
-de dois anos (Sub-11 = 2015 e 2016) é permitida preenchendo os anos na mão — comum em escolinha
-que junta duas idades por falta de turma.
+**Por que não existem mais categoria e temporada.** Modelar `season → category → class_group`
+obrigava a escola a manter uma grade anual antes de abrir a primeira turma, e a "regra de idade"
+no banco brigava com a operação real: escola junta duas idades por falta de professor, aceita um
+aluno mais novo por avaliação, renomeia "Sub-8" para "Iniciação". A idade continua sendo dado do
+aluno (`birth_date`) e aparece derivada no card e nos relatórios; o agrupamento pedagógico passa
+a ser o nome da turma, que a escola escolhe. Quem quiser sinalizar idade no nome escreve
+"Sub-8 — Ter/Qui 17h" e tem o mesmo efeito sem schema novo.
+
+O que se perdeu: promoção automática de categoria na virada de ano. A troca de turma no fim do
+ciclo é uma ação da secretaria (encerrar a matrícula e criar outra), o que também deixa rastro
+em `audit_log` — melhor do que uma reclassificação silenciosa.
+
+## 1.1 Quem entra na turma
+
+A vaga é da turma (`capacity`), contada por matrículas `active`. Matrícula em `draft` **não**
+ocupa vaga; `waitlist` guarda a ordem de chegada. A sala (`room`) é informativa — duas turmas no
+mesmo horário na mesma sala é conflito que a escola resolve, não o sistema.
 
 ## 2. Situações da matrícula
 
@@ -55,9 +65,8 @@ banco e obedece. A ordem importa:
 |---|---|---|---|
 | 1 | já existe matrícula na turma | bloqueia | evita duplicar aluno na chamada |
 | 2 | consentimento **revogado** | bloqueia | revogação é ato do responsável; nada a contorna |
-| 3 | categoria incompatível | bloqueia (com exceção) | é a regra mais visível para a escola |
-| 4 | outra turma ativa na temporada | bloqueia (com exceção) | evita cobrança dupla e duas chamadas |
-| 5 | turma lotada | lista de espera | lotação **não** é bloqueio; é fila |
+| 3 | outra turma ativa | bloqueia (com exceção) | evita cobrança dupla e duas chamadas |
+| 4 | turma lotada | lista de espera | lotação **não** é bloqueio; é fila |
 | 6 | consentimento ausente | rascunho | a vaga já foi decidida; falta o termo |
 
 Duas consequências deliberadas:
@@ -67,12 +76,12 @@ Duas consequências deliberadas:
 
 ## 4. Exceção com motivo, nunca silenciosa
 
-Categoria e "uma turma por temporada" aceitam exceção — atleta de 2009 que joga no Sub-13,
-aluno que treina em duas turmas. A exceção exige texto em `override_reason` (≥ 10 caracteres),
-vai para `audit_log` e aparece na linha da turma.
+"Uma turma ativa por aluno" aceita exceção — atleta que treina no Sub-8 de terça e no Sub-11 de
+sábado. A exceção exige texto em `override_reason` (≥ 10 caracteres), vai para `audit_log` e
+aparece na linha da turma.
 
-**Exceção não fura lotação.** Quem autoriza a idade não compra vaga: se a turma está cheia, a
-matrícula com exceção entra na fila como qualquer outra. O primeiro código desta entrega fazia
+**Exceção não fura lotação.** Quem autoriza a segunda turma não compra vaga: se a turma está
+cheia, a matrícula com exceção entra na fila como qualquer outra. O primeiro código desta entrega fazia
 o contrário; o teste de UI mostrou a turma passando de 1/1 para 2/1.
 
 Consentimento revogado, duplicidade e dados inválidos **não** têm exceção — não é decisão da
@@ -80,8 +89,9 @@ escola.
 
 ## 5. O que a tela mostra
 
-`/turmas` — temporada ativa, categorias com contagem, tabela de turmas com ocupação e professor.
-Formulários em `<details>`: "Nova categoria", "Abrir turma", "Trocar de temporada".
+`/turmas` — tabela de turmas com horário, sala, ocupação e professores, mais o cadastro de aluno
+logo acima (a secretaria abre turma e matricula no mesmo lugar). Formulário em `<details>`:
+"Abrir turma" (nome livre, unidade, sala, dias, horário, capacidade, professores).
 
 `/turmas/[id]` — cabeçalho da turma, três números (matriculados, vagas, lista de espera), painel
 de professores, matrícula e a lista da turma com consentimento por aluno.
@@ -100,7 +110,7 @@ Regras de acabamento aplicadas ([16](16-padroes-de-acabamento.md)):
 
 | Papel | Vê | Cria/edita |
 |---|---|---|
-| admin | todas as turmas | temporada, categoria, turma, matrícula, professor |
+| admin | todas as turmas | turma, matrícula, aluno, professor |
 | coordenação | todas as turmas | turma, matrícula |
 | professor | **só as turmas dele** | nada (leitura) |
 | responsável | nada em `/turmas` | — |

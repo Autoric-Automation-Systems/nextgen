@@ -12,7 +12,6 @@ import {
   resolveOverriddenEnrollment,
   scheduleIssueText,
   seatsLeft,
-  suggestBirthYearRange,
   validOverrideReason,
   validateSchedule,
 } from "@nextgen/core";
@@ -38,132 +37,11 @@ async function teacherManager() {
   return { session, workspace };
 }
 
-async function admin() {
-  const session = await requireSession();
-  const workspace = await resolveWorkspace(session);
-  if (!workspace || !workspace.can("school:write")) return null;
-  return { session, workspace };
-}
-
-function dateOnly(value: FormDataEntryValue | null): Date | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-export async function createSeason(_prev: TurmaState, formData: FormData): Promise<TurmaState> {
-  const context = await admin();
-  if (!context) return fail("Só a administração da escola cria temporada.");
-  const { session, workspace } = context;
-
-  const name = String(formData.get("name") ?? "").trim();
-  const startsOn = dateOnly(formData.get("startsOn"));
-  const endsOn = dateOnly(formData.get("endsOn"));
-
-  if (!name) return fail("Dê um nome à temporada (por exemplo, 2026).");
-  if (!startsOn || !endsOn) return fail("Informe início e fim da temporada.");
-  if (endsOn <= startsOn) return fail("O fim da temporada precisa ser depois do início.");
-
-  try {
-    await withTenant({ schoolId: workspace.schoolId }, async (tx) => {
-      await tx.season.updateMany({ where: { isActive: true }, data: { isActive: false } });
-      const season = await tx.season.create({
-        data: { schoolId: workspace.schoolId, name, startsOn, endsOn, isActive: true },
-      });
-      await tx.auditLog.create({
-        data: {
-          schoolId: workspace.schoolId,
-          actorUserId: session.userId,
-          actorRole: workspace.role,
-          action: "season.create",
-          entity: "season",
-          entityId: season.id,
-          after: { name, startsOn: startsOn.toISOString(), endsOn: endsOn.toISOString() },
-        },
-      });
-    });
-  } catch (error) {
-    console.error("[turmas] falha ao criar temporada", error);
-    return fail("Não foi possível criar a temporada agora. Tente novamente.");
-  }
-
-  revalidatePath("/turmas");
-  return ok(`Temporada ${name} criada e marcada como ativa.`);
-}
-
-export async function createCategory(_prev: TurmaState, formData: FormData): Promise<TurmaState> {
-  const context = await admin();
-  if (!context) return fail("Só a administração da escola cria categoria.");
-  const { session, workspace } = context;
-
-  const name = String(formData.get("name") ?? "").trim();
-  const seasonId = String(formData.get("seasonId") ?? "");
-  const fromRaw = String(formData.get("birthYearFrom") ?? "").trim();
-  const toRaw = String(formData.get("birthYearTo") ?? "").trim();
-
-  if (!name) return fail("Dê um nome à categoria (Sub-8, Sub-9…).");
-
-  try {
-    const result = await withTenant({ schoolId: workspace.schoolId }, async (tx) => {
-      const season = await tx.season.findFirst({ where: { id: seasonId } });
-      if (!season) return fail("Temporada não encontrada nesta escola.");
-
-      const suggested = suggestBirthYearRange(name, season.startsOn.getUTCFullYear());
-      const from = fromRaw ? Number(fromRaw) : (suggested?.from ?? null);
-      const to = toRaw ? Number(toRaw) : (suggested?.to ?? null);
-
-      if (from === null || to === null) {
-        return fail("O nome não indica a idade. Informe o ano de nascimento de e para.");
-      }
-      if (!Number.isInteger(from) || !Number.isInteger(to)) return fail("Ano precisa ser número inteiro.");
-      if (from > to) return fail("O ano inicial não pode ser maior que o final.");
-      if (from < 1990 || to > 2100) return fail("Faixa de ano de nascimento improvável — confira.");
-
-      const duplicate = await tx.category.findFirst({ where: { seasonId, name } });
-      if (duplicate) return fail(`Já existe a categoria ${name} nesta temporada.`);
-
-      const siblings = await tx.category.count({ where: { seasonId } });
-      const category = await tx.category.create({
-        data: {
-          schoolId: workspace.schoolId,
-          seasonId,
-          name,
-          birthYearFrom: from,
-          birthYearTo: to,
-          sortOrder: siblings,
-        },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          schoolId: workspace.schoolId,
-          actorUserId: session.userId,
-          actorRole: workspace.role,
-          action: "category.create",
-          entity: "category",
-          entityId: category.id,
-          after: { name, birthYearFrom: from, birthYearTo: to, seasonId },
-        },
-      });
-
-      return ok(`${name} criada (nascidos em ${from === to ? from : `${from}–${to}`}).`);
-    });
-
-    if (result.status === "ok") revalidatePath("/turmas");
-    return result;
-  } catch (error) {
-    console.error("[turmas] falha ao criar categoria", error);
-    return fail("Não foi possível criar a categoria agora. Tente novamente.");
-  }
-}
-
 export async function createClassGroup(_prev: TurmaState, formData: FormData): Promise<TurmaState> {
   const context = await editor();
   if (!context) return fail("Seu perfil não cria turma.");
   const { session, workspace } = context;
 
-  const categoryId = String(formData.get("categoryId") ?? "");
-  const seasonId = String(formData.get("seasonId") ?? "");
   const unitIdInput = String(formData.get("unitId") ?? "").trim();
   const roomIdInput = String(formData.get("roomId") ?? "").trim();
   const startTime = String(formData.get("startTime") ?? "").trim();
@@ -186,9 +64,6 @@ export async function createClassGroup(_prev: TurmaState, formData: FormData): P
 
   try {
     const result = await withTenant({ schoolId: workspace.schoolId }, async (tx) => {
-      const category = await tx.category.findFirst({ where: { id: categoryId, seasonId } });
-      if (!category) return fail("Categoria não encontrada na temporada ativa.");
-
       const unit = unitIdInput
         ? await tx.unit.findFirst({ where: { id: unitIdInput, deletedAt: null } })
         : await tx.unit.findFirst({ where: { deletedAt: null }, orderBy: { isPrimary: "desc" } });
@@ -203,7 +78,6 @@ export async function createClassGroup(_prev: TurmaState, formData: FormData): P
 
       const sameRoom = await tx.classGroup.findMany({
         where: {
-          seasonId,
           unitId: unit.id,
           roomId: roomIdInput || null,
           deletedAt: null,
@@ -220,14 +94,12 @@ export async function createClassGroup(_prev: TurmaState, formData: FormData): P
         );
       }
 
-      const name = rawName || `${category.name} — ${formatSchedule({ weekdays, startTime, endTime })}`;
+      const name = rawName || formatSchedule({ weekdays, startTime, endTime });
       const group = await tx.classGroup.create({
         data: {
           schoolId: workspace.schoolId,
           unitId: unit.id,
           roomId: roomIdInput || null,
-          seasonId,
-          categoryId: category.id,
           name,
           weekdays: schedule.weekdays,
           startTime,
@@ -246,7 +118,6 @@ export async function createClassGroup(_prev: TurmaState, formData: FormData): P
           entityId: group.id,
           after: {
             name,
-            categoryId: category.id,
             weekdays: schedule.weekdays,
             startTime,
             endTime,
@@ -282,7 +153,7 @@ export async function enrollStudent(_prev: TurmaState, formData: FormData): Prom
     const result = await withTenant({ schoolId: workspace.schoolId }, async (tx) => {
       const group = await tx.classGroup.findFirst({
         where: { id: classGroupId, deletedAt: null },
-        include: { category: true, season: true },
+        select: { id: true, name: true, capacity: true, isActive: true },
       });
       if (!group) return fail("Turma não encontrada nesta escola.");
       if (!group.isActive) return fail("Esta turma está inativa.");
@@ -293,7 +164,7 @@ export async function enrollStudent(_prev: TurmaState, formData: FormData): Prom
           consents: { where: { purposeCode: "enrollment" }, orderBy: { grantedAt: "desc" } },
           enrollments: {
             where: { deletedAt: null, status: { in: ["active", "draft", "waitlist"] } },
-            include: { classGroup: { select: { id: true, seasonId: true, name: true } } },
+            include: { classGroup: { select: { id: true, name: true } } },
           },
         },
       });
@@ -309,32 +180,23 @@ export async function enrollStudent(_prev: TurmaState, formData: FormData): Prom
         where: { classGroupId, status: "waitlist", deletedAt: null },
       });
       const otherGroup = student.enrollments.find(
-        (entry) => entry.status === "active" && entry.classGroup.seasonId === group.seasonId,
+        (entry) => entry.status === "active" && entry.classGroupId !== classGroupId,
       );
 
       const consentStatus = student.consents[0]?.status;
       const consent =
         consentStatus === "granted" ? "granted" : consentStatus === "revoked" ? "revoked" : "missing";
-      const year = student.birthDate.getUTCFullYear();
-      const categoryMatches =
-        group.category.birthYearFrom === null ||
-        group.category.birthYearTo === null ||
-        (year >= group.category.birthYearFrom && year <= group.category.birthYearTo);
-
       const decision = decideEnrollment({
         consent,
         capacity: group.capacity,
         activeCount,
         waitlistCount,
-        categoryMatches,
         alreadyEnrolled: alreadyEnrolled > 0,
         activeInAnotherGroup: Boolean(otherGroup),
       });
 
-      // Exceção só existe para categoria e para a regra de uma turma por temporada.
-      const overridable =
-        decision.status === "blocked" &&
-        (decision.reason === "category_mismatch" || decision.reason === "other_group_active");
+      // Exceção só existe para a regra de uma turma ativa por aluno (segunda turma).
+      const overridable = decision.status === "blocked" && decision.reason === "other_group_active";
 
       if (decision.status === "blocked") {
         if (!overridable) return fail(BLOCKED_TEXT[decision.reason]);

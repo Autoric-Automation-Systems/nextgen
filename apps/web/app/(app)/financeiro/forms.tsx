@@ -29,14 +29,10 @@ export function PlanForm() {
           <label htmlFor="plan-amount">Valor mensal</label>
           <input id="plan-amount" name="monthlyAmount" required inputMode="decimal" placeholder="450,00" />
         </div>
-        <div className="field">
-          <label htmlFor="plan-due">Dia padrão</label>
-          <input id="plan-due" name="dueDay" type="number" min={1} max={31} defaultValue={10} required />
-        </div>
       </div>
       <p className="muted" style={{ marginTop: 0 }}>
-        O dia padrão vale para quem não escolheu outro na matrícula. Dia 31 em fevereiro vence no
-        último dia do mês.
+        O plano define só o valor. O dia do vencimento é escolhido no cadastro do aluno — é ele que
+        a cobrança automática usa.
       </p>
       <button className="btn" disabled={pending}>
         {pending ? "Criando…" : "Criar plano"}
@@ -55,10 +51,10 @@ export function GenerateForm({ competence, billable }: { competence: string; bil
       <p className="muted" style={{ marginTop: 0 }}>
         {billable === 0
           ? "Nenhum aluno com plano e matrícula ativa ainda. Defina o plano no aluno para poder cobrar."
-          : `${billable} aluno(s) com plano e matrícula ativa vão receber cobrança deste mês. Quem já tem a competência não é cobrado de novo.`}
+          : `${billable} aluno(s) com plano e matrícula ativa entram na cobrança deste mês. A geração automática roda todo dia e avisa por e-mail cinco dias antes de cada vencimento; aqui você antecipa o mês inteiro de uma vez. Quem já tem a competência não é cobrado de novo.`}
       </p>
       <button className="btn" disabled={pending || billable === 0}>
-        {pending ? "Gerando…" : `Gerar mensalidades de ${competence}`}
+        {pending ? "Gerando…" : `Gerar mensalidades de ${competence} agora`}
       </button>
     </form>
   );

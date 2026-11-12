@@ -2,19 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { withTenant } from "@nextgen/db";
-import {
-  competenceLabel,
-  dueDateFor,
-  formatBRL,
-  isCompetence,
-  monthlyCharge,
-  pixPayload,
-  toCents,
-  type Competence,
-} from "@nextgen/core";
-import { defaultMailer, loggingMailer } from "@nextgen/auth";
+import { competenceLabel, formatBRL, isCompetence, pixPayload, toCents } from "@nextgen/core";
 import { requireSession } from "@/lib/session";
 import { resolveWorkspace } from "@/lib/workspace";
+import { runMonthlyBilling } from "@/lib/billing-run";
+import { sendInvoiceEmail } from "@/lib/invoice-email";
 
 export type FinanceState = { status: "idle" | "ok" | "error"; message?: string };
 
@@ -44,11 +36,6 @@ function cents(formData: FormData, key: string): number | null {
   }
 }
 
-function day(value: string): number | null {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 31 ? parsed : null;
-}
-
 function isoDayOrNull(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const date = new Date(`${value}T00:00:00.000Z`);
@@ -66,18 +53,16 @@ export async function createPlan(_prev: FinanceState, formData: FormData): Promi
 
   const name = text(formData, "name");
   const amount = cents(formData, "monthlyAmount");
-  const dueDay = day(text(formData, "dueDay"));
 
   if (!name) return fail("Dê um nome ao plano (por exemplo, Mensalidade 3x semana).");
   if (!amount) return fail("Informe o valor mensal, como 450,00.");
-  if (!dueDay) return fail("O dia de vencimento precisa estar entre 1 e 31.");
 
   try {
     await withTenant(
       { schoolId: context.workspace.schoolId, userId: context.session.userId },
       async (tx) => {
         const plan = await tx.tuitionPlan.create({
-          data: { schoolId: context.workspace.schoolId, name, monthlyAmount: amount, dueDay },
+          data: { schoolId: context.workspace.schoolId, name, monthlyAmount: amount },
         });
         await tx.auditLog.create({
           data: {
@@ -87,7 +72,7 @@ export async function createPlan(_prev: FinanceState, formData: FormData): Promi
             action: "tuition_plan.create",
             entity: "tuition_plan",
             entityId: plan.id,
-            after: { name, monthlyAmount: amount, dueDay },
+            after: { name, monthlyAmount: amount },
           },
         });
       },
@@ -100,14 +85,15 @@ export async function createPlan(_prev: FinanceState, formData: FormData): Promi
   }
 
   refresh();
-  return ok(`Plano "${name}" criado: ${formatBRL(amount)} todo dia ${dueDay}.`);
+  return ok(`Plano "${name}" criado: ${formatBRL(amount)} por mês.`);
 }
 
 /**
- * Gera as mensalidades da competência.
+ * Gera as mensalidades da competência a partir do dia de vencimento de cada aluno.
  *
- * Idempotente por construção: o índice único `(student_id, competence, kind)` faz o
- * `skipDuplicates` ignorar quem já foi cobrado. Clicar duas vezes não duplica cobrança.
+ * O caminho normal é o cron (`/api/cron/mensalidades`), que só cobra quem já entrou na
+ * janela do vencimento. Este botão existe para a secretaria antecipar o mês inteiro ou
+ * recuperar um mês que passou.
  */
 export async function generateMonth(_prev: FinanceState, formData: FormData): Promise<FinanceState> {
   const context = await cashier();
@@ -116,73 +102,17 @@ export async function generateMonth(_prev: FinanceState, formData: FormData): Pr
   const competence = text(formData, "competence");
   if (!isCompetence(competence)) return fail("Escolha o mês no formato AAAA-MM.");
 
-  const result = await withTenant(
+  const result = await runMonthlyBilling(
     { schoolId: context.workspace.schoolId, userId: context.session.userId },
-    async (tx) => {
-      const students = await tx.student.findMany({
-        where: {
-          status: "active",
-          deletedAt: null,
-          tuitionPlanId: { not: null },
-          enrollments: { some: { status: "active" } },
-        },
-        select: {
-          id: true,
-          tuitionPlan: { select: { id: true, monthlyAmount: true, dueDay: true } },
-          enrollments: {
-            where: { status: "active" },
-            orderBy: { startsOn: "desc" },
-            take: 1,
-            select: { dueDay: true, discountCents: true, startsOn: true },
-          },
-          guardians: {
-            where: { isFinancial: true },
-            take: 1,
-            select: { guardianId: true },
-          },
-        },
-      });
-
-      const rows = students.flatMap((student) => {
-        const plan = student.tuitionPlan;
-        const enrollment = student.enrollments[0];
-        if (!plan) return [];
-
-        const amount = monthlyCharge({
-          monthlyAmount: plan.monthlyAmount,
-          discount: enrollment?.discountCents ?? 0,
-          competence,
-          startsOn: enrollment?.startsOn ?? null,
-        });
-        if (amount === null) return [];
-
-        const dueDay = enrollment?.dueDay ?? plan.dueDay;
-        return [
-          {
-            schoolId: context.workspace.schoolId,
-            studentId: student.id,
-            guardianId: student.guardians[0]?.guardianId ?? null,
-            planId: plan.id,
-            kind: "monthly" as const,
-            competence,
-            dueDate: dueDateFor(competence, dueDay),
-            amount,
-            baseAmount: plan.monthlyAmount,
-            discount: Math.max(0, plan.monthlyAmount - amount),
-          },
-        ];
-      });
-
-      if (rows.length === 0) return { created: 0, skipped: 0, empty: true };
-
-      const created = await tx.invoice.createMany({ data: rows, skipDuplicates: true });
-      return { created: created.count, skipped: rows.length - created.count, empty: false };
-    },
+    // `notify` fica ligado também no botão manual: assim a escola que ainda não configurou
+    // o cron consegue entregar o PIX de quem venceu hoje. A janela interna evita mandar
+    // aviso de competência antecipada.
+    { competence, onlyDueSoon: false, notify: true },
   );
 
   refresh();
 
-  if (result.empty) {
+  if (result.created === 0 && result.alreadyThere === 0) {
     return fail(
       "Nenhum aluno com plano e matrícula ativa. Defina o plano do aluno antes de gerar o mês.",
     );
@@ -193,8 +123,10 @@ export async function generateMonth(_prev: FinanceState, formData: FormData): Pr
     return ok(`Nada a fazer: ${label} já estava gerado para todos os alunos.`);
   }
 
-  const skipped = result.skipped > 0 ? ` ${result.skipped} já existia(m).` : "";
-  return ok(`${result.created} mensalidade(s) de ${label} gerada(s).${skipped}`);
+  const skipped = result.alreadyThere > 0 ? ` ${result.alreadyThere} já existia(m).` : "";
+  const invited =
+    result.emailed > 0 ? ` ${result.emailed} e-mail(s) de cobrança enviado(s).` : "";
+  return ok(`${result.created} mensalidade(s) de ${label} gerada(s).${skipped}${invited}`);
 }
 
 export async function registerPayment(
@@ -420,12 +352,7 @@ export async function savePixSettings(
   return ok("Chave Pix salva. O copia e cola já sai com ela.");
 }
 
-/**
- * Envia a cobrança por e-mail ao responsável financeiro.
- *
- * Falha de e-mail não desfaz a cobrança: a mensagem aparece na tela e a linha continua
- * lá para reenvio.
- */
+/** Reenvio manual da cobrança. Falha de e-mail não desfaz a cobrança. */
 export async function emailInvoice(_prev: FinanceState, formData: FormData): Promise<FinanceState> {
   const context = await cashier();
   if (!context) return fail("Só a administração da escola envia cobrança.");
@@ -433,88 +360,20 @@ export async function emailInvoice(_prev: FinanceState, formData: FormData): Pro
   const invoiceId = text(formData, "invoiceId");
   if (!invoiceId) return fail("Cobrança não identificada.");
 
-  const data = await withTenant(
-    { schoolId: context.workspace.schoolId, userId: context.session.userId },
-    async (tx) => {
-      const invoice = await tx.invoice.findFirst({
-        where: { id: invoiceId },
-        include: {
-          student: {
-            select: {
-              fullName: true,
-              guardians: {
-                where: { isFinancial: true },
-                select: { guardian: { select: { user: { select: { email: true, name: true } } } } },
-              },
-            },
-          },
-          school: { select: { tradeName: true, pixKey: true, pixHolder: true, pixCity: true } },
-          payments: { select: { amount: true } },
-        },
-      });
-      if (!invoice) return null;
-      if (invoice.status === "canceled") return null;
-
-      const guardian = invoice.student.guardians[0]?.guardian.user;
-      if (!guardian?.email) return null;
-
-      const paid = invoice.payments.reduce((total, payment) => total + payment.amount, 0);
-      return {
-        to: guardian.email,
-        guardianName: guardian.name,
-        studentName: invoice.student.fullName,
-        schoolName: invoice.school.tradeName,
-        competence: invoice.competence as Competence,
-        dueDate: invoice.dueDate,
-        amount: Math.max(0, invoice.amount - paid),
-        pix: invoice.school.pixKey
-          ? pixPayload({
-              key: invoice.school.pixKey,
-              holder: invoice.school.pixHolder ?? invoice.school.tradeName,
-              city: invoice.school.pixCity ?? "Brasil",
-              amountCents: invoice.amount,
-              txid: invoice.id,
-            }).payload
-          : null,
-      };
-    },
-  );
-
-  if (!data) {
-    return fail(
-      "Não encontrei responsável financeiro com e-mail nesta cobrança. Cadastre o responsável antes de enviar.",
-    );
-  }
-
-  const label = competenceLabel(data.competence);
-  const due = data.dueDate.toISOString().slice(0, 10).split("-").reverse().join("/");
-  const subject = `${data.schoolName} — mensalidade de ${label}`;
-
-  const lines = [
-    `Olá, ${data.guardianName ?? "responsável"}.`,
-    "",
-    `A mensalidade de ${data.studentName} referente a ${label} está disponível.`,
-    `Vencimento: ${due}`,
-    `Valor: ${formatBRL(data.amount)}`,
-  ];
-
-  if (data.pix) {
-    lines.push("", "Pague por Pix copiando o código abaixo no aplicativo do seu banco:", "", data.pix);
-  } else {
-    lines.push("", "A escola ainda não configurou a chave Pix; peça o boleto na secretaria.");
-  }
-
-  lines.push("", `Qualquer dúvida, fale com a secretaria de ${data.schoolName}.`);
-
+  let result: Awaited<ReturnType<typeof sendInvoiceEmail>>;
   try {
-    await loggingMailer(defaultMailer(), "charge").send({
-      to: data.to,
-      subject,
-      text: lines.join("\n"),
-    });
+    result = await sendInvoiceEmail(
+      { schoolId: context.workspace.schoolId, userId: context.session.userId },
+      { invoiceId, force: true },
+    );
   } catch {
     return fail("O provedor de e-mail recusou o envio. A cobrança continua em aberto para reenvio.");
   }
 
-  return ok(`Cobrança enviada para o responsável de ${data.studentName}.`);
+  if (result.status === "sent") return ok(`Cobrança enviada para o responsável de ${result.studentName}.`);
+  if (result.reason === "already_notified") return ok("Esta cobrança já havia sido enviada.");
+  if (result.reason === "canceled") return fail("Cobrança cancelada não é enviada.");
+  return fail(
+    "Não encontrei responsável financeiro com e-mail nesta cobrança. Cadastre o responsável antes de enviar.",
+  );
 }

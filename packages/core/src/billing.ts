@@ -84,6 +84,29 @@ export function todayUtc(now: Date = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
+/**
+ * Quantos dias antes do vencimento a mensalidade é gerada e enviada ao responsável.
+ *
+ * Enviar no próprio dia do vencimento é enviar a conta já vencida: o responsável precisa
+ * de prazo para pagar e a escola precisa que o dinheiro caia na data. Cinco dias cobrem
+ * um fim de semana sem antecipar tanto que o e-mail se perca no meio do mês.
+ */
+export const BILLING_LEAD_DAYS = 5;
+
+/**
+ * Já é hora de gerar a cobrança desta competência?
+ *
+ * A janela abre `leadDays` antes do vencimento e **não fecha**: uma execução que falhou
+ * (deploy, provedor de e-mail fora) é recuperada no dia seguinte em vez de perder o mês.
+ */
+export function isBillingWindowOpen(
+  dueDate: Date,
+  today: Date = todayUtc(),
+  leadDays: number = BILLING_LEAD_DAYS,
+): boolean {
+  return dayNumber(today) >= dayNumber(dueDate) - leadDays;
+}
+
 export function isOverdue(dueDate: Date, today: Date = todayUtc()): boolean {
   return dayNumber(today) > dayNumber(dueDate);
 }

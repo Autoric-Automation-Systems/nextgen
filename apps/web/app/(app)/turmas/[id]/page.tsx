@@ -73,17 +73,10 @@ export default async function ClassGroupPage({
           <div>
             <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>{group.name}</h1>
             <p className="muted" style={{ margin: 0 }}>
-              {group.categoryName}
-              {group.birthYearFrom !== null
-                ? ` (nascidos em ${group.birthYearFrom === group.birthYearTo ? group.birthYearFrom : `${group.birthYearFrom}–${group.birthYearTo}`})`
-                : ""}
-              {" · "}
               {group.schedule}
               {" · "}
               {group.unitName}
               {group.roomName ? ` · ${group.roomName}` : ""}
-              {" · temporada "}
-              {group.seasonName}
             </p>
             <p className="muted" style={{ margin: "4px 0 0" }}>
               {group.teachers.length > 0

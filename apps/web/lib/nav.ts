@@ -37,10 +37,10 @@ export const NAV: NavSection[] = [
     items: [
       { href: "/dashboard", label: "Painel", hint: "Visão do mês", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/alunos", label: "Alunos", hint: "Cadastro e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
-      { href: "/turmas", label: "Turmas", hint: "Categorias, horários e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
+      { href: "/turmas", label: "Turmas", hint: "Horários, salas e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/avaliacao", label: "Avaliação", hint: "Ciclos, notas e card", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
       { href: "/pedagogia", label: "Pedagogia", hint: "Matérias, capítulos e conteúdo", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
-      { href: "/financeiro", label: "Financeiro", hint: "Mensalidades, boletos e gastos", roles: ["admin"], platform: true },
+      { href: "/financeiro", label: "Financeiro", hint: "Mensalidades, PIX e gastos", roles: ["admin"], platform: true },
       { href: "/site", label: "Site da escola", hint: "Página pública, logo e cores", roles: ["admin"], platform: true, status: "soon" },
     ],
   },
@@ -49,7 +49,7 @@ export const NAV: NavSection[] = [
     title: "Aluno e família",
     items: [
       { href: "/alunos", label: "Meus filhos", hint: "Matrícula, card e evolução", roles: ["guardian"] },
-      { href: "/meus-boletos", label: "Mensalidades", hint: "Boletos e vencimentos", roles: ["guardian"] },
+      { href: "/meus-boletos", label: "Mensalidades", hint: "Mensalidades e vencimentos", roles: ["guardian"] },
       { href: "/consentimentos", label: "Consentimentos", hint: "Imagem, saúde e o que você autorizou", roles: ["guardian"], status: "soon" },
     ],
   },

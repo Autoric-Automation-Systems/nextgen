@@ -49,6 +49,22 @@ export async function withUser<T>(userId: string, fn: (tx: Tx) => Promise<T>): P
   });
 }
 
+/**
+ * Bloco de job de sistema: sem sessão, sem escola, mas com o sinal `app.system_job`.
+ *
+ * A única coisa que esse sinal libera é a leitura do diretório de escolas (política
+ * `system_school_directory`), o que a cobrança mensal precisa para saber para quem cobrar.
+ * Cada escola é então visitada com `withTenant` — o sinal não atravessa a transação.
+ */
+export async function withSystemJob<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`select set_config('app.system_job', 'on', true)`;
+    await tx.$executeRaw`select set_config('app.school_id', '', true)`;
+    await tx.$executeRaw`select set_config('app.user_id', '', true)`;
+    return fn(tx);
+  });
+}
+
 /** Bloco sem tenant: usado por rotas de plataforma e jobs globais. */
 export async function withoutTenant<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
   return prisma.$transaction(async (tx) => {

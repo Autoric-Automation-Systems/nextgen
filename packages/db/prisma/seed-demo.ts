@@ -22,11 +22,6 @@ const ids = {
   unit: "01940000-0000-7000-8000-000000000101",
   roomField: "01940000-0000-7000-8000-000000000102",
   roomLocker: "01940000-0000-7000-8000-000000000103",
-  season: "01940000-0000-7000-8000-000000000104",
-  catSub8: "01940000-0000-7000-8000-000000000105",
-  catSub9: "01940000-0000-7000-8000-000000000106",
-  catSub11: "01940000-0000-7000-8000-000000000107",
-  catSub13: "01940000-0000-7000-8000-000000000108",
   groupSub9: "01940000-0000-7000-8000-000000000111",
   groupSub11: "01940000-0000-7000-8000-000000000112",
   groupSub13: "01940000-0000-7000-8000-000000000113",
@@ -220,49 +215,13 @@ async function seedSchoolStructure() {
       });
     }
 
-    await db.season.upsert({
-      where: { id: ids.season },
-      update: {},
-      create: {
-        id: ids.season,
-        schoolId: school,
-        name: "2026",
-        startsOn: new Date("2026-01-15"),
-        endsOn: new Date("2026-12-15"),
-        isActive: true,
-      },
-    });
-
-    const categories = [
-      [ids.catSub8, "Sub-8", 2018, 2018, 8],
-      [ids.catSub9, "Sub-9", 2017, 2017, 9],
-      [ids.catSub11, "Sub-11", 2015, 2016, 11],
-      [ids.catSub13, "Sub-13", 2013, 2014, 13],
-    ] as const;
-
-    for (const [id, name, from, to, sortOrder] of categories) {
-      await db.category.upsert({
-        where: { id },
-        update: {},
-        create: {
-          id,
-          schoolId: school,
-          seasonId: ids.season,
-          name,
-          birthYearFrom: from,
-          birthYearTo: to,
-          sortOrder,
-        },
-      });
-    }
-
     const groups = [
-      [ids.groupSub9, ids.catSub9, "Sub-9 — Ter/Qui 17h", [2, 4], "17:00", "18:00"],
-      [ids.groupSub11, ids.catSub11, "Sub-11 — Seg/Qua 18h", [1, 3], "18:00", "19:00"],
-      [ids.groupSub13, ids.catSub13, "Sub-13 — Ter/Qui 19h", [2, 4], "19:00", "20:30"],
+      [ids.groupSub9, "Sub-9 — Ter/Qui 17h", [2, 4], "17:00", "18:00"],
+      [ids.groupSub11, "Sub-11 — Seg/Qua 18h", [1, 3], "18:00", "19:00"],
+      [ids.groupSub13, "Sub-13 — Ter/Qui 19h", [2, 4], "19:00", "20:30"],
     ] as const;
 
-    for (const [id, categoryId, name, weekdays, startTime, endTime] of groups) {
+    for (const [id, name, weekdays, startTime, endTime] of groups) {
       await db.classGroup.upsert({
         where: { id },
         update: {},
@@ -271,8 +230,6 @@ async function seedSchoolStructure() {
           schoolId: school,
           unitId: ids.unit,
           roomId: ids.roomField,
-          seasonId: ids.season,
-          categoryId,
           name,
           weekdays: [...weekdays],
           startTime,
@@ -407,7 +364,6 @@ async function seedStudents() {
           classGroupId: student.group,
           status: "active",
           startsOn: new Date("2026-02-01"),
-          dueDay: 10,
         },
       });
 
@@ -478,7 +434,6 @@ async function seedRatings(studentId: string, student: DemoStudent) {
         create: {
           schoolId: school,
           studentId,
-          seasonId: ids.season,
           cycleLabel: cycle.label,
           code,
           score: value,

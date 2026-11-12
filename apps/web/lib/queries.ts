@@ -7,7 +7,6 @@ export type StudentRow = {
   nickname: string | null;
   age: number;
   regime: AgeRegime;
-  category: string | null;
   classGroup: string | null;
   guardianNames: string[];
   consent: "granted" | "missing" | "revoked";
@@ -38,7 +37,7 @@ export async function listStudents(ctx: {
         guardians: { include: { guardian: { include: { user: true } } } },
         enrollments: {
           where: { deletedAt: null },
-          include: { classGroup: { include: { category: true } } },
+          include: { classGroup: { select: { id: true, name: true } } },
         },
         consents: { where: { purposeCode: { in: ["enrollment", "image_public"] } } },
       },
@@ -70,7 +69,6 @@ export async function listStudents(ctx: {
         nickname: student.nickname,
         age,
         regime: ageRegime(age),
-        category: enrollment?.classGroup.category.name ?? null,
         classGroup: enrollment?.classGroup.name ?? null,
         guardianNames: student.guardians.map((link) => link.guardian.user.name),
         consent,
@@ -85,38 +83,43 @@ export type SchoolOverview = {
   teachers: number;
   classGroups: number;
   pendingConsents: number;
-  categories: { name: string; students: number }[];
+  /** Ocupação por turma: é o quadro que a coordenação olha todo dia. */
+  groups: { id: string; name: string; students: number; capacity: number }[];
 };
 
 export async function getOverview(ctx: { schoolId: string; userId: string }): Promise<SchoolOverview> {
   return withTenant(ctx, async (tx) => {
-    const [activeStudents, teachers, classGroups, consents, categories, enrollments] = await Promise.all([
+    const [activeStudents, teachers, groups, consents, enrollments] = await Promise.all([
       tx.student.findMany({ where: { deletedAt: null, status: "active" }, select: { id: true } }),
       tx.membership.count({ where: { role: "teacher", status: "active" } }),
-      tx.classGroup.count({ where: { deletedAt: null, isActive: true } }),
+      tx.classGroup.findMany({
+        where: { deletedAt: null, isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, capacity: true },
+      }),
       tx.consent.findMany({ where: { purposeCode: "enrollment" }, select: { studentId: true } }),
-      tx.category.findMany({ orderBy: { sortOrder: "asc" } }),
       tx.enrollment.findMany({
         where: { deletedAt: null, status: "active" },
-        select: { classGroup: { select: { categoryId: true } } },
+        select: { classGroupId: true },
       }),
     ]);
 
     const withConsent = new Set(consents.map((c) => c.studentId));
-    const perCategory = new Map<string, number>();
+    const perGroup = new Map<string, number>();
     for (const enrollment of enrollments) {
-      const id = enrollment.classGroup.categoryId;
-      perCategory.set(id, (perCategory.get(id) ?? 0) + 1);
+      perGroup.set(enrollment.classGroupId, (perGroup.get(enrollment.classGroupId) ?? 0) + 1);
     }
 
     return {
       students: activeStudents.length,
       teachers,
-      classGroups,
+      classGroups: groups.length,
       pendingConsents: activeStudents.filter((student) => !withConsent.has(student.id)).length,
-      categories: categories.map((category) => ({
-        name: category.name,
-        students: perCategory.get(category.id) ?? 0,
+      groups: groups.map((group) => ({
+        id: group.id,
+        name: group.name,
+        students: perGroup.get(group.id) ?? 0,
+        capacity: group.capacity,
       })),
     };
   });
@@ -127,7 +130,8 @@ export type StudentCard = {
   nickname: string;
   fullName: string;
   age: number;
-  category: string | null;
+  /** Nome da turma ativa; a escola escolhe o rótulo. */
+  classGroup: string | null;
   position: string | null;
   jerseyNumber: number | null;
   guardianNames: string[];
@@ -156,7 +160,7 @@ export async function getStudentCard(
         guardians: { include: { guardian: { include: { user: true } } } },
         enrollments: {
           where: { deletedAt: null },
-          include: { classGroup: { include: { category: true } } },
+          include: { classGroup: { select: { id: true, name: true } } },
         },
         consents: { where: { purposeCode: { in: ["enrollment", "image_public", "public_card"] } } },
         skillRatings: { orderBy: { ratedAt: "desc" } },
@@ -207,7 +211,7 @@ export async function getStudentCard(
       nickname: student.nickname ?? student.fullName.split(" ")[0]!,
       fullName: student.fullName,
       age,
-      category: enrollment?.classGroup.category.name ?? null,
+      classGroup: enrollment?.classGroup.name ?? null,
       position: student.position,
       jerseyNumber: student.jerseyNumber,
       guardianNames: student.guardians.map((link) => link.guardian.user.name),

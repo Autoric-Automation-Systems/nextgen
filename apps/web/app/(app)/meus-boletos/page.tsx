@@ -142,7 +142,7 @@ export default async function MyInvoicesPage() {
             </>
           ) : (
             <p className="muted" style={{ margin: 0 }}>
-              A escola ainda não cadastrou a chave Pix. Peça o boleto ou o link de pagamento na
+              A escola ainda não cadastrou a chave Pix. Peça o link de pagamento na
               secretaria.
             </p>
           )}

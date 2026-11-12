@@ -129,6 +129,14 @@ h1 { font-size: 44px; line-height: 1.1; letter-spacing: -0.03em; margin: 18px 0 
 .field input:focus, .field select:focus, .field textarea:focus {
   outline: 2px solid var(--brand-soft); border-color: var(--brand);
 }
+.field-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 14px 16px 2px;
+  margin: 0;
+}
+.field-group legend { padding: 0 6px; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
 .field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 12px; }
 .checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
@@ -159,6 +167,7 @@ tr:last-child td { border-bottom: none; }
 .badge.danger { background: #fee4e2; color: var(--danger); }
 
 .stack { display: flex; flex-direction: column; gap: 20px; }
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .section-title { font-size: 20px; letter-spacing: -0.02em; margin: 0; }
 .stat { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }

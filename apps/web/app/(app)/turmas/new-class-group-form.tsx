@@ -7,20 +7,14 @@ import { createClassGroup, type TurmaState } from "./actions";
 const initial: TurmaState = { status: "idle" };
 
 export function NewClassGroupForm({
-  seasonId,
-  categories,
   units,
 }: {
-  seasonId: string;
-  categories: { id: string; name: string }[];
   units: { id: string; name: string; isPrimary: boolean }[];
 }) {
   const [state, action, pending] = useActionState(createClassGroup, initial);
 
   return (
     <form action={action}>
-      <input type="hidden" name="seasonId" value={seasonId} />
-
       {state.status !== "idle" ? (
         <p className={state.status === "ok" ? "notice ok" : "notice error"} role="status">
           {state.message}
@@ -29,22 +23,23 @@ export function NewClassGroupForm({
 
       <div className="field-row">
         <div className="field">
-          <label htmlFor="group-category">Categoria</label>
-          <select id="group-category" name="categoryId" required defaultValue="">
-            <option value="" disabled>
-              Escolha…
-            </option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          <label htmlFor="group-name">Nome da turma</label>
+          <input
+            id="group-name"
+            name="name"
+            required
+            maxLength={60}
+            placeholder="Sub-9 — Ter/Qui 17h"
+          />
         </div>
 
         <div className="field">
           <label htmlFor="group-unit">Unidade</label>
-          <select id="group-unit" name="unitId" defaultValue={units.find((unit) => unit.isPrimary)?.id ?? units[0]?.id ?? ""}>
+          <select
+            id="group-unit"
+            name="unitId"
+            defaultValue={units.find((unit) => unit.isPrimary)?.id ?? units[0]?.id ?? ""}
+          >
             {units.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.name}
@@ -80,15 +75,12 @@ export function NewClassGroupForm({
           <label htmlFor="group-end">Fim</label>
           <input id="group-end" name="endTime" type="time" required defaultValue="18:00" />
         </div>
-        <div className="field">
-          <label htmlFor="group-name">Nome (opcional)</label>
-          <input id="group-name" name="name" maxLength={60} placeholder="Sub-8 — Ter/Qui 17h" />
-        </div>
       </div>
 
       <p className="muted" style={{ marginTop: 0 }}>
-        Sem nome, a turma é nomeada pela categoria e pelo horário. O sistema recusa duas turmas na
-        mesma sala no mesmo horário — é o erro que só aparece quando dois professores chegam juntos.
+        O nome é livre: &quot;Sub-9&quot;, &quot;Iniciantes&quot; ou &quot;Sub-11 feminino&quot;. O sistema recusa
+        duas turmas na mesma sala no mesmo horário — é o erro que só aparece quando dois
+        professores chegam juntos.
       </p>
 
       <button className="btn" disabled={pending}>

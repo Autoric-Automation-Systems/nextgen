@@ -46,7 +46,7 @@ flowchart LR
     B --> C[Wizard: logo, cores, frase]
     C --> D[Primeira unidade + salas]
     D --> E[Importar alunos CSV<br/>ou cadastrar 1]
-    E --> F[Criar turmas + categorias]
+    E --> F[Abrir turmas<br/>nome livre, horário]
     F --> G[Convidar professores]
     G --> H[Publicar site]
     H --> I[Primeira matrícula]
@@ -59,11 +59,11 @@ com responsável confirmado.
 
 1. Secretaria busca o aluno por nome/CPF do responsável.
 2. Se novo: nome, nascimento, gênero opcional, foto opcional, responsável (nome, CPF, e-mail, telefone).
-3. Sistema calcula categoria pela data de nascimento e temporada.
-4. Escolhe unidade, turma (com vagas), plano e dia de vencimento (5, 10, 15, 20).
+3. Sistema mostra a idade pela data de nascimento (o card usa a idade; não há categoria a manter).
+4. Escolhe unidade, turma (com vagas), plano e dia de vencimento (qualquer dia 1–31, escolhido pela família).
 5. Registra documentos: certidão, documento do responsável, atestado médico (validade).
 6. Envia convite ao responsável; matrícula fica `pending_guardian`.
-7. Responsável confirma, aceita termos e recebe o primeiro boleto/Pix.
+7. Responsável confirma, aceita termos e passa a receber a mensalidade em Pix no e-mail.
 
 **Exceções:** turma lotada (lista de espera), aluno sem CPF (matrícula manual), responsável
 sem e-mail (convite por SMS/WhatsApp com link), aluno bolsista (valor zero).

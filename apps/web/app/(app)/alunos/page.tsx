@@ -23,10 +23,19 @@ export default async function StudentsPage() {
     studentIds: session.actor.kind === "guardian" ? session.actor.studentIds : undefined,
   });
 
+  const canWrite = workspace.can("student:write");
+
   return (
     <div className="stack">
       <div>
-        <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>Alunos</h1>
+        <div className="page-head">
+          <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>Alunos</h1>
+          {canWrite ? (
+            <Link className="btn" href="/alunos/novo">
+              Cadastrar aluno
+            </Link>
+          ) : null}
+        </div>
         <p className="muted" style={{ margin: 0 }}>
           {students.length} aluno(s) em {workspace.schoolName}.{" "}
           {session.actor.kind === "guardian"
@@ -42,7 +51,7 @@ export default async function StudentsPage() {
             <tr>
               <th>Aluno</th>
               <th>Idade</th>
-              <th>Categoria / turma</th>
+              <th>Turma</th>
               <th>Responsável</th>
               <th>Consentimento</th>
               <th>Card público</th>
@@ -65,11 +74,8 @@ export default async function StudentsPage() {
                     <span className="muted">{REGIME_LABEL[student.regime]}</span>
                   </div>
                 </td>
-                <td data-label="Categoria / turma">
-                  <div className="cell-value">
-                    {student.category ?? "—"}
-                    {student.classGroup ? <span className="muted">{student.classGroup}</span> : null}
-                  </div>
+                <td data-label="Turma" className="muted">
+                  {student.classGroup ?? "—"}
                 </td>
                 <td data-label="Responsável" className="muted">{student.guardianNames.join(", ") || "—"}</td>
                 <td data-label="Consentimento">
@@ -92,7 +98,10 @@ export default async function StudentsPage() {
             ))}
             {students.length === 0 ? (
               <tr>
-                <td colSpan={6} className="muted">Nenhum aluno cadastrado ainda.</td>
+                <td colSpan={6} className="muted">
+                  Nenhum aluno cadastrado ainda.{" "}
+                  {canWrite ? <Link href="/alunos/novo">Cadastre o primeiro</Link> : null}
+                </td>
               </tr>
             ) : null}
           </tbody>

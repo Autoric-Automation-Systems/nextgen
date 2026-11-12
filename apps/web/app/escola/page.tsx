@@ -12,7 +12,7 @@ export const metadata: Metadata = {
  *
  * Login é o mesmo da família — um mecanismo só, e-mail com link. O que muda é o público e
  * a expectativa de quem chega: quem administra quer criar escola, cadastrar turma e
- * fechar o mês; quem é responsável quer o boleto e a evolução do filho.
+ * fechar o mês; quem é responsável quer o PIX da mensalidade e a evolução do filho.
  */
 export default function EscolaPage() {
   return (
@@ -26,7 +26,7 @@ export default function EscolaPage() {
             Você administra uma escola de futebol?
           </h1>
           <p className="lead">
-            Matrícula, turma, categoria, avaliação, saúde e mensalidade no mesmo lugar — com o
+            Matrícula, turma, avaliação, saúde e mensalidade no mesmo lugar — com o
             consentimento do responsável registrado desde o primeiro cadastro.
           </p>
 

@@ -42,7 +42,7 @@ export default async function CardPreviewPage() {
 
   const cardData = {
     nickname: student.nickname,
-    category: student.category,
+    team: student.classGroup,
     position: student.position,
     jerseyNumber: student.jerseyNumber,
     age: student.age,
@@ -93,7 +93,7 @@ export default async function CardPreviewPage() {
               <Link href={`/alunos/${entry.id}`}>{entry.name}</Link>
               <span className="muted">
                 {" "}
-                · {entry.age} anos · {entry.category ?? "sem categoria"}
+                · {entry.age} anos · {entry.classGroup ?? "sem turma"}
               </span>
             </li>
           ))}

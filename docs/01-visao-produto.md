@@ -86,9 +86,8 @@ Números em [`12-metricas-precificacao.md`](12-metricas-precificacao.md).
 | **Escola** (`school`) | Tenant. Unidade de isolamento de dados e de cobrança da NextGen |
 | **Unidade** (`unit`) | Endereço físico: sede, núcleo, polo. Tem quadras/campos |
 | **Sala/Recurso** (`room`) | Espaço dentro da unidade (quadra coberta, campo 1, sala de vídeo) |
-| **Temporada** (`season`) | Ano/período esportivo. Define categorias e ciclos de avaliação |
-| **Categoria** (`category`) | Faixa etária (Sub-8, Sub-9…), calculada por ano de nascimento |
-| **Turma** (`class_group`) | Grupo de alunos com horário, unidade, categoria e professor |
+| **Ciclo** (`evaluation_cycle`) | Período de avaliação — o card do aluno é comparado dentro do ciclo, não de uma temporada anual |
+| **Turma** (`class_group`) | Grupo de alunos com nome livre, horário, unidade, sala e professor. "Sub-8" é um nome possível, não uma entidade do sistema |
 | **Matrícula** (`enrollment`) | Vínculo aluno ↔ turma ↔ plano, com vigência e status |
 | **Responsável** (`guardian`) | Adulto com vínculo legal e/ou financeiro com o aluno |
 | **Aluno** (`student` / `student_profile`) | Menor tutelado; **não** é usuário autônomo antes dos 16 |
