@@ -19,6 +19,22 @@ import {
 
 const PUBLIC_TTL_SECONDS = 60 * 15;
 
+/**
+ * Dois stores, dois tokens. Sem explicitar aqui, o SDK cai em `BLOB_READ_WRITE_TOKEN`,
+ * que não existe neste projeto — e o erro aparece só no primeiro upload real.
+ */
+function tokenFor(area: "public" | "private"): string | undefined {
+  const value =
+    area === "public"
+      ? process.env.BLOB_PUBLIC_READ_WRITE_TOKEN
+      : process.env.BLOB_PRIVATE_READ_WRITE_TOKEN;
+  return value ? value : undefined;
+}
+
+export function uploadsConfigured(area: "public" | "private"): boolean {
+  return Boolean(tokenFor(area));
+}
+
 export type UploadInput = {
   schoolId: string;
   kind: StorageKind;
@@ -67,6 +83,7 @@ export async function uploadPublic(input: UploadInput): Promise<UploadResult> {
     access: "public",
     contentType: input.mime,
     addRandomSuffix: false,
+    token: tokenFor("public"),
     // Conteúdo de vitrine pode ficar em cache de borda.
     cacheControlMaxAge: 60 * 60 * 24 * 30,
   });
@@ -87,6 +104,7 @@ export async function uploadPrivate(input: UploadInput): Promise<UploadResult> {
     access: "private",
     contentType: input.mime,
     addRandomSuffix: false,
+    token: tokenFor("private"),
   });
 
   return {
@@ -119,6 +137,7 @@ export async function presignPrivateDownload(options: {
     pathname: options.pathname,
     operations: ["get"],
     validUntil,
+    token: tokenFor("private"),
   });
 
   const { presignedUrl } = await presignUrl(token, {

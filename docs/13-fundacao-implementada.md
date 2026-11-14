@@ -8,10 +8,10 @@ apenas desenhado em `04-modulos.md`. Tudo aqui roda e é verificado pela CI.
 | Camada | Onde | Estado |
 |---|---|---|
 | Monorepo (pnpm + turbo) | raiz | funciona |
-| Schema de dados + migrações | `packages/db/prisma` | 25 tabelas, 4 migrações |
+| Schema de dados + migrações | `packages/db/prisma` | 32 tabelas, 16 migrações |
 | Isolamento por escola (RLS) | `packages/db/prisma/migrations/*_rls` | testado |
 | Seed de duas escolas | `packages/db/prisma/seed.ts` | idempotente |
-| Regras puras (dinheiro, RBAC, consentimento, avaliação) | `packages/core` | 44 testes |
+| Regras puras (dinheiro, RBAC, consentimento, avaliação) | `packages/core` | 110 testes |
 | Sessão e resolução de ator | `packages/auth` | e-mail + senha |
 | Storage (Vercel Blob, 2 stores) | `packages/integrations` | upload + URL assinada |
 | App Next.js (login, painel, alunos) | `apps/web` | build verde |
@@ -77,10 +77,15 @@ Não existe `season` nem `category` no schema (migration `turma_sem_temporada`):
 | `/dashboard` | requer sessão; métricas da escola |
 | `/alunos` | requer sessão; lista com regime etário e consentimento |
 | `/alunos/[id]` | ficha do aluno com o card na versão interna |
+| `/pedagogia` | equipe: matérias com contagem de capítulos e conteúdos |
+| `/pedagogia/[id]` | equipe: capítulos, conteúdos, publicar e arquivar |
+| `/aulas` | equipe: planos de aula (professor vê as próprias turmas) |
 | `/financeiro` | administração: competência, cobranças, planos, Pix, despesas (`?mes=YYYY-MM`) |
 | `/meus-boletos` | responsável: cobranças dos próprios filhos e Pix de cada uma |
 | `/sistema` | só administração da plataforma; diretório de escolas |
 | `/sistema/card` | só plataforma; card interno e público lado a lado, com dado de demonstração |
+| `/api/pedagogia/upload` | token de upload para o store privado (só `content:write`) |
+| `/api/pedagogia/arquivo/[id]` | link assinado de 5 min para o arquivo privado |
 | `/api/auth/*` | Better Auth |
 
 Sem sessão, todo o painel redireciona para `/login`.
@@ -176,6 +181,38 @@ Telas que fecham o ciclo de vida do aluno depois do cadastro:
 - **Regras de proteção** — ninguém muda o próprio cargo nem o próprio acesso, e a escola
   não pode ficar sem administração ativa.
 
+## Pedagogia e plano de aula
+
+Biblioteca da escola em três níveis — **matéria → capítulo → conteúdo** — e o plano de aula
+que o professor escreve por turma.
+
+- **Quem cria o quê** — matéria e capítulo exigem `content:structure` (administração e
+  coordenação). Conteúdo exige `content:write`, então professor alimenta a grade que a
+  coordenação montou, mas não a reorganiza.
+- **Seis tipos de conteúdo** — texto, link externo, vídeo, áudio, imagem e PDF. Um e apenas
+  um dos três campos de mídia é preenchido (`body_text`, `url`, `storage_path`), e a
+  constraint `materials_source_check` recusa o resto. O banco não é a única defesa: a mesma
+  regra está em `apps/web/lib/pedagogy-rules.ts`, coberta por teste.
+- **Upload direto ao Blob** — o arquivo não passa pela função da Vercel (o corpo de uma
+  requisição serverless tem limite de poucos MB, e vídeo de treino não cabe). O navegador
+  pede um token em `/api/pedagogia/upload`, que confere `private/<escola>/materials/<tipo>/`
+  contra a sessão, a extensão contra o mimetype e o tamanho contra o limite do tipo
+  (imagem 5 MB, PDF 20 MB, áudio 50 MB, vídeo 500 MB).
+- **Mídia privada** — o `storage_path` nunca vira URL pública. `/api/pedagogia/arquivo/[id]`
+  confere a RLS, recusa rascunho para o responsável e devolve um link assinado de 5 minutos.
+  Não existe endereço permanente para circular em grupo de WhatsApp.
+- **Rascunho antes de publicado** — conteúdo nasce `is_published = false`; a família só vê
+  o que foi publicado. Arquivar é soft delete: o plano de aula e o histórico continuam
+  apontando para a linha.
+- **Link externo** — só `http`/`https`, com host e sem credencial embutida
+  (`normalizeHttpUrl`). `javascript:` num `href` é execução de script na sessão de quem
+  abriu; `file:` é leitura da máquina.
+- **Plano de aula** — turma, data, duração (15 a 180 min), objetivo, aquecimento, parte
+  principal, jogo, volta à calma e observações. Professor só planeja turma em que está
+  vinculado (a RLS isola escola, não turma) e só arquiva o próprio plano.
+- **Sem arquivo configurado** — com `BLOB_PRIVATE_READ_WRITE_TOKEN` vazio, a tela avisa e
+  oferece apenas texto e link; a rota de upload responde 503 com a mesma mensagem.
+
 ## Como rodar
 
 ```bash
@@ -237,10 +274,11 @@ consentimento e auditoria append-only.
 Ficam para as próximas fases, na ordem de `09-roadmap.md`:
 
 1. Matrícula com convite ao responsável e assinatura do termo (o schema já suporta).
-2. Conteúdo, matérias, capítulos e plano de aula.
-3. Avaliação de habilidades, histórico e card público.
-4. Anamnese e prontuário com visibilidade segregada.
-5. Financeiro: emissão real de boleto/Pix por gateway e régua de cobrança automática
+2. Avaliação de habilidades, histórico e card público.
+3. Anamnese e prontuário com visibilidade segregada.
+4. Financeiro: emissão real de boleto/Pix por gateway e régua de cobrança automática
    (a geração mensal, a baixa manual, o Pix copia-e-cola e as despesas já existem — ver
    `07-financeiro.md`, seção 14).
-6. Site público da escola e editor de identidade visual.
+5. Site público da escola e editor de identidade visual.
+6. Consumo do conteúdo publicado na área do aluno e do responsável (hoje a biblioteca é
+   só da equipe).

@@ -17,6 +17,7 @@
     "@nextgen/core": "workspace:*",
     "@nextgen/db": "workspace:*",
     "@nextgen/integrations": "workspace:*",
+    "@vercel/blob": "2.8.2",
     "next": "15.5.29",
     "react": "19.2.0",
     "react-dom": "19.2.0",

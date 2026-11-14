@@ -56,7 +56,9 @@ Objetivo: base técnica e jurídica para não retrabalhar.
 
 ### Fase 2 — Pedagogia e engajamento (6–8 semanas)
 
-- [ ] Matérias, capítulos, conteúdos (vídeo, áudio, PDF, imagem, texto)
+- [x] Matérias, capítulos, conteúdos (vídeo, áudio, PDF, imagem, texto) — ver
+  `13-fundacao-implementada.md`
+- [x] Plano de aula por turma
 - [ ] Progresso do aluno
 - [ ] Avaliação por skills + ciclos + rubrica
 - [ ] Card privado + evolução

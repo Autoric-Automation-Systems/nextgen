@@ -77,6 +77,15 @@ describe("navSectionsFor", () => {
     expect(soon).not.toContain("Painel");
   });
 
+  it("pedagogia e planos de aula já estão liberados", () => {
+    const items = navSectionsFor({ isPlatformAdmin: false, role: "teacher" }).flatMap(
+      (section) => section.items,
+    );
+
+    expect(items.find((item) => item.href === "/pedagogia")?.status).toBeUndefined();
+    expect(items.find((item) => item.href === "/aulas")?.status).toBeUndefined();
+  });
+
   it("financeiro e mensalidades já estão liberados", () => {
     const admin = navSectionsFor({ isPlatformAdmin: false, role: "admin" })
       .flatMap((section) => section.items)

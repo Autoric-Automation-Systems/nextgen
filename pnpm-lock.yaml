@@ -29,6 +29,9 @@ importers:
       '@nextgen/integrations':
         specifier: workspace:*
         version: link:../../packages/integrations
+      '@vercel/blob':
+        specifier: 2.8.2
+        version: 2.8.2
       next:
         specifier: 15.5.29
         version: 15.5.29(@types/node@24.10.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
