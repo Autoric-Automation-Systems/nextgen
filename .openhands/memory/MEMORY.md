@@ -60,6 +60,13 @@
   cargo por pessoa, turmas do professor, revogação sem apagar histórico. Não muda o próprio
   cargo/acesso; sempre ≥1 admin ativo. E-mail de responsável não pode virar equipe (1
   membership por pessoa+escola).
+- **Pedagogia**: `subjects → chapters → materials` (`text|link|video|audio|image|pdf`,
+  exatamente uma origem de mídia). Matéria/capítulo = `content:structure`
+  (admin+coord); conteúdo = `content:write` (inclui professor). Upload não passa pela
+  server action: token em `/api/pedagogia/upload`, download por link assinado de 5 min em
+  `/api/pedagogia/arquivo/[id]`, e `storagePath` nunca vira URL pública. `@vercel/blob`
+  **precisa de `token` explícito** — sem ele o SDK procura `BLOB_READ_WRITE_TOKEN`, que
+  não existe aqui. Plano de aula em `/aulas`, 1 por turma+data, professor só nas suas.
 - **Site público**: `/` → `/como-funciona`; `/escola/solicitar` grava em `school_leads`
   (único `INSERT` do `nextgen_app`, via `$executeRaw`).
 - Ativos de marca em `apps/web/public/{brand,icons}`; `lib/brand.ts` é o único com caminhos e
