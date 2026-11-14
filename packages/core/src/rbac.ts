@@ -26,6 +26,9 @@ export const ACTIONS = [
   "attendance:write",
   "content:read",
   "content:write",
+  /// Estrutura da biblioteca (matéria e capítulo). Professor alimenta conteúdo, mas não
+  /// reorganiza a grade pedagógica da escola.
+  "content:structure",
   "assessment:read",
   "assessment:write",
   "assessment:approve",
@@ -88,6 +91,7 @@ const PERMISSIONS: Record<Action, Role[]> = {
 
   "content:read": ["admin", "coordinator", "teacher", "guardian"],
   "content:write": ["admin", "coordinator", "teacher"],
+  "content:structure": ["admin", "coordinator"],
 
   "assessment:read": ["admin", "coordinator", "teacher", "guardian"],
   "assessment:write": ["admin", "coordinator", "teacher"],

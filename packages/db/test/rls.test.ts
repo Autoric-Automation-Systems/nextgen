@@ -122,3 +122,41 @@ describe("RLS: isolamento entre escolas", () => {
     expect(rows[0]?.userId).toBe(guardianUserId);
   });
 });
+
+describe("RLS: pedagogia", () => {
+  const DEMO_SUBJECT = "01930000-0000-7000-8000-000000000501";
+  const DEMO_CHAPTER = "01930000-0000-7000-8000-000000000511";
+
+  it("matéria de uma escola não existe para a outra", async () => {
+    const demo = await withTenant({ schoolId: DEMO }, (tx) => tx.subject.findMany());
+    const rival = await withTenant({ schoolId: RIVAL }, (tx) => tx.subject.findMany());
+
+    expect(demo.length).toBeGreaterThan(0);
+    expect(rival).toHaveLength(0);
+  });
+
+  it("capítulo não pode pendurar em matéria de outra escola", async () => {
+    await expect(
+      withTenant({ schoolId: RIVAL }, (tx) =>
+        tx.chapter.create({
+          data: { schoolId: RIVAL, subjectId: DEMO_SUBJECT, title: "Capítulo invasor" },
+        }),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("conteúdo sem corpo, link ou arquivo é recusado pelo banco", async () => {
+    await expect(
+      withTenant({ schoolId: DEMO }, (tx) =>
+        tx.material.create({
+          data: {
+            schoolId: DEMO,
+            chapterId: DEMO_CHAPTER,
+            kind: "text",
+            title: "Vazio",
+          },
+        }),
+      ),
+    ).rejects.toThrow();
+  });
+});

@@ -42,6 +42,12 @@ describe("can", () => {
     expect(can(coordinator, { action: "assessment:approve" })).toBe(true);
   });
 
+  it("professor alimenta conteúdo, mas não reorganiza a grade pedagógica", () => {
+    expect(can(teacher, { action: "content:write" })).toBe(true);
+    expect(can(teacher, { action: "content:structure" })).toBe(false);
+    expect(can(coordinator, { action: "content:structure" })).toBe(true);
+  });
+
   it("responsável só alcança os próprios filhos", () => {
     expect(can(guardian, { action: "student:read", studentId: "aluno-a" })).toBe(true);
     expect(can(guardian, { action: "student:read", studentId: "aluno-b" })).toBe(false);

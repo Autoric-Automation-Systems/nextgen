@@ -161,6 +161,11 @@ model School {
   invoices           Invoice[]
   invoicePayments    InvoicePayment[]
   expenses           Expense[]
+  subjects           Subject[]
+  chapters           Chapter[]
+  materials          Material[]
+  lessonPlans        LessonPlan[]
+  lessonPlanItems    LessonPlanMaterial[]
 
   @@map("schools")
 }
@@ -456,6 +461,7 @@ model ClassGroup {
   room        Room?               @relation(fields: [roomId], references: [id])
   teachers    ClassGroupTeacher[]
   enrollments Enrollment[]
+  lessonPlans LessonPlan[]
 
   @@index([schoolId])
   @@map("class_groups")
@@ -771,4 +777,137 @@ model Expense {
 
   @@index([schoolId, dueDate])
   @@map("expenses")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pedagogia: matérias, capítulos e conteúdos
+// ─────────────────────────────────────────────────────────────
+//
+// A hierarquia é curta de propósito: matéria → capítulo → conteúdo. Não existe
+// "curso" nem "trilha": a escola pequena não mantém essa estrutura viva, e o que
+// interessa ao professor é "onde está o vídeo do passe" em dois cliques.
+
+enum MaterialKind {
+  /// Texto escrito na própria plataforma, sem arquivo.
+  text
+  /// Endereço externo (YouTube, Drive, site da escola).
+  link
+  video
+  audio
+  image
+  pdf
+
+  @@map("material_kind")
+}
+
+model Subject {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  schoolId    String    @map("school_id") @db.Uuid
+  name        String
+  description String?
+  position    Int       @default(0)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school   School    @relation(fields: [schoolId], references: [id])
+  chapters Chapter[]
+
+  @@index([schoolId, position])
+  @@map("subjects")
+}
+
+model Chapter {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  schoolId  String    @map("school_id") @db.Uuid
+  subjectId String    @map("subject_id") @db.Uuid
+  title     String
+  summary   String?
+  position  Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school    School     @relation(fields: [schoolId], references: [id])
+  subject   Subject    @relation(fields: [subjectId], references: [id])
+  materials Material[]
+
+  @@index([schoolId, subjectId, position])
+  @@map("chapters")
+}
+
+model Material {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  schoolId    String       @map("school_id") @db.Uuid
+  chapterId   String       @map("chapter_id") @db.Uuid
+  kind        MaterialKind
+  title       String
+  description String?
+  /// Corpo do conteúdo quando `kind = text`.
+  bodyText    String?      @map("body_text")
+  /// Endereço externo quando `kind = link`.
+  url         String?
+  /// Caminho no store privado do Blob quando há arquivo.
+  storagePath String?      @map("storage_path")
+  mime        String?
+  sizeBytes   Int?         @map("size_bytes")
+  position    Int          @default(0)
+  isPublished Boolean      @default(false) @map("is_published")
+  createdById String?      @map("created_by_id") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz(6)
+
+  school     School               @relation(fields: [schoolId], references: [id])
+  chapter    Chapter              @relation(fields: [chapterId], references: [id])
+  lessonPlan LessonPlanMaterial[]
+
+  @@index([schoolId, chapterId, position])
+  @@map("materials")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Plano de aula
+// ─────────────────────────────────────────────────────────────
+
+model LessonPlan {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  schoolId        String    @map("school_id") @db.Uuid
+  classGroupId    String    @map("class_group_id") @db.Uuid
+  authorUserId    String    @map("author_user_id") @db.Uuid
+  title           String
+  plannedFor      DateTime  @map("planned_for") @db.Date
+  durationMinutes Int       @default(60) @map("duration_minutes")
+  objective       String?
+  warmup          String?
+  mainPart        String?   @map("main_part")
+  gamePart        String?   @map("game_part")
+  cooldown        String?
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  school     School               @relation(fields: [schoolId], references: [id])
+  classGroup ClassGroup           @relation(fields: [classGroupId], references: [id])
+  materials  LessonPlanMaterial[]
+
+  @@index([schoolId, classGroupId, plannedFor])
+  @@map("lesson_plans")
+}
+
+model LessonPlanMaterial {
+  id           String @id @default(uuid(7)) @db.Uuid
+  schoolId     String @map("school_id") @db.Uuid
+  lessonPlanId String @map("lesson_plan_id") @db.Uuid
+  materialId   String @map("material_id") @db.Uuid
+
+  school     School     @relation(fields: [schoolId], references: [id])
+  lessonPlan LessonPlan @relation(fields: [lessonPlanId], references: [id])
+  material   Material   @relation(fields: [materialId], references: [id])
+
+  @@unique([lessonPlanId, materialId])
+  @@index([schoolId])
+  @@map("lesson_plan_materials")
 }

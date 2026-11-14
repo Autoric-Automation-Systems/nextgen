@@ -369,6 +369,124 @@ async function main() {
     });
   });
 
+  // Pedagogia: duas matérias, capítulos e conteúdos, para a tela não nascer vazia.
+  await inSchool(schoolDemo, ids.adminUser, async () => {
+    const ids2 = {
+      subjectFundamentos: "01930000-0000-7000-8000-000000000501",
+      subjectTatica: "01930000-0000-7000-8000-000000000502",
+      chapterPasse: "01930000-0000-7000-8000-000000000511",
+      chapterConducao: "01930000-0000-7000-8000-000000000512",
+      materialPasse: "01930000-0000-7000-8000-000000000521",
+      materialVideo: "01930000-0000-7000-8000-000000000522",
+      planQuarta: "01930000-0000-7000-8000-000000000531",
+    };
+
+    await db.subject.upsert({
+      where: { id: ids2.subjectFundamentos },
+      update: {},
+      create: {
+        id: ids2.subjectFundamentos,
+        schoolId: schoolDemo,
+        name: "Fundamentos Técnicos",
+        description: "Base de passe, domínio e condução",
+        position: 1,
+      },
+    });
+
+    await db.subject.upsert({
+      where: { id: ids2.subjectTatica },
+      update: {},
+      create: {
+        id: ids2.subjectTatica,
+        schoolId: schoolDemo,
+        name: "Tática",
+        description: "Leitura de jogo e movimentação",
+        position: 2,
+      },
+    });
+
+    await db.chapter.upsert({
+      where: { id: ids2.chapterPasse },
+      update: {},
+      create: {
+        id: ids2.chapterPasse,
+        schoolId: schoolDemo,
+        subjectId: ids2.subjectFundamentos,
+        title: "Passe e recepção",
+        summary: "Decidir antes de receber",
+        position: 1,
+      },
+    });
+
+    await db.chapter.upsert({
+      where: { id: ids2.chapterConducao },
+      update: {},
+      create: {
+        id: ids2.chapterConducao,
+        schoolId: schoolDemo,
+        subjectId: ids2.subjectFundamentos,
+        title: "Condução",
+        summary: "Bola colada ao pé, cabeça erguida",
+        position: 2,
+      },
+    });
+
+    await db.material.upsert({
+      where: { id: ids2.materialPasse },
+      update: {},
+      create: {
+        id: ids2.materialPasse,
+        schoolId: schoolDemo,
+        chapterId: ids2.chapterPasse,
+        kind: "text",
+        title: "Apoio de pé, olho no companheiro",
+        description: "O que observar na primeira aula",
+        bodyText:
+          "Peça apoio com o pé de trás, nunca com o da frente. O corpo abre para o campo e o " +
+          "primeiro toque já aponta para onde a bola vai.",
+        position: 1,
+        isPublished: true,
+        createdById: ids.adminUser,
+      },
+    });
+
+    await db.material.upsert({
+      where: { id: ids2.materialVideo },
+      update: {},
+      create: {
+        id: ids2.materialVideo,
+        schoolId: schoolDemo,
+        chapterId: ids2.chapterConducao,
+        kind: "link",
+        title: "Condução em slalom (referência externa)",
+        description: "Vídeo de apoio para o professor",
+        url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        position: 1,
+        isPublished: false,
+        createdById: ids.adminUser,
+      },
+    });
+
+    await db.lessonPlan.upsert({
+      where: { id: ids2.planQuarta },
+      update: {},
+      create: {
+        id: ids2.planQuarta,
+        schoolId: schoolDemo,
+        classGroupId: ids.groupSub8,
+        authorUserId: ids.teacherUser,
+        title: "Passe em apoio — 3 estações",
+        plannedFor: new Date("2026-11-04"),
+        durationMinutes: 60,
+        objective: "Receber de perfil e devolver em dois toques.",
+        warmup: "Pega-pega com bola e alongamento dinâmico.",
+        mainPart: "Três estações: parede, triângulo e rondo 4x1.",
+        gamePart: "Jogo reduzido 3x3 com limite de dois toques.",
+        cooldown: "Roda de conversa e alongamento.",
+      },
+    });
+  });
+
   console.log("seed ok");
   console.log(`  senha de todas:  ${DEMO_PASSWORD}`);
   console.log("  login demo:      admin@demo.test / professor@demo.test");
