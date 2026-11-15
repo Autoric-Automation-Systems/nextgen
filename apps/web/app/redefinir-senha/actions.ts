@@ -35,8 +35,8 @@ export async function resetPassword(
   }
 
   // Sem o e-mail aqui: o servidor só tem o token, e o token já foi entregue na caixa
-  // certa. A regra "senha não contém o e-mail" roda em `/definir-senha`, onde a sessão
-  // conhece o endereço.
+  // certa. A regra "senha não contém o e-mail" precisa do endereço, que só a sessão tem;
+  // no convite ela fica de fora, e o token já limita quem chega até este formulário.
   const verdict = checkNewPassword(parsed.data.password, parsed.data.confirmation);
   if (!verdict.ok) return { status: "error", message: verdict.message };
 

@@ -36,7 +36,8 @@ export default async function ResetPasswordPage({
               </h2>
               <p className="muted" style={{ marginTop: 0, marginBottom: 18 }}>
                 Este link de senha já foi usado ou passou do prazo. Peça outro — leva um
-                minuto e o anterior deixa de valer.
+                minuto e o anterior deixa de valer. Se a escola acabou de cadastrar você,
+                o mesmo caminho serve para receber o convite de novo.
               </p>
               <Link className="btn" href="/esqueci-senha" style={{ width: "100%" }}>
                 Pedir novo link

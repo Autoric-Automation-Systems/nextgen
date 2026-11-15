@@ -12,11 +12,11 @@ const schema = z.object({
 export type SignupState = { status: "idle" | "sent" | "error"; message?: string };
 
 /**
- * Cadastro = link por e-mail. A senha é escolhida depois do clique, em `/definir-senha`:
- * assim ninguém cria acesso com um endereço que não é seu.
+ * Primeiro acesso = link por e-mail que **cria a senha**, em `/redefinir-senha`.
  *
- * O login do dia a dia é e-mail + senha. Este caminho fica para o primeiro acesso e para
- * quem foi convidado pela escola.
+ * O link não autentica sozinho: quem abre a caixa ainda escolhe a senha. Isso protege a
+ * conta quando o e-mail é compartilhado (o do responsável costuma ser) e mantém a senha
+ * como o único jeito de entrar no dia a dia.
  */
 export async function requestSignupLink(
   _prev: SignupState,
@@ -40,14 +40,13 @@ export async function requestSignupLink(
   }
 
   try {
-    await auth.api.signInMagicLink({
+    await auth.api.requestPasswordReset({
       headers: await headers(),
       body: {
         email: parsed.data.email,
-        callbackURL: "/definir-senha",
-        // Sem isto, a falha na verificação volta para `/dashboard`, que exige sessão e
-        // redireciona para o login — descartando o motivo.
-        errorCallbackURL: "/cadastro",
+        // A página que recebe o token é a que grava a senha; o token chega validado pelo
+        // Better Auth em `/api/auth/reset-password/:token`.
+        redirectTo: "/redefinir-senha",
       },
     });
   } catch {

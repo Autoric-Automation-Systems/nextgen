@@ -1,5 +1,5 @@
 /**
- * Transporte de e-mail do link mágico, sem efeitos colaterais de import — o health
+ * Transporte de e-mail do link de senha, sem efeitos colaterais de import — o health
  * check precisa saber qual transporte está ativo sem abrir conexão com o banco.
  */
 import nodemailer, { type Transporter } from "nodemailer";

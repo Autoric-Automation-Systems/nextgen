@@ -43,9 +43,9 @@ export async function setupFirstSchool(_prev: SetupState, formData: FormData): P
   }
 
   try {
-    await auth.api.signInMagicLink({
+    await auth.api.requestPasswordReset({
       headers: await headers(),
-      body: { email: result.email, callbackURL: "/dashboard", errorCallbackURL: "/login" },
+      body: { email: result.email, redirectTo: "/redefinir-senha" },
     });
   } catch (error) {
     console.error("[setup] conta criada, link não enviado", error);

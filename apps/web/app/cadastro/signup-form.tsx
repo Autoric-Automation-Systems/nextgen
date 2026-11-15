@@ -24,9 +24,9 @@ export function SignupForm({ error }: { error?: string }) {
             Primeiro acesso
           </h2>
           <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
-            Informe o e-mail que a escola cadastrou. Enviamos um link para confirmar que ele
-            é seu — e, ao abrir, você escolhe a senha. Depois disso o login é direto, sem
-            e-mail a cada vez.
+            Informe o e-mail que a escola cadastrou. Enviamos um link para você criar a
+            senha. Depois disso o login é direto, com e-mail e senha — não existe link de
+            entrada: quem tem a senha abre o painel.
           </p>
 
           {reason ? (
@@ -37,8 +37,8 @@ export function SignupForm({ error }: { error?: string }) {
 
           {state.status === "sent" ? (
             <div className="notice ok" role="status">
-              Se este e-mail estiver liberado, o link chega em instantes. Ele vale por 15
-              minutos, abre uma vez só e leva direto à definição da senha.
+              Se este e-mail estiver liberado, o link chega em instantes. Ele vale por 30
+              minutos, abre uma vez só e leva à tela em que você cria a senha.
             </div>
           ) : (
             <form action={action}>
@@ -62,7 +62,7 @@ export function SignupForm({ error }: { error?: string }) {
               ) : null}
 
               <button className="btn" style={{ width: "100%" }} disabled={pending}>
-                {pending ? "Enviando…" : "Enviar link de cadastro"}
+                {pending ? "Enviando…" : "Enviar link para criar a senha"}
               </button>
             </form>
           )}

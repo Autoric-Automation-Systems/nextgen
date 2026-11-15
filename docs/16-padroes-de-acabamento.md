@@ -41,7 +41,8 @@ primeiro dia:
 ## E-mail transacional
 
 O e-mail é a única tela que ninguém abre no navegador antes do cliente. O padrão está em
-`packages/auth/src/magic-link-email.ts` e deve ser seguido por qualquer e-mail novo:
+`packages/auth/src/invitation-email.ts` e `password-reset-email.ts`, e deve ser seguido
+por qualquer e-mail novo:
 
 - **Tabela + estilo inline.** Gmail, Outlook e Apple Mail descartam parte do `<style>`,
   `flex` e `grid`. `role="presentation"` e `style` em cada célula é o denominador comum.

@@ -117,8 +117,10 @@ tenant para permitir essa evolução.
 ## 5. Autenticação e autorização
 
 - Sessões em cookie `HttpOnly`, `Secure`, `SameSite=Lax`.
-- Login: e-mail + senha (padrão). O link mágico ficou restrito a cadastro e convite: ele
-  só abre `/definir-senha`, nunca o painel. Google e passkey ficam para a v2.
+- Login: e-mail + senha, sempre. O e-mail manda um link que **cria ou troca a senha** em
+  `/redefinir-senha`; nenhum link autentica sozinho. Google e passkey ficam para a v2.
+- O mesmo endpoint (`requestPasswordReset`) serve convite e redefinição: o texto muda
+  conforme o estado da conta, e o nome da escola vem do vínculo, não do formulário.
 - 2FA obrigatório para `admin` e `platform_support`.
 - RBAC por `membership.role` + escopo: `school`, `unit`, `class_group`, `self`.
 - Guards declarativos:

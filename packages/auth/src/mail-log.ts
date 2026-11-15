@@ -51,7 +51,7 @@ async function record(
  * Gmail, porta bloqueada. Sem registro, descobrir qual delas exige o log da Vercel, que
  * não é alcançável de fora do deploy.
  */
-export function loggingMailer(inner: Mailer, kind = "magic-link"): Mailer {
+export function loggingMailer(inner: Mailer, kind = "acesso"): Mailer {
   return {
     async send(message) {
       try {

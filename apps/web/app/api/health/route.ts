@@ -39,9 +39,11 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const deep = params.get("smtp") === "1";
 
-  // `?login=1` dispara o link mágico de verdade e devolve o erro do Better Auth, que o
-  // formulário esconde de propósito (resposta igual para e-mail com e sem conta). O
-  // destino é o domínio reservado para testes: nenhuma caixa real recebe nada.
+  // `?login=1` chama o endpoint de senha e devolve o erro do Better Auth, que o formulário
+  // esconde de propósito (resposta igual para e-mail com e sem conta). O endereço é do
+  // domínio reservado para testes: nenhuma caixa real recebe nada — e, por ser e-mail sem
+  // conta, o Better Auth não chega a enviar. O que a sonda prova é origem aceita e endpoint
+  // respondendo; o envio de verdade só se vê com uma conta real.
   if (params.get("login") === "1") return probeLogin();
   // O endereço resolvido vai junto: sem ele, `INVALID_ORIGIN` no login não tem como ser
   // explicado — a origem recusada é justamente esta, e ela não é o domínio público.
@@ -175,8 +177,8 @@ async function probeLogin() {
   const { auth } = await import("@nextgen/auth");
 
   try {
-    await auth.api.signInMagicLink({
-      body: { email: "probe@example.com", callbackURL: "/dashboard" },
+    await auth.api.requestPasswordReset({
+      body: { email: "probe@example.com", redirectTo: "/redefinir-senha" },
       headers: new Headers({ origin: defaultBaseURL() }),
     });
 

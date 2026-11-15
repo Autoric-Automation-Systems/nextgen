@@ -22,7 +22,7 @@ const SLUG_ATTEMPTS = 9;
 /**
  * Prepara usuário e escola no primeiro acesso.
  *
- * Chamada pelo login antes de pedir o link mágico. Sem isso, numa instalação com
+ * Chamada pelo login antes de pedir o link de senha. Sem isso, numa instalação com
  * `users = 0` o link chega e a verificação falha com `new_user_signup_disabled`: o
  * `disableSignUp` do Better Auth não cria conta. Aqui a conta passa a existir.
  *

@@ -167,7 +167,7 @@ fictícios. O primeiro acesso real é o do item 4.
 Projeto criado: **`nextgen-three-ebon`** → `https://nextgen-three-ebon.vercel.app`.
 
 Esse é o endereço de produção: `/api/health` responde `config.app.authBase` com ele, e é
-o nome que o link mágico usa para montar a URL de retorno. O antigo
+o endereço que o e-mail de senha usa para montar a URL de retorno. O antigo
 `nextgen-autoric.vercel.app` — de um projeto anterior — continua respondendo, mas atrás de
 *Deployment Protection*; não use para cadastro nem para teste de login.
 
@@ -308,7 +308,7 @@ endereço que o Better Auth considera canônico em `config.app.authBase`.
 `BETTER_AUTH_SECRET` **não pode ser trocado** depois que houver sessões: todos os cookies
 existentes deixam de valer e todo mundo é deslogado.
 
-Sem transporte configurado, o link mágico não é enviado e o login simplesmente não
+Sem transporte configurado, o link de senha não é enviado e o login simplesmente não
 acontece — de propósito. O `/api/health` responde `"mail": "missing"` nesse caso. O
 transporte de console (que imprime o link no log) é ignorado quando `VERCEL_ENV=production`,
 porque log de produção vira acesso à conta de qualquer pessoa.
@@ -411,9 +411,10 @@ Nenhum dos dois é obrigatório hoje: o upload ainda não está ligado a nenhuma
 O login é por **e-mail e senha** e **não existe auto-cadastro** (`disableSignUp: true`):
 nenhum usuário nasce pela tela de login.
 
-O link por e-mail continua, mas só em `/cadastro` e só para primeiro acesso ou convite:
-o clique leva a `/definir-senha`, onde a pessoa escolhe a senha que vai usar no login.
-Todo convite gasta um e-mail; login do dia a dia não gasta nenhum.
+O link por e-mail continua, mas só para primeiro acesso, convite e senha esquecida: o
+clique leva a `/redefinir-senha`, onde a pessoa cria ou troca a senha que vai usar no
+login. Nenhum link abre o painel sozinho — quem tem a senha entra; quem só tem o link
+escolhe uma senha. Todo convite gasta um e-mail; login do dia a dia não gasta nenhum.
 
 Espere o deploy terminar com `migrations: "aplicadas"` no `/api/health`.
 

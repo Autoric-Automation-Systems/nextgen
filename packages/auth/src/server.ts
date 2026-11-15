@@ -1,10 +1,10 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
+import { accessContext } from "./access-context";
 import { authDb } from "./auth-db";
 import { defaultMailer, type Mailer } from "./mail";
-import { buildMagicLinkEmail } from "./magic-link-email";
+import { buildInvitationEmail } from "./invitation-email";
 import { buildPasswordResetEmail } from "./password-reset-email";
 import { loggingMailer } from "./mail-log";
 import { defaultBaseURL, trustedOriginsFrom } from "./base-url";
@@ -12,12 +12,11 @@ import { PASSWORD_MIN_LENGTH } from "./password-rules";
 
 export * from "./mail";
 
-/** Um número só: o token e o texto do e-mail não podem divergir. */
-const EXPIRES_IN_MINUTES = 15;
-
 /**
- * Meia hora para o link de senha. Longo o bastante para o e-mail chegar depois do
- * almoço, curto o bastante para não ser um passeio grátis se a caixa vazar.
+ * Validade do link de senha, seja convite da escola ou redefinição.
+ *
+ * Longo o bastante para o e-mail chegar depois do almoço, curto o bastante para não ser
+ * um passeio grátis se a caixa vazar. É também o número que o e-mail anuncia.
  */
 const RESET_EXPIRES_IN_MINUTES = 30;
 
@@ -43,7 +42,8 @@ export function createAuth(options: AuthOptions = {}) {
     database: prismaAdapter(authDb, { provider: "postgresql" }),
 
     /**
-     * Senha é o login do dia a dia; o link mágico ficou só para criar o acesso.
+     * Senha é o único caminho de entrada. O link por e-mail existe para **criar** a
+     * senha — convite da escola ou "esqueci a senha" — e nunca autentica sozinho.
      *
      * `disableSignUp` impede que qualquer pessoa crie conta e escola pela API: quem
      * provisiona usuário é a escola (ou o bootstrap do primeiro acesso).
@@ -56,13 +56,28 @@ export function createAuth(options: AuthOptions = {}) {
       // Senha nova derruba as sessões antigas: se o motivo do pedido foi invasão de
       // conta, deixar o invasor logado anularia o reset.
       revokeSessionsOnPasswordReset: true,
+      /**
+       * O mesmo endpoint serve ao convite e à redefinição: quem decide o texto é o estado
+       * da conta. Conta sem credencial recebe "sua escola criou seu acesso"; conta com
+       * senha recebe "definir nova senha".
+       */
       async sendResetPassword({ user, url }) {
-        const content = buildPasswordResetEmail({
-          url,
-          email: user.email,
-          appUrl: baseURL,
-          expiresInMinutes: RESET_EXPIRES_IN_MINUTES,
-        });
+        const context = await accessContext(user.id);
+
+        const content = context.hasPassword
+          ? buildPasswordResetEmail({
+              url,
+              email: user.email,
+              appUrl: baseURL,
+              expiresInMinutes: RESET_EXPIRES_IN_MINUTES,
+            })
+          : buildInvitationEmail({
+              url,
+              email: user.email,
+              appUrl: baseURL,
+              schoolName: context.schoolName,
+              expiresInMinutes: RESET_EXPIRES_IN_MINUTES,
+            });
 
         await mailer.send({ to: user.email, ...content });
       },
@@ -97,25 +112,7 @@ export function createAuth(options: AuthOptions = {}) {
       },
     },
 
-    plugins: [
-      magicLink({
-        expiresIn: EXPIRES_IN_MINUTES * 60,
-        // Sem auto-cadastro: só entra quem já foi convidado pela escola.
-        disableSignUp: true,
-        storeToken: "hashed",
-        async sendMagicLink({ email, url }) {
-          const content = buildMagicLinkEmail({
-            url,
-            email,
-            appUrl: baseURL,
-            expiresInMinutes: EXPIRES_IN_MINUTES,
-          });
-
-          await mailer.send({ to: email, ...content });
-        },
-      }),
-      nextCookies(),
-    ],
+    plugins: [nextCookies()],
   });
 }
 

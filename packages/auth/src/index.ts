@@ -2,7 +2,8 @@ export * from "./server";
 export { hasPassword } from "./auth-db";
 export { ensureUser } from "./provision-user";
 export { loggingMailer, maskAddress } from "./mail-log";
-export { buildMagicLinkEmail, type EmailContent, type MagicLinkEmailInput } from "./magic-link-email";
+export { accessContext, type AccessContext } from "./access-context";
+export { buildInvitationEmail, type EmailContent, type InvitationEmailInput } from "./invitation-email";
 export { buildPasswordResetEmail, type PasswordResetEmailInput } from "./password-reset-email";
 export {
   checkNewPassword,

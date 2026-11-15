@@ -383,7 +383,7 @@ export async function mailRecent() {
 }
 
 /**
- * Quantos usuários existem. Zero explica sozinho um link mágico que nunca sai: o Better
+ * Quantos usuários existem. Zero explica sozinho um e-mail que nunca sai: o Better
  * Auth está com `disableSignUp`, então e-mail desconhecido não gera envio nem erro visível.
  */
 export async function userCount(): Promise<number | null> {
