@@ -32,6 +32,11 @@
 - Login é um só (`/login`, sempre e-mail + senha); `lib/bootstrap-admin.ts` roda antes do
   envio do link: com `users = 0` o primeiro e-mail vira admin da plataforma. **Produção estava com `users = 0`**:
   não teste login em prod com e-mail alheio. Não há usuário de seed em prod.
+- **E-mail é nodemailer sobre SMTP** (`smtp.gmail.com`, 465/TLS): `EMAIL_USER` +
+  `EMAIL_PASS` (senha de app) já estão na Vercel e o health confirma
+  `mail: smtp` + `?smtp=1` → `auth.ok: true`. **Não diga que "e-mail não está
+  configurado"** — isso vale só no ambiente local (`MAIL_TRANSPORT=console`, link no log).
+  Resend existe no código como alternativa, mas o caminho real é SMTP.
 - Login "enviado" sem chegar tem 3 causas silenciosas: `INVALID_ORIGIN`,
   `DATABASE_URL_MIGRATE` inválida e URL/segredo faltando. Sondas: `/api/health?login=1`,
   `?smtp=1`, `mailRecent`.
