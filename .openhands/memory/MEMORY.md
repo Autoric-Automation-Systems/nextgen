@@ -29,8 +29,8 @@
 - Produção = `https://nextgen-three-ebon.vercel.app` (confirme em `/api/health` →
   `config.app.authBase`). `nextgen-autoric.vercel.app` é projeto antigo atrás de SSO.
   `/api/health` devolve `version` = sha servido: é a prova de qual build está no ar.
-- Login é um só (`/login`); `lib/bootstrap-admin.ts` roda antes do link mágico: com
-  `users = 0` o primeiro e-mail vira admin da plataforma. **Produção estava com `users = 0`**:
+- Login é um só (`/login`, sempre e-mail + senha); `lib/bootstrap-admin.ts` roda antes do
+  envio do link: com `users = 0` o primeiro e-mail vira admin da plataforma. **Produção estava com `users = 0`**:
   não teste login em prod com e-mail alheio. Não há usuário de seed em prod.
 - Login "enviado" sem chegar tem 3 causas silenciosas: `INVALID_ORIGIN`,
   `DATABASE_URL_MIGRATE` inválida e URL/segredo faltando. Sondas: `/api/health?login=1`,
@@ -48,7 +48,8 @@
 - Financeiro v0 é sem gateway: Pix copia-e-cola (`packages/core/src/pix.ts`) + baixa manual.
   `charge:read` vale para `guardian` também (`/meus-boletos`) — telas de escola precisam
   excluir o responsável, ou vazam totais, inadimplência e despesas para a família.
-- Consentimento: `/consentimentos` (responsável aceita, admin/coordenação só leem),
+- Consentimento: `/consentimentos` (responsável aceita; admin/coordenação só leem, exceto
+  quando a própria pessoa é a responsável do aluno — `guardianStudentIds` na sessão),
   termos versionados em `consent_terms` (texto + `body_hash` sha256), aceite com
   `evidence_hash`/IP/UA, índice parcial = 1 linha autorizada por aluno+finalidade, trigger
   só deixa mudar `status`/`revoked_at`. `lib/consent.ts` fala chaves camel (`publicCard`)
@@ -56,7 +57,7 @@
   Aceitar `enrollment` ativa a matrícula `draft`; revogar **não** cancela matrícula.
   Card público exige 12+ **e** `image_public` — abaixo de 12 não existe card público
   (decisão fechada em `docs/11` nº 16: o card privado segue mostrando só barras).
-- `/equipe`: convite por link mágico (`hasPassword` decide `/dashboard` vs `/definir-senha`),
+- `/equipe`: convite pelo link de senha (o mesmo `/redefinir-senha` de "esqueci a senha"),
   cargo por pessoa, turmas do professor, revogação sem apagar histórico. Não muda o próprio
   cargo/acesso; sempre ≥1 admin ativo. E-mail de responsável não pode virar equipe (1
   membership por pessoa+escola).
@@ -67,6 +68,14 @@
   `/api/pedagogia/arquivo/[id]`, e `storagePath` nunca vira URL pública. `@vercel/blob`
   **precisa de `token` explícito** — sem ele o SDK procura `BLOB_READ_WRITE_TOKEN`, que
   não existe aqui. Plano de aula em `/aulas`, 1 por turma+data, professor só nas suas.
+- **Unidades**: `/unidades` (só `unit:write` = admin) cria unidade (endereço) e sala (tipo +
+  capacidade). Primeira unidade vira `isPrimary` e não muda; `ROOM_KINDS`/validação puras em
+  `lib/unit-rules.ts`, banco em `lib/units.ts`. CEP/UF normalizados antes do banco.
+- **Fronteira cliente/servidor**: componente `"use client"` nunca pode importar módulo que
+  chegue em `@nextgen/db`/`@nextgen/auth` — quebra só no navegador ("client-side exception",
+  `APP_DATABASE_URL` ausente), com 200 no servidor, `tsc` e testes verdes. Constantes de UI
+  ficam em `lib/*-rules.ts` puros; `lib/client-boundary.test.ts` percorre os imports e falha
+  no CI. Não reintegre `ROOM_KINDS` em `lib/units.ts` nem `ROLE_LABELS` em `lib/team.ts`.
 - **Site público**: `/` → `/como-funciona`; `/escola/solicitar` grava em `school_leads`
   (único `INSERT` do `nextgen_app`, via `$executeRaw`).
 - Ativos de marca em `apps/web/public/{brand,icons}`; `lib/brand.ts` é o único com caminhos e
