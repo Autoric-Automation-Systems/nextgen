@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { inviteMember, type TeamState } from "./actions";
-import { INVITABLE_ROLES, ROLE_LABELS } from "@/lib/team";
+import { INVITABLE_ROLES, ROLE_LABELS } from "@/lib/team-rules";
 
 const initial: TeamState = { status: "idle" };
 

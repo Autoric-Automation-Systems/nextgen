@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ROLES } from "@nextgen/core";
-import { INVITABLE_ROLES, ROLE_LABELS, isInvitableRole } from "./team";
+import { INVITABLE_ROLES, ROLE_LABELS, isInvitableRole } from "./team-rules";
 
 describe("equipe: papéis do convite", () => {
   it("todo papel do sistema tem rótulo em português", () => {

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { resendInvite, setMemberRole, setMemberStatus, type TeamState } from "./actions";
-import { INVITABLE_ROLES, ROLE_LABELS } from "@/lib/team";
+import { INVITABLE_ROLES, ROLE_LABELS } from "@/lib/team-rules";
 import type { TeamMemberRow } from "@/lib/team";
 
 const initial: TeamState = { status: "idle" };
