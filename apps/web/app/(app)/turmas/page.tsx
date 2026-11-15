@@ -47,7 +47,8 @@ export default async function ClassGroupsPage() {
         units.length === 0 ? (
           <p className="notice">
             Antes de abrir turma, cadastre uma unidade com endereço — a turma acontece em algum
-            lugar, e o responsável precisa saber onde deixar o aluno.
+            lugar, e o responsável precisa saber onde deixar o aluno.{" "}
+            <Link href="/unidades">Cadastrar unidade</Link>.
           </p>
         ) : (
           <details className="panel">

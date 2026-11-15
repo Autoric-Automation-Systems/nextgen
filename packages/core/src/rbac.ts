@@ -61,6 +61,13 @@ export type Actor =
       userId: string;
       role: Role;
       schoolId: string;
+      /**
+       * Filhos do próprio usuário na escola. Vazio para quem não é responsável.
+       *
+       * Equipe e família são vínculos diferentes, e a mesma pessoa pode ter os dois: o
+       * dono da escola que matriculou o filho precisa assinar o termo dele.
+       */
+      guardianStudentIds?: string[];
     }
   | {
       kind: "guardian";
@@ -134,11 +141,22 @@ export function can(actor: Actor, request: AccessRequest): boolean {
     return PERMISSIONS[request.action].includes("platform_support");
   }
 
-  const allowedRoles = PERMISSIONS[request.action];
-  if (!allowedRoles.includes(actor.role)) return false;
-
   // Ninguém age sobre escola diferente da própria, exceto impersonação explícita.
   if (request.schoolId && request.schoolId !== actor.schoolId) return false;
+
+  // Consentimento é ato da família (LGPD art. 8º): nem a administração assina no lugar do
+  // responsável. Mas equipe que também é responsável assina pelo próprio filho.
+  const children =
+    actor.kind === "guardian" ? actor.studentIds : actor.kind === "member" ? actor.guardianStudentIds ?? [] : [];
+
+  if (request.action === "consent:grant") {
+    // Sem aluno no pedido, a pergunta é de capacidade: "esta pessoa assina termo?".
+    if (!request.studentId) return actor.role === "guardian" || children.length > 0;
+    return children.includes(request.studentId);
+  }
+
+  const allowedRoles = PERMISSIONS[request.action];
+  if (!allowedRoles.includes(actor.role)) return false;
 
   // Responsável só alcança os próprios filhos.
   if (actor.kind === "guardian" && request.studentId && !actor.studentIds.includes(request.studentId)) {

@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth, ensureUser, hasPassword } from "@nextgen/auth";
+import { auth, ensureUser } from "@nextgen/auth";
 import { withTenant } from "@nextgen/db";
 import { requireSession } from "@/lib/session";
 import { resolveWorkspace } from "@/lib/workspace";
@@ -113,8 +113,8 @@ export async function inviteMember(_prev: TeamState, formData: FormData): Promis
     if (result.status === "error") return result;
 
     // Convite fora da transação: e-mail lento não segura a tela, e falha de SMTP não
-    // desfaz o vínculo — a pessoa continua podendo entrar por "esqueci a senha".
-    const invited = await sendAccessLink(data.email, user.id);
+    // desfaz o vínculo — a pessoa continua podendo pedir o link em /cadastro.
+    const invited = await sendAccessLink(data.email);
 
     revalidatePath("/equipe");
     revalidatePath("/turmas");
@@ -245,29 +245,24 @@ export async function resendInvite(_prev: TeamState, formData: FormData): Promis
   const userId = String(formData.get("userId") ?? "");
   if (!email) return fail("Convite inválido.");
 
-  const sent = await sendAccessLink(email, userId || undefined);
+  const sent = await sendAccessLink(email);
   return sent
-    ? ok(`Convite reenviado para ${email}.`)
+    ? ok(`Link de acesso enviado para ${email}.`)
     : fail("O e-mail não saiu agora. Tente de novo em alguns minutos.");
 }
 
 /**
  * Link de acesso.
  *
- * Quem já tem senha cai no painel; quem nunca entrou vai definir a senha. Mandar todo
- * mundo para `/definir-senha` faria um professor antigo trocar a senha só para entrar numa
- * segunda escola.
+ * Sempre leva a `/redefinir-senha`: quem nunca entrou cria a senha, quem já tem senha
+ * escolhe outra. O texto do e-mail acompanha o estado da conta (`accessContext`), então
+ * a mesma ação serve ao convite e ao reenvio sem mentir para nenhum dos dois.
  */
-async function sendAccessLink(email: string, userId?: string): Promise<boolean> {
+async function sendAccessLink(email: string): Promise<boolean> {
   try {
-    const alreadyHasPassword = userId ? await hasPassword(userId) : false;
-    await auth.api.signInMagicLink({
+    await auth.api.requestPasswordReset({
       headers: await headers(),
-      body: {
-        email,
-        callbackURL: alreadyHasPassword ? "/dashboard" : "/definir-senha",
-        errorCallbackURL: "/login",
-      },
+      body: { email, redirectTo: "/redefinir-senha" },
     });
     return true;
   } catch (error) {

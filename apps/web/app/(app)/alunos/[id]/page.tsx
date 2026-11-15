@@ -30,6 +30,9 @@ export default async function StudentCardPage({ params }: { params: Promise<{ id
   if (!student) notFound();
 
   const consent = CONSENT_LABEL[student.consent];
+  // Equipe e família no mesmo login: quem é responsável deste aluno assina o termo por
+  // aqui, sem depender de o menu de família aparecer.
+  const isMyChild = session.guardianStudentIds.includes(student.id);
 
   return (
     <div className="stack">
@@ -44,7 +47,14 @@ export default async function StudentCardPage({ params }: { params: Promise<{ id
             {student.guardianNames.join(", ") || "sem responsável vinculado"}
           </p>
         </div>
-        <span className={consent.cls}>{consent.text}</span>
+        <div className="row" style={{ gap: 10, alignItems: "center" }}>
+          {isMyChild ? (
+            <Link className="btn btn-ghost" href="/consentimentos">
+              Consentimentos
+            </Link>
+          ) : null}
+          <span className={consent.cls}>{consent.text}</span>
+        </div>
       </div>
 
       <div className="grid grid-2" style={{ alignItems: "start" }}>

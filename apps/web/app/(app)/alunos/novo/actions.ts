@@ -182,13 +182,9 @@ export async function createStudent(_prev: StudentState, formData: FormData): Pr
     // desfaz o aluno.
     let invited = true;
     try {
-      await auth.api.signInMagicLink({
+      await auth.api.requestPasswordReset({
         headers: await headers(),
-        body: {
-          email: data.guardianEmail,
-          callbackURL: "/definir-senha",
-          errorCallbackURL: "/cadastro",
-        },
+        body: { email: data.guardianEmail, redirectTo: "/redefinir-senha" },
       });
     } catch (error) {
       console.error("[alunos] convite do responsável não saiu", error);

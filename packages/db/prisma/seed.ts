@@ -27,6 +27,7 @@ const ids = {
   teacherUser: "01930000-0000-7000-8000-000000000202",
   guardianUser: "01930000-0000-7000-8000-000000000203",
   guardian: "01930000-0000-7000-8000-000000000204",
+  adminGuardian: "01930000-0000-7000-8000-000000000205",
   studentA: "01930000-0000-7000-8000-000000000301",
   studentB: "01930000-0000-7000-8000-000000000302",
   studentC: "01930000-0000-7000-8000-000000000303",
@@ -240,6 +241,36 @@ async function main() {
         schoolId: schoolDemo,
         studentId: ids.studentA,
         guardianId: ids.guardian,
+        relation: "mother",
+        isLegal: true,
+        isFinancial: true,
+        isPickupAuthorized: true,
+        verifiedAt: new Date("2026-01-10T12:00:00Z"),
+        verificationMethod: "in_person_document",
+      },
+    });
+
+    // A diretora também é mãe de um aluno: o caso "equipe e família no mesmo login", que
+    // é o que revela se a tela de consentimento olha o vínculo ou o cargo.
+    await db.guardian.upsert({
+      where: { schoolId_userId: { schoolId: schoolDemo, userId: ids.adminUser } },
+      update: {},
+      create: {
+        id: ids.adminGuardian,
+        schoolId: schoolDemo,
+        userId: ids.adminUser,
+        phone: "+5511977776666",
+        relationDefault: "mother",
+      },
+    });
+
+    await db.studentGuardian.upsert({
+      where: { studentId_guardianId: { studentId: ids.studentC, guardianId: ids.adminGuardian } },
+      update: {},
+      create: {
+        schoolId: schoolDemo,
+        studentId: ids.studentC,
+        guardianId: ids.adminGuardian,
         relation: "mother",
         isLegal: true,
         isFinancial: true,

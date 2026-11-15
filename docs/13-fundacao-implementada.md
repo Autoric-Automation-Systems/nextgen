@@ -8,7 +8,7 @@ apenas desenhado em `04-modulos.md`. Tudo aqui roda e é verificado pela CI.
 | Camada | Onde | Estado |
 |---|---|---|
 | Monorepo (pnpm + turbo) | raiz | funciona |
-| Schema de dados + migrações | `packages/db/prisma` | 32 tabelas, 16 migrações |
+| Schema de dados + migrações | `packages/db/prisma` | 32 tabelas, 15 migrações |
 | Isolamento por escola (RLS) | `packages/db/prisma/migrations/*_rls` | testado |
 | Seed de duas escolas | `packages/db/prisma/seed.ts` | idempotente |
 | Regras puras (dinheiro, RBAC, consentimento, avaliação) | `packages/core` | 110 testes |
@@ -59,6 +59,37 @@ como dono, a política é inútil — por isso `APP_DATABASE_URL` é obrigatóri
   imagem pública vigente.
 - Menor de 16 não tem login próprio: `canHoldOwnLogin(age)`.
 
+## Unidades e salas
+
+A unidade é o endereço onde a escola treina — o que o responsável procura antes de
+matricular; a sala é o espaço físico onde a turma treina. Regras em
+`apps/web/lib/unit-rules.ts` (sem banco) e leitura/escrita em `apps/web/lib/units.ts`:
+
+- CEP, UF e cidade são normalizados antes do banco: `01310100`, `01310-100` e `0131010`
+  não podem virar três unidades diferentes na mesma escola.
+- A primeira unidade cadastrada vira a principal e não muda depois; a turma nova já vem
+  com ela pré-selecionada. O seed cria "Sede Centro", então a tela não nasce vazia.
+- Sala tem tipo (campo, quadra, ginásio, sala de aula) e capacidade explícita. A capacidade
+  da sala é referência do espaço: quem limita a turma é a capacidade da turma.
+- Toda escrita passa por `withTenant` e deixa `audit_log` (`unit.create`, `room.create`).
+  Criar unidade e criar sala são ações separadas: a escola abre o endereço e só depois
+  distribui os espaços dentro dele.
+
+## Papel duplo: equipe e família no mesmo login
+
+Diretor que também é pai não tem duas contas. A sessão resolve `role` pelo vínculo de
+equipe e, junto, `guardianStudentIds` — os alunos em que aquela pessoa é o responsável
+cadastrado. O RBAC usa as duas coisas:
+
+- `consent:grant` é capacidade (coordenação) **ou** `children.includes(studentId)`;
+  `guardianLink()` confere o vínculo no banco antes de qualquer escrita, então ser admin
+  não autoriza assinar o termo do filho de outra pessoa.
+- `/consentimentos` mostra as pendências da escola para leitura e, logo abaixo, "Seus
+  filhos" com os botões de autorizar. Quem só tem papel de equipe lê; quem é responsável
+  assina.
+- Convite de equipe recusa e-mail que já é responsável na mesma escola, e vice-versa: uma
+  `membership` por pessoa+escola.
+
 ## Turma, sem categoria nem temporada
 
 Não existe `season` nem `category` no schema (migration `turma_sem_temporada`): a turma é o
@@ -70,16 +101,16 @@ Não existe `season` nem `category` no schema (migration `turma_sem_temporada`):
 |---|---|
 | `/` | landing pública |
 | `/login` | e-mail e senha; avisos de `?senha=1` e `?saida=1` |
-| `/cadastro` | pede o link de primeiro acesso/convite |
-| `/definir-senha` | exige sessão do link; define a senha inicial |
+| `/cadastro` | pede o e-mail do primeiro acesso (convite da escola) |
 | `/esqueci-senha` | pede o link de redefinição |
-| `/redefinir-senha` | troca a senha com o token do e-mail |
+| `/redefinir-senha` | cria/troca a senha com o token do e-mail |
 | `/dashboard` | requer sessão; métricas da escola |
 | `/alunos` | requer sessão; lista com regime etário e consentimento |
 | `/alunos/[id]` | ficha do aluno com o card na versão interna |
 | `/pedagogia` | equipe: matérias com contagem de capítulos e conteúdos |
 | `/pedagogia/[id]` | equipe: capítulos, conteúdos, publicar e arquivar |
 | `/aulas` | equipe: planos de aula (professor vê as próprias turmas) |
+| `/unidades` | administração: unidades com endereço e salas com capacidade (`unit:write` só admin) |
 | `/financeiro` | administração: competência, cobranças, planos, Pix, despesas (`?mes=YYYY-MM`) |
 | `/meus-boletos` | responsável: cobranças dos próprios filhos e Pix de cada uma |
 | `/sistema` | só administração da plataforma; diretório de escolas |
@@ -90,16 +121,25 @@ Não existe `season` nem `category` no schema (migration `turma_sem_temporada`):
 
 Sem sessão, todo o painel redireciona para `/login`.
 
-## Autenticação: senha no dia a dia, link só no convite
+## Autenticação: senha é o único jeito de entrar
 
-O login é **e-mail + senha**. O link mágico não abre o painel: ele existe para o primeiro
-acesso e para o convite da escola, e o clique sempre termina em `/definir-senha`.
+O login é **e-mail + senha**. Não existe link que autentique sozinho: o link do e-mail
+serve para **criar** a senha (convite) ou **trocar** a senha (esqueci), e sempre termina em
+`/redefinir-senha`. Quem abriu a caixa ainda precisa escolher a senha — importa porque o
+e-mail do responsável costuma ser compartilhado com a família.
 
 | Caminho | Para quê | Validade | Regras |
 |---|---|---|---|
 | `/login` | dia a dia | — | e-mail + senha; "Manter conectado" opcional |
-| `/cadastro` → `/definir-senha` | primeiro acesso/convite | 15 min, uso único | define a senha com sessão do link |
+| `/cadastro` → `/redefinir-senha` | primeiro acesso/convite | 30 min, uso único | cria a credencial de quem ainda não tem senha |
 | `/esqueci-senha` → `/redefinir-senha` | senha esquecida | 30 min, uso único | revoga as sessões antigas |
+
+O convite e a redefinição usam o **mesmo endpoint** (`requestPasswordReset`) e mudam só o
+texto: `sendResetPassword` consulta `accessContext(userId)` e escolhe
+`buildInvitationEmail` (conta sem credencial → "a escola X criou seu acesso") ou
+`buildPasswordResetEmail`. O nome da escola vem do vínculo ativo, nunca de parâmetro do
+formulário; conta com dois vínculos recebe o texto genérico, em vez de um nome escolhido
+no chute.
 
 Detalhes que mudam o comportamento:
 
@@ -110,10 +150,10 @@ Detalhes que mudam o comportamento:
 - `disableSignUp: true`: ninguém cria conta pela API. Quem provisiona usuário é a escola
   ou o bootstrap do primeiro acesso (`ensureBootstrapAdmin`).
 - Senha: 10 a 128 caracteres, sem as óbvias do `OBVIOUS` (ver `password-rules.ts`). A
-  regra "não pode conter o e-mail" roda onde o e-mail é conhecido — em `/definir-senha`,
-  pela sessão. Em `/redefinir-senha` o servidor só tem o token, e o token já foi para a
-  caixa certa: a regra é dispensada, e não é bug.
-- Tokens de link são gravados com hash (`storeToken: "hashed"`), de uso único.
+  regra "não pode conter o e-mail" roda onde o e-mail é conhecido; em `/redefinir-senha` o
+  servidor só tem o token, e o token já foi para a caixa certa: a regra é dispensada.
+- Tokens de link são de uso único e expiram em 30 minutos; o token é consumido na mesma
+  transação que grava a senha.
 - O servidor recusa origem desconhecida (`403 INVALID_ORIGIN`) e limita tentativas
   (`TOO_MANY_REQUESTS`), com mensagem própria em português.
 
@@ -175,7 +215,7 @@ Telas que fecham o ciclo de vida do aluno depois do cadastro:
   na hora; revogar `enrollment` **não** cancela a matrícula em silêncio (decisão humana).
   Aceitar `enrollment` tira a matrícula de `draft` e a coloca em `active` ou `waitlist`
   conforme lotação.
-- **`/equipe`** — convite por e-mail (link mágico da Better Auth), cargo por pessoa,
+- **`/equipe`** — convite por e-mail (link que cria a senha), cargo por pessoa,
   vínculo com turmas do professor, revogação de acesso sem apagar histórico. A escola
   nunca vê senha; quem já tem senha cai no painel, quem nunca entrou vai definir a senha.
 - **Regras de proteção** — ninguém muda o próprio cargo nem o próprio acesso, e a escola

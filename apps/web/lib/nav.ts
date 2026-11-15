@@ -38,6 +38,7 @@ export const NAV: NavSection[] = [
       { href: "/dashboard", label: "Painel", hint: "Visão do mês", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/alunos", label: "Alunos", hint: "Cadastro e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
       { href: "/turmas", label: "Turmas", hint: "Horários, salas e matrícula", roles: ["admin", "coordinator", "teacher"], platform: true },
+      { href: "/unidades", label: "Unidades e salas", hint: "Endereços onde a escola treina", roles: ["admin"], platform: true },
       { href: "/equipe", label: "Equipe", hint: "Professores, coordenação e convites", roles: ["admin"], platform: true },
       { href: "/consentimentos", label: "Pendências de consentimento", hint: "Quem ainda não autorizou", roles: ["admin", "coordinator"], platform: true },
       { href: "/avaliacao", label: "Avaliação", hint: "Ciclos, notas e card", roles: ["admin", "coordinator", "teacher"], platform: true, status: "soon" },
@@ -62,7 +63,7 @@ export const NAV: NavSection[] = [
     items: [
       { href: "/sistema", label: "Escolas", hint: "Diretório da plataforma", roles: [], platform: true },
       { href: "/sistema/card", label: "Card do aluno", hint: "Revisão da versão interna e da pública", roles: [], platform: true },
-      { href: "/sistema/email", label: "E-mail do acesso", hint: "Prévia do link mágico", roles: [], platform: true },
+      { href: "/sistema/email", label: "E-mails de acesso", hint: "Prévia do convite e da redefinição", roles: [], platform: true },
       { href: "/sistema/pedidos", label: "Pedidos de cadastro", hint: "Quem pediu para entrar", roles: [], platform: true, status: "soon" },
     ],
   },

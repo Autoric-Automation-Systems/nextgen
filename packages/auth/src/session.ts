@@ -16,6 +16,13 @@ export type ResolvedSession = {
   actor: Actor;
   /** Escola ativa. Nula só na operação da plataforma, que não pertence a tenant. */
   schoolId: string | null;
+  /**
+   * Filhos do usuário na escola ativa, **independente do papel**.
+   *
+   * Ser responsável não é um cargo: é um vínculo com o aluno. Dono de escola que também
+   * é pai continua sendo os dois, e precisa poder assinar o termo do próprio filho.
+   */
+  guardianStudentIds: string[];
   memberships: MembershipSummary[];
   isPlatformAdmin: boolean;
 };
@@ -129,6 +136,7 @@ export async function resolveSession(input: ResolveInput): Promise<ResolvedSessi
       email: input.email,
       actor: { kind: "platform", userId: input.userId, role: "platform_support" },
       schoolId: null,
+      guardianStudentIds: [],
       memberships: [],
       isPlatformAdmin: true,
     };
@@ -137,6 +145,9 @@ export async function resolveSession(input: ResolveInput): Promise<ResolvedSessi
   const membership =
     memberships.find((m) => m.schoolId === input.preferredSchoolId) ?? memberships[0]!;
 
+  // Carregado sempre: o mesmo login pode ser equipe e responsável na mesma escola.
+  const children = await guardianStudentIds(input.userId, membership.schoolId);
+
   const actor: Actor =
     membership.role === "guardian"
       ? {
@@ -144,13 +155,14 @@ export async function resolveSession(input: ResolveInput): Promise<ResolvedSessi
           userId: input.userId,
           role: "guardian",
           schoolId: membership.schoolId,
-          studentIds: await guardianStudentIds(input.userId, membership.schoolId),
+          studentIds: children,
         }
       : {
           kind: "member",
           userId: input.userId,
           role: membership.role,
           schoolId: membership.schoolId,
+          guardianStudentIds: children,
         };
 
   return {
@@ -159,6 +171,7 @@ export async function resolveSession(input: ResolveInput): Promise<ResolvedSessi
     email: input.email,
     actor,
     schoolId: membership.schoolId,
+    guardianStudentIds: children,
     memberships,
     isPlatformAdmin: platformAdmin,
   };

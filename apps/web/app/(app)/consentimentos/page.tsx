@@ -12,60 +12,104 @@ export default async function ConsentsPage() {
   const workspace = await resolveWorkspace(session);
   if (!workspace) return <p className="muted">Sua conta não tem escola. Fale com a administração.</p>;
 
-  const isGuardian = workspace.can("consent:grant");
-  const canRead = workspace.can("consent:read");
-  if (!isGuardian && !canRead) {
+  // Duas perguntas diferentes, e a resposta não é a mesma:
+  // - "eu assino termo?" é vínculo de família, não cargo — vale para o dono da escola que
+  //   matriculou o filho;
+  // - "eu vejo as pendências da escola?" é cargo (administração e coordenação), em leitura.
+  const myChildren = session.guardianStudentIds;
+  const signsTerms = workspace.can("consent:grant") || myChildren.length > 0;
+  const staffView = workspace.role !== "guardian" && workspace.can("consent:read");
+
+  if (!signsTerms && !staffView) {
     return <p className="muted">Só o responsável vê os próprios consentimentos.</p>;
   }
 
   const ctx = { schoolId: workspace.schoolId, userId: session.userId };
 
-  // O escopo do responsável vem da sessão (`actor.studentIds`), nunca de parâmetro de URL.
-  const guardian = isGuardian && session.actor.kind === "guardian" ? session.actor : null;
-  const students = guardian
-    ? await listConsents(ctx, { studentIds: guardian.studentIds })
-    : await listConsents(ctx, { onlyPending: true });
+  // O escopo do responsável vem da sessão, nunca de parâmetro de URL.
+  const family = myChildren.length > 0 ? await listConsents(ctx, { studentIds: myChildren }) : [];
+  const schoolPending = staffView ? await listConsents(ctx, { onlyPending: true }) : [];
+  const familyIds = new Set(family.map((student) => student.studentId));
+  const othersPending = schoolPending.filter((student) => !familyIds.has(student.studentId));
 
-  const pending = students.filter((student) => student.pending.length > 0);
+  const familyPending = family.filter((student) => student.pending.length > 0);
 
   return (
     <div className="stack">
       <div>
         <h1 style={{ fontSize: 28, margin: "0 0 6px" }}>
-          {guardian ? "Consentimentos" : "Consentimentos pendentes"}
+          {myChildren.length > 0 ? "Consentimentos" : "Consentimentos pendentes"}
         </h1>
-        <p className="muted" style={{ margin: 0 }}>
-          {guardian
+        <p className="muted" style={{ margin: 0, maxWidth: 760 }}>
+          {myChildren.length > 0
             ? "O que você autoriza hoje vale só para o que está marcado. Cada finalidade pode ser revogada a qualquer momento, com efeito imediato."
             : "Alunos sem o termo obrigatório ou com matrícula em rascunho. Quem autoriza é o responsável, pelo próprio login — a escola não aceita termo no lugar da família."}
         </p>
       </div>
 
-      {guardian && pending.length > 0 ? (
-        <p className="notice">
-          {pending.length === 1
-            ? "Um aluno seu tem pendência de consentimento. Sem o termo de matrícula, a vaga não é liberada."
-            : `${pending.length} alunos seus têm pendência de consentimento. Sem o termo de matrícula, a vaga não é liberada.`}
+      {signsTerms && family.length > 0 ? (
+        <section className="stack">
+          <div>
+            <h2 className="section-title" style={{ marginBottom: 4 }}>
+              Seus filhos
+            </h2>
+            <p className="muted" style={{ margin: 0 }}>
+              Você assina o termo dos alunos sob sua guarda, mesmo quando também faz parte da
+              equipe da escola. A escola não pode assinar no seu lugar.
+            </p>
+          </div>
+
+          {familyPending.length > 0 ? (
+            <p className="notice">
+              {familyPending.length === 1
+                ? "Um aluno seu tem pendência de consentimento. Sem o termo de matrícula, a vaga não é liberada."
+                : `${familyPending.length} alunos seus têm pendência de consentimento. Sem o termo de matrícula, a vaga não é liberada.`}
+            </p>
+          ) : null}
+
+          {family.map((student) => (
+            <StudentCard key={student.studentId} student={student} readOnly={false} />
+          ))}
+        </section>
+      ) : null}
+
+      {signsTerms && family.length === 0 && !staffView ? (
+        <p className="muted">
+          Nenhum aluno vinculado ao seu login. Se isso estiver errado, fale com a secretaria
+          da escola.
         </p>
       ) : null}
 
-      {students.length === 0 ? (
-        <p className="muted">
-          {guardian
-            ? "Nenhum aluno vinculado ao seu login. Se isso estiver errado, fale com a secretaria da escola."
-            : "Nenhuma pendência de consentimento. Todas as famílias autorizaram o termo obrigatório."}
-        </p>
+      {staffView ? (
+        <section className="stack">
+          {signsTerms ? (
+            <div>
+              <h2 className="section-title" style={{ marginBottom: 4 }}>
+                Pendências da escola
+              </h2>
+              <p className="muted" style={{ margin: 0 }}>
+                Você vê estas pendências para cobrar as famílias, em modo leitura. Quem
+                autoriza é o responsável, pelo login dele.
+              </p>
+            </div>
+          ) : null}
+
+          {othersPending.length === 0 ? (
+            <p className="muted">
+              Nenhuma pendência de consentimento. Todas as famílias autorizaram o termo
+              obrigatório.
+            </p>
+          ) : (
+            othersPending.map((student) => (
+              <StudentCard key={student.studentId} student={student} readOnly />
+            ))
+          )}
+
+          <p className="muted">
+            <Link href="/alunos">← Voltar para alunos</Link>
+          </p>
+        </section>
       ) : null}
-
-      {students.map((student) => (
-        <StudentCard key={student.studentId} student={student} readOnly={!guardian} />
-      ))}
-
-      {guardian ? null : (
-        <p className="muted">
-          <Link href="/alunos">← Voltar para alunos</Link>
-        </p>
-      )}
     </div>
   );
 }
