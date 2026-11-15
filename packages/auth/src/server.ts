@@ -79,7 +79,11 @@ export function createAuth(options: AuthOptions = {}) {
               expiresInMinutes: RESET_EXPIRES_IN_MINUTES,
             });
 
-        await mailer.send({ to: user.email, ...content });
+        await mailer.send({
+          to: user.email,
+          ...content,
+          kind: context.hasPassword ? "senha" : "convite",
+        });
       },
     },
 

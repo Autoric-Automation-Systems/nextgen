@@ -154,6 +154,12 @@ Detalhes que mudam o comportamento:
   servidor só tem o token, e o token já foi para a caixa certa: a regra é dispensada.
 - Tokens de link são de uso único e expiram em 30 minutos; o token é consumido na mesma
   transação que grava a senha.
+- O transporte é **nodemailer sobre SMTP** (`smtp.gmail.com` por padrão para conta Gmail,
+  porta 465 com TLS implícito). `MAIL_TRANSPORT=console` só vale fora de produção: em
+  produção, sem credencial, o envio falha em vez de imprimir o link no log.
+- Cada tentativa fica em `mail_log` com o motivo (`convite`, `senha`, `charge`), o
+  destinatário mascarado e o status. `/api/health` traz as três últimas em `mailRecent`;
+  é o primeiro lugar a olhar quando "o e-mail não chegou".
 - O servidor recusa origem desconhecida (`403 INVALID_ORIGIN`) e limita tentativas
   (`TOO_MANY_REQUESTS`), com mensagem própria em português.
 

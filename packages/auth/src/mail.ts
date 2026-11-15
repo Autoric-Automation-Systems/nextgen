@@ -9,6 +9,12 @@ export type MailMessage = {
   subject: string;
   text: string;
   html?: string;
+  /**
+   * Rótulo do motivo no `mail_log` (`convite`, `senha`, `charge`). "Não chegou" e
+   * "chegou o e-mail errado" produzem a mesma tela; o rótulo separa os dois no
+   * diagnóstico, sem abrir o conteúdo da mensagem.
+   */
+  kind?: string;
 };
 
 export type Mailer = {

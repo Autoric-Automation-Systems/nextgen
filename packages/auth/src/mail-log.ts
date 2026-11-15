@@ -51,9 +51,10 @@ async function record(
  * Gmail, porta bloqueada. Sem registro, descobrir qual delas exige o log da Vercel, que
  * não é alcançável de fora do deploy.
  */
-export function loggingMailer(inner: Mailer, kind = "acesso"): Mailer {
+export function loggingMailer(inner: Mailer, defaultKind = "acesso"): Mailer {
   return {
     async send(message) {
+      const kind = message.kind ?? defaultKind;
       try {
         await inner.send(message);
         await record(kind, message.to, "enviado");
